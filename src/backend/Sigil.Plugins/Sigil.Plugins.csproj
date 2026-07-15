@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net462: requisito de plug-in packages de Dataverse (doc 04 §1, verificado) -->
+    <TargetFramework>net462</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Sigil.Plugins</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SDK clásico para plugins (.NET Framework) — la rama ServiceClient es para clientes .NET moderno -->
+    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.60" />
+    <!-- Permite compilar net462 en Linux/macOS/CI sin .NET Framework instalado -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sigil.Plugins.Core\Sigil.Plugins.Core.csproj" />
+  </ItemGroup>
+
+</Project>

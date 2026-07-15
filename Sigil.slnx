@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/backend/">
+    <Project Path="src/backend/Sigil.Plugins.Core.Tests/Sigil.Plugins.Core.Tests.csproj" />
+    <Project Path="src/backend/Sigil.Plugins.Core/Sigil.Plugins.Core.csproj" />
+    <Project Path="src/backend/Sigil.Plugins.Tests/Sigil.Plugins.Tests.csproj" />
+    <Project Path="src/backend/Sigil.Plugins/Sigil.Plugins.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/conformance/">
+    <Project Path="tests/conformance/Sigil.Conformance.Tests/Sigil.Conformance.Tests.csproj" />
+  </Folder>
+</Solution>

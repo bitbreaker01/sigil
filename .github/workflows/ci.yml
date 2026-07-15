@@ -1,0 +1,71 @@
+# CI de Sigil (doc 09 §4, doc 11 §5) — rojo bloquea merge.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x" # alineado con global.json — mismo compilador local y en CI
+
+jobs:
+  # Núcleo puro: compila y CORRE en runner Linux (barato y rápido — doc 04 §2)
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Tests del núcleo puro (net8)
+        run: dotnet test src/backend/Sigil.Plugins.Core.Tests -c Release
+
+  # Plugin net462: los tests EJECUTAN solo en Windows (doc 11 §2)
+  plugins:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Tests de orquestación (net462)
+        run: dotnet test src/backend/Sigil.Plugins.Tests -c Release
+
+  # PRUEBA DE EXISTENCIA DE LA PROPIA SUITE DE CONFORMIDAD (doc 11 §1 regla 5):
+  # en PR corre SIN secrets — debe compilar y OMITIRSE con motivo. Si alguien rompe
+  # la suite, este job la delata en el PR (no semanas después contra Dev).
+  conformance-harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: La suite compila y se auto-omite sin ambiente
+        run: dotnet test tests/conformance/Sigil.Conformance.Tests -c Release
+
+  # Suite de conformidad CONTRA DEV: a demanda, con secrets del environment 'dev'.
+  conformance:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Conformidad del ambiente Dev
+        env:
+          SIGIL_DATAVERSE_URL: ${{ secrets.SIGIL_DATAVERSE_URL }}
+          SIGIL_CLIENT_ID: ${{ secrets.SIGIL_CLIENT_ID }}
+          SIGIL_CLIENT_SECRET: ${{ secrets.SIGIL_CLIENT_SECRET }}
+        run: dotnet test tests/conformance/Sigil.Conformance.Tests -c Release --logger "console;verbosity=detailed"

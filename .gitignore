@@ -1,0 +1,19 @@
+# Build
+bin/
+obj/
+*.user
+.vs/
+
+# Secrets y firmas — JAMÁS en git (doc 07 §4, doc 09 §10)
+*.snk
+*.pfx
+*.local.json
+.env
+
+# Frontend (se agrega en F3)
+node_modules/
+dist/
+
+# Artefactos locales
+*.tsr
+TestResults/

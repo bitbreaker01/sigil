@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- netstandard2.0: consumible desde el plugin net462 Y testeable desde net8 (doc 04 §2) -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Sigil.Plugins.Core</RootNamespace>
+    <!-- Firma: se habilita en cuanto exista el .snk (custodia fuera de git — doc 09 §10).
+         Requisito verificado: si el assembly registrado está firmado, TODAS las dependencias
+         del plugin package deben estarlo (doc 04 §2). -->
+  </PropertyGroup>
+
+  <!-- Dependencias del stack (doc 04 §1) se agregan cuando su primer test las exija (Strict TDD):
+       PDFsharp >= 6.2.4 (jamás 6.2.0), BouncyCastle.Cryptography 2.x, QRCoder (PngByteQRCode),
+       SixLabors.ImageSharp >= 2.1.11 (rama 2.1.x). -->
+
+</Project>
