@@ -1,8 +1,12 @@
 # Resultados del spike en sandbox real de Dataverse
 
-**Fecha:** 2026-07-15 · **Ambiente:** Dev (`org36e60d9d.crm.dynamics.com`) · **Vehículo:** plugin package `sanic_SigilSpike` v1.0.8 (net462) ejecutado vía Custom API `sanic_sigil_capi_RunSpike` con isolationMode=2 (sandbox), runtime CLR 4.0.30319.
+**Fecha:** 2026-07-15 · **Ambiente:** Dev (`org36e60d9d.crm.dynamics.com`) · **Vehículo:** plugin package `sanic_SigilSpike` (net462) ejecutado vía Custom API `sanic_sigil_capi_RunSpike` con isolationMode=2 (sandbox), runtime CLR 4.0.30319.
 
-Evidencia cruda: `evidencia-resultado-v1.0.8.json` (salida íntegra del plugin, sin editar).
+**Este documento consolida DOS corridas** (cada número se atribuye a la suya):
+- **v1.0.8** — los 3 veredictos originales. Evidencia cruda: `evidencia-resultado-v1.0.8.json`.
+- **v1.0.9** — la ampliación de System.Text.Json (paso `f`). Evidencia cruda: `evidencia-resultado-v1.0.9.json`.
+
+Nota: el `sha256` y las latencias de TSA **difieren entre corridas** — el sha porque la serialización PDF no es determinística (doc 04 §7); las latencias por variación de red. Las cifras de los veredictos 1–3 son de v1.0.8; las de la ampliación STJ, de v1.0.9.
 
 ---
 
@@ -17,8 +21,18 @@ Evidencia cruda: `evidencia-resultado-v1.0.8.json` (salida íntegra del plugin, 
 | PDFsharp 6.2.4 — composición de PDF | ✅ **vía XObject manual** (ver veredicto 3) | 4.341 bytes en 11 ms, `/SMask` presente, round-trip `PdfReader` OK (1 página) |
 | SHA-256 del PDF | ✅ | `0313D9B3...CECD88` |
 | BouncyCastle 2.6.x RFC 3161 | ✅ | ver veredicto 2 |
+| System.Text.Json — (de)serialización reflexiva de los contratos reales | ✅ | 2 participants + 1 zone + roundtrip + JsonDocument, 481 ms (corrida v1.0.9, ver abajo) |
 
-Bonus (evidencia de build, no del JSON): el nupkg v1.0.8 que corrió en el sandbox **se generó con `dotnet pack` en Linux** — el pipeline de build no necesita Windows para empaquetar.
+Bonus (evidencia de build, no del JSON): el nupkg que corrió en el sandbox **se generó con `dotnet pack` en Linux** — el pipeline de build no necesita Windows para empaquetar.
+
+**Ampliación 2026-07-15 (v1.0.9) — System.Text.Json en el sandbox net462:** se agregó el paso `f` que ejercita la **misma ruta reflexiva** que usará el motor: `Deserialize<List<ParticipantInputSpike>>` (Guid + `int?` con `JsonPropertyName`), `Deserialize<List<ZoneInputSpike>>` (double), `Serialize` de vuelta (writer reflexivo) y `JsonDocument.Parse`. Todo verde: `{"ok":true,"ms":481,"participants":2,"zones":1,"roundtripLen":121,"docCount":2,"assemblyVersion":"9.0.0.6"}`. El riesgo real (trust parcial del sandbox → Reflection.Emit bloqueado) **no se materializó**.
+
+**Finding importante — lo MEDIDO vs lo INTERPRETADO:**
+
+- **Medido (hecho):** el nupkg v1.0.9 empaquetó **System.Text.Json assembly `8.0.0.5`** (package 8.0.5 — verificado leyendo el `.dll` del nupkg con `AssemblyName.GetAssemblyName`), y su cadena de 7 dependencias viaja en el package (confirmado con `unzip -l`). Sin embargo, en runtime el sandbox reportó `assemblyVersion: 9.0.0.6`. O sea: **corrió una STJ distinta (más nueva) a la que shippeamos**.
+- **Interpretación (hipótesis más plausible, no probada por el spike):** la plataforma Dataverse provee su propia System.Text.Json 9.0 y el loader del sandbox la unifica, igual que hace con `Microsoft.Xrm.Sdk`. El spike **no** instrumentó el mecanismo (binding redirect / load context), así que esto es inferencia consistente con el comportamiento conocido, no medición directa. Hipótesis alternativa no descartada del todo: que el 8.0.5 no se resolviera y el runtime tomara la 9.0.0.6 por otra vía.
+
+**Consecuencia de diseño (independiente de cuál hipótesis sea):** dado que el runtime corre 9.0.0.6, `Sigil.Plugins.Core` y el spike se pinearon a **9.0.6** (el package cuyos assets `lib/net462` se confirmaron en nuget.org — package 9.0.6 → assembly 9.0.0.x según el esquema de versionado de STJ) para que los tests locales corran la misma línea 9.0 que el sandbox — minimiza el skew test↔producción. La verificación de parity exacta se cierra cuando el primer test del motor cargue el package pineado en el ambiente.
 
 ### 2. ¿La TSA es alcanzable desde el sandbox? — ✅ SÍ (con fallback obligatorio)
 

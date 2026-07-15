@@ -7,6 +7,7 @@
 // TODO envuelto en try/catch por paso: los resultados parciales SIEMPRE llegan al JSON de salida.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -15,6 +16,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Xrm.Sdk;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
@@ -548,6 +550,61 @@ namespace SigilSpike.Plugin
             tsaResults.Append("]");
             tsaJson = tsaResults.ToString();
 
+            // ---------------------------------------------------------------
+            // f. SYSTEM.TEXT.JSON — (de)serialización reflexiva de los contratos
+            //    reales (ParticipantsJson/ZonesJson). El riesgo en el sandbox
+            //    net462 es el trust parcial: STJ usa reflexión y, en algunas
+            //    rutas, Reflection.Emit — que el sandbox podría bloquear (mismo
+            //    patrón del hallazgo de PDFsharp: corre en net8, ¿corre acá?).
+            // ---------------------------------------------------------------
+            string stjJson = "{\"ok\":false,\"error\":\"not run\"}";
+            try
+            {
+                var sw = Stopwatch.StartNew();
+                var opts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+                const string participantsJson =
+                    "[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"order\":1}," +
+                    "{\"userId\":\"22222222-2222-2222-2222-222222222222\",\"order\":2}]";
+                List<ParticipantInputSpike> participants =
+                    JsonSerializer.Deserialize<List<ParticipantInputSpike>>(participantsJson);
+
+                const string zonesJson =
+                    "[{\"userId\":\"22222222-2222-2222-2222-222222222222\"," +
+                    "\"page\":3,\"x\":62.5,\"y\":81.0,\"w\":22.0,\"h\":8.0}]";
+                List<ZoneInputSpike> zones =
+                    JsonSerializer.Deserialize<List<ZoneInputSpike>>(zonesJson);
+
+                // Serialización de vuelta: ejercita el WRITER reflexivo (la otra mitad del riesgo).
+                string roundtrip = JsonSerializer.Serialize(participants, opts);
+
+                // Ruta JsonDocument (algunas validaciones la usan).
+                int docCount;
+                using (JsonDocument doc = JsonDocument.Parse(participantsJson))
+                    docCount = doc.RootElement.GetArrayLength();
+
+                sw.Stop();
+                bool ok = participants != null && participants.Count == 2 &&
+                          participants[0].Order == 1 && participants[1].UserId != Guid.Empty &&
+                          zones != null && zones.Count == 1 && Math.Abs(zones[0].X - 62.5) < 0.001 &&
+                          zones[0].Page == 3 && roundtrip.IndexOf("11111111", StringComparison.Ordinal) >= 0 &&
+                          docCount == 2;
+
+                var stjAsm = typeof(JsonSerializer).Assembly.GetName();
+                stjJson = "{" + J("ok", ok) + "," + J("ms", sw.ElapsedMilliseconds) + "," +
+                    J("participants", participants == null ? 0 : participants.Count) + "," +
+                    J("zones", zones == null ? 0 : zones.Count) + "," +
+                    J("roundtripLen", roundtrip.Length) + "," +
+                    J("docCount", docCount) + "," +
+                    J("assemblyVersion", stjAsm.Version == null ? "?" : stjAsm.Version.ToString()) + "}";
+                trace.Trace("stj OK: {0} ms, ok={1}", sw.ElapsedMilliseconds, ok);
+            }
+            catch (Exception ex)
+            {
+                stjJson = FailJson(ex);
+                trace.Trace("stj FAIL: {0}", ex);
+            }
+
             total.Stop();
             string json = "{" +
                 "\"sandbox\":" + sandboxJson + "," +
@@ -559,6 +616,7 @@ namespace SigilSpike.Plugin
                 "\"pdfmanual\":" + pdfManualJson + "," +
                 "\"sha256\":" + sha256Json + "," +
                 "\"tsa\":" + tsaJson + "," +
+                "\"systemtextjson\":" + stjJson + "," +
                 J("totalMs", total.ElapsedMilliseconds) +
                 "}";
 

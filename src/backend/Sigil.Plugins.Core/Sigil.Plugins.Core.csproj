@@ -18,8 +18,11 @@
     <!-- 6.2.4 exacto: la versión validada por los spikes (jamás 6.2.0 — issue #187 de transparencia) -->
     <PackageReference Include="PDFsharp" Version="6.2.4" />
     <!-- Contratos JSON de las Custom APIs (doc 04 §4). netstandard2.0: viaja como dependent
-         assembly del plugin package (mismo mecanismo verificado con PDFsharp/BouncyCastle) -->
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+         assembly del plugin package. Versión 9.0.6 = la que el sandbox real UNIFICA en runtime
+         (spike 2026-07-15: shippeamos 8.0.5 y el sandbox cargó 9.0.0.6 — la plataforma provee
+         la suya, como con Microsoft.Xrm.Sdk). Se pinea 9.0.6 para que los tests locales corran
+         la MISMA versión que el sandbox — cero skew entre test y producción. -->
+    <PackageReference Include="System.Text.Json" Version="9.0.6" />
   </ItemGroup>
 
 </Project>

@@ -9,7 +9,7 @@
     <!-- El id del nupkg DEBE empezar con el prefijo del publisher (sanic_) y el
          registro pluginpackage.name debe ser exactamente este id. -->
     <PackageId>sanic_SigilSpike</PackageId>
-    <Version>1.0.8</Version>
+    <Version>1.0.9</Version>
     <Authors>Sigil</Authors>
     <Description>Spike: full crypto stack inside the Dataverse sandbox + TSA reachability.</Description>
 
@@ -30,6 +30,9 @@
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.*" />
     <PackageReference Include="QRCoder" Version="1.8.*" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.*" />
+    <!-- Contratos JSON de las Custom APIs (doc 04 §4) — misma versión que Sigil.Plugins.Core.
+         v1.0.9 shippeó 8.0.5 y el sandbox unificó a 9.0.0.6 → alineado a 9.0.6 (evidencia en RESULTADOS-SANDBOX.md). -->
+    <PackageReference Include="System.Text.Json" Version="9.0.6" />
   </ItemGroup>
 
 </Project>
