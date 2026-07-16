@@ -76,6 +76,18 @@ public sealed class EntornoDeApi(
     public int? InputInt(string nombre)
         => Contexto.InputParameters.TryGetValue(nombre, out var valor) && valor is int i ? i : (int?)null;
 
+    /// <summary>
+    /// Integer OPCIONAL de una Custom API. La plataforma materializa un parámetro Integer
+    /// opcional ausente como <c>0</c> (no como "ausente") — indistinguible de un 0 explícito.
+    /// Por eso 0 se trata como "no provisto"; un negativo llega tal cual y lo rechaza la
+    /// validación del dominio. Sin esto, TODO llamante que omita el parámetro sería rechazado.
+    /// </summary>
+    public int? InputOptionalInt(string nombre)
+    {
+        var v = InputInt(nombre);
+        return v is 0 ? null : v;
+    }
+
     /// <summary>El Target de una Custom API bound — su ausencia es un error de contrato.</summary>
     public EntityReference Target
         => Input<EntityReference>("Target")

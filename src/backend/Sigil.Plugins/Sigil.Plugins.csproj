@@ -7,13 +7,30 @@
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RootNamespace>Sigil.Plugins</RootNamespace>
+
+    <!-- Plugin package (doc 04 §1, doc 09 §4). El id DEBE empezar con el prefijo del
+         publisher (sanic_) y el registro pluginpackage.name debe ser exactamente este id. -->
+    <PackageId>sanic_Sigil</PackageId>
+    <!-- Bump OBLIGATORIO por cada cambio de código: Dataverse cachea el assembly del plugin
+         package por VERSIÓN — actualizar el content sin subir la versión NO recarga el código
+         (lección del spike, 2026-07-15). El deploy tool lee esta versión del nupkg. -->
+    <Version>1.0.1</Version>
+    <Authors>Sistemas Abiertos Nicaragua</Authors>
+    <Description>Sigil — motor de firma digital (Custom APIs de negocio).</Description>
+    <!-- Sin firma: los plugin packages no la requieren (doc 04 §2: solo si el principal está firmado). -->
+    <SignAssembly>false</SignAssembly>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- SDK clásico para plugins (.NET Framework) — la rama ServiceClient es para clientes .NET moderno -->
-    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.60" />
+    <!-- ExcludeAssets=runtime: la plataforma provee Microsoft.Xrm.Sdk — JAMÁS debe viajar en el package.
+         El proyecto de tests lo referencia por su cuenta para tener el runtime asset (net462). -->
+    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.60" ExcludeAssets="runtime" />
     <!-- Permite compilar net462 en Linux/macOS/CI sin .NET Framework instalado -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <!-- SDK que empaqueta el assembly + sus dependent assemblies como plugin package (nupkg) -->
+    <PackageReference Include="Microsoft.PowerApps.MSBuild.Plugin" Version="1.*" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

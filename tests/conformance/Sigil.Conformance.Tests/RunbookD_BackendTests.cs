@@ -9,7 +9,11 @@
 //   - RoutingType y DocumentType viajan como String ("sequential"|"parallel", "content"|"final").
 //   - TransactionId de salida es Guid.
 
+using System.Text.Json;
+using Microsoft.Crm.Sdk.Messages;
+using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
+using PdfSharp.Pdf;
 using Xunit;
 
 namespace Sigil.Conformance.Tests;
@@ -126,5 +130,74 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         var filas = client.RetrieveMultiple(query).Entities;
         Assert.True(filas.Count == 1, $"La propiedad de respuesta {propiedad} de {api} no existe (F2).");
         Assert.Equal(tipo, filas[0].GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("type").Value);
+    }
+
+    // ── CF-D05: smoke E2E — la salida de F1 (doc 10) ─────────────────────────
+    // No prueba REGISTRO sino FUNCIÓN real: invoca CreateTransaction con un PDF real,
+    // lo recupera con GetDocumentContent y verifica el round-trip byte a byte. Crea y
+    // borra su propio dato (cleanup en finally) — jamás deja basura en Dev.
+
+    [SkippableFact]
+    public void CF_D05_SmokeE2E_CrearBorradorConPdfReal_YLeerloDeVuelta()
+    {
+        var client = fx.RequireClient();
+        var yo = ((WhoAmIResponse)client.Execute(new WhoAmIRequest())).UserId;
+
+        var pdf = PdfDeUnaPagina();
+        var pdfBase64 = Convert.ToBase64String(pdf);
+
+        var participantsJson = JsonSerializer.Serialize(new[] { new { userId = yo } });
+        var zonesJson = JsonSerializer.Serialize(new[]
+        {
+            new { userId = yo, page = 1, x = 40.0, y = 40.0, w = 20.0, h = 8.0 },
+        });
+
+        var crear = new OrganizationRequest("sanic_sigil_capi_CreateTransaction")
+        {
+            ["Name"] = "CF-D05 smoke E2E",
+            ["RoutingType"] = "parallel",
+            ["PdfBase64"] = pdfBase64,
+            ["ParticipantsJson"] = participantsJson,
+            ["ZonesJson"] = zonesJson,
+        };
+
+        Guid txId = Guid.Empty;
+        try
+        {
+            var resp = client.Execute(crear);
+            txId = (Guid)resp.Results["TransactionId"];
+            Assert.NotEqual(Guid.Empty, txId);
+
+            // Leer el contenido de vuelta (el llamante es el creador → autorizado en Borrador).
+            var leer = new OrganizationRequest("sanic_sigil_capi_GetDocumentContent")
+            {
+                ["Target"] = new EntityReference("sanic_sigil_tbl_transaction", txId),
+                ["DocumentType"] = "content",
+            };
+            var pdfDeVuelta = (string)client.Execute(leer).Results["PdfBase64"];
+
+            // Round-trip exacto: los bytes que subimos son los que bajan (doc 04 §3.1 GetDocumentContent).
+            Assert.Equal(pdfBase64, pdfDeVuelta);
+        }
+        finally
+        {
+            if (txId != Guid.Empty)
+            {
+                var borrar = new OrganizationRequest("sanic_sigil_capi_DeleteDraft")
+                {
+                    ["Target"] = new EntityReference("sanic_sigil_tbl_transaction", txId),
+                };
+                client.Execute(borrar); // cleanup — no dejar borradores de prueba en Dev
+            }
+        }
+    }
+
+    private static byte[] PdfDeUnaPagina()
+    {
+        using var doc = new PdfDocument();
+        doc.AddPage();
+        using var ms = new MemoryStream();
+        doc.Save(ms, closeStream: false);
+        return ms.ToArray();
     }
 }

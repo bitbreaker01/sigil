@@ -15,6 +15,9 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <!-- Directo (no transitivo): Sigil.Plugins excluye el runtime de Xrm.Sdk para el package;
+         los tests SÍ necesitan el assembly en runtime (corren en el runner Windows). -->
+    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies" Version="9.0.2.60" />
     <!-- DECIDIDO (2026-07-15): STUB PROPIO de IOrganizationService — FakeXrmEasy descartado
          por licenciamiento (doc 11 §2). El stub se construye acá, TDD, con el primer test de Apis/. -->
   </ItemGroup>

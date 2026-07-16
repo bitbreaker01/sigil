@@ -71,6 +71,22 @@ public class CreateTransactionPluginTests
         Assert.Equal("Ana Creadora", evento.GetAttributeValue<string>(SchemaNames.Evento.ActorName));
     }
 
+    [Fact] // quirk de Custom API: un Integer opcional ausente llega como 0 → se trata como "no provisto"
+    public void ExpirationDays_EnCero_SeTrataComoAusente_NoComoError()
+    {
+        var creador = _arnes.SembrarUsuario("Ana", "ana@bac.test");
+        _arnes.Contexto.InputParameters["Name"] = "Doc sin plazo";
+        _arnes.Contexto.InputParameters["RoutingType"] = "parallel";
+        _arnes.Contexto.InputParameters["ExpirationDays"] = 0; // como lo materializa la plataforma
+        _arnes.Contexto.InputParameters["PdfBase64"] = Convert.ToBase64String(ArnesDeApi.PdfDePrueba(1));
+        _arnes.Contexto.InputParameters["ParticipantsJson"] = $$"""[ {"userId":"{{creador}}"} ]""";
+
+        Ejecutar(creador); // no lanza
+
+        var tx = _arnes.Servicio.FilasDe(SchemaNames.Tx.Entidad).Single();
+        Assert.False(tx.Contains(SchemaNames.Tx.ExpirationDays)); // no se persiste un plazo espurio
+    }
+
     [Fact]
     public void M7_ConPdfSinMagicBytes_Rechaza_SinEscribirNada()
     {

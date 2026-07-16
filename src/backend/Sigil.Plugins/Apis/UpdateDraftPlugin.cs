@@ -35,7 +35,7 @@ public class UpdateDraftPlugin : SigilApiPlugin
         var name = e.Input<string>("Name");
         var message = e.Input<string>("Message");
         var routingToken = e.Input<string>("RoutingType");
-        var expirationDays = e.InputInt("ExpirationDays");
+        var expirationDays = e.InputOptionalInt("ExpirationDays"); // 0 = ausente (quirk de Custom API)
         var pdfBase64 = e.Input<string>("PdfBase64");
         var participantsJson = e.Input<string>("ParticipantsJson");
         var zonesJson = e.Input<string>("ZonesJson");
