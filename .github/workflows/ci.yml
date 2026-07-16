@@ -53,6 +53,19 @@ jobs:
       - name: La suite compila y se auto-omite sin ambiente
         run: dotnet test tests/conformance/Sigil.Conformance.Tests -c Release
 
+  # El script de carrera de locks (doc 11 §3) COMPILA en cada PR — corre a demanda
+  # contra Dev con etiqueta en el PR que toque locks/estados (necesita SIGIL_SEED_UPNS
+  # + impersonación; no se ejecuta en cada PR, pero jamás debe estar roto).
+  lock-race-harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: El script de carrera compila
+        run: dotnet build tests/integration/Sigil.LockRace -c Release
+
   # Suite de conformidad CONTRA DEV: a demanda, con secrets del environment 'dev'.
   conformance:
     if: github.event_name == 'workflow_dispatch'

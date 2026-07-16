@@ -10,6 +10,9 @@
   <Folder Name="/tests/conformance/">
     <Project Path="tests/conformance/Sigil.Conformance.Tests/Sigil.Conformance.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/Sigil.LockRace/Sigil.LockRace.csproj" />
+  </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Sigil.Deploy/Sigil.Deploy.csproj" />
   </Folder>
