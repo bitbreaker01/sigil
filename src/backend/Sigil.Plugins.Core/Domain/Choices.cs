@@ -57,4 +57,5 @@ public enum EventType
     Expirada = 159460009,
     VerificacionRealizada = 159460010,
     CanceladaPorElCreador = 159460011,
+    TsaAbandonada = 159460012, // agregado por el negocio 2026-07-16 (evento de ResealPending con TSA off)
 }

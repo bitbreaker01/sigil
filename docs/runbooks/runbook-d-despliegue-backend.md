@@ -1,16 +1,16 @@
 # Runbook D — Despliegue del Backend (plugin package + Custom APIs)
 
-**Cuándo:** cada vez que se despliega o actualiza el backend de Sigil en un ambiente (Dev primero; Test/Prod por el pipeline). **Fase:** F2. **Verificación:** suite de conformidad `CF-D01..D06`.
+**Cuándo:** cada vez que se despliega o actualiza el backend de Sigil en un ambiente (Dev primero; Test/Prod por el pipeline). **Fase:** F2. **Verificación:** suite de conformidad `CF-D01..D13`.
 
-**Superficie actual (2026-07-16):** el package `sanic_Sigil` contiene **11 Custom APIs** (4 CRUD de borrador, 4 del ciclo de vida, 2 de Firma Maestra, RetrySealing) **+ el step ASÍNCRONO del worker de sellado** (`Sigil | Step | SealingWorker on Update of transaction` con post-image — verificado por CF-D09). Env vars que setea la herramienta: MaxPdfSizeKB, MaxParticipants, ExpirationDefaultDays (7 en Dev), SignatureImageSpec, **TsaEnabled=yes, TsaEndpoints (Sectigo primero en Dev — DigiCert está bloqueada desde el sandbox), AppPlayUrl (placeholder Dev — ACTUALIZAR tras el primer `pac code push`)**.
+**Superficie actual (2026-07-16):** el package `sanic_Sigil` contiene **15 Custom APIs** (4 CRUD de borrador, 4 del ciclo de vida, 2 de Firma Maestra, RetrySealing, VerifyDocument, 3 jobs) **+ el step ASÍNCRONO del worker de sellado** (`Sigil | Step | SealingWorker on Update of transaction` con post-image — verificado por CF-D09). Env vars que setea la herramienta: MaxPdfSizeKB, MaxParticipants, ExpirationDefaultDays (7 en Dev), SignatureImageSpec, **TsaEnabled=yes, TsaEndpoints (Sectigo primero en Dev — DigiCert está bloqueada desde el sandbox), AppPlayUrl (placeholder Dev — ACTUALIZAR tras el primer `pac code push`)**.
 
 > **Operación — Sellando eterno:** si el worker agota los 4 reintentos de plataforma, la transacción queda en Sellando. La salida automática es el **saneamiento T14** de `sanic_sigil_capi_ExpireTransactions` (desplegada desde F2.4 — mueve a Error de Sellado toda Sellando > 24 h sin actividad). **Hasta que el flow diario que la invoca exista (F4), correr el job manualmente** (con las credenciales del SP): `OrganizationRequest("sanic_sigil_capi_ExpireTransactions")` — devuelve `ExpiredCount`/`SanitizedCount`. Los otros dos jobs (`ProcessReminders`, `ResealPending`) se invocan igual.
 >
-> **Decisión de negocio pendiente (registrada 2026-07-16):** `ResealPending` con TSA deshabilitada mueve ledgers a "Sin sello TSA" y el doc 04 §3.1 pide "+ evento", pero `sanic_sigil_choice_eventtype` no tiene un valor para "TSA abandonada". Cuando el negocio lo decida: agregar el valor en el portal + Apéndice A (doc 12) + el evento en el plugin. Mientras tanto queda en el trace y en `MovedToNoTsaCount`.
+> **Decisión de negocio RESUELTA (2026-07-16):** el negocio agregó "TSA abandonada" (**159460012**, copiado del portal al Apéndice A) a `sanic_sigil_choice_eventtype`; `ResealPending` emite ese evento al mover ledgers a "Sin sello TSA" con la TSA deshabilitada (desde package v1.0.10). **Al promover a Test/Prod:** el valor nuevo del choice debe viajar en la solución `sigil_core_sigil` — Dataverse NO valida valores de choice al escribir, así que si el destino no lo tiene, el evento se crea con etiqueta en blanco (bug silencioso). Verificá con `CF-A16` en el destino tras el import.
 
 Este runbook cubre el despliegue por **SDK puro** (herramienta `tools/Sigil.Deploy`), que no requiere `pac` CLI ni herramientas de Windows. La sección §7 documenta el camino alternativo con `pac` (doc 09 §4) para quien lo prefiera.
 
-> **Qué hace la herramienta automáticamente** (para que sepas qué NO tenés que hacer a mano): registra el plugin package `sanic_Sigil`, espera que la plataforma descubra los 4 plugin types, crea/actualiza las 4 Custom APIs con sus parámetros, propiedades de respuesta, binding, privilegio de ejecución e `IsPrivate`, setea los valores de env vars que el backend lee, e **intenta** colocar todo en la solución `sigil_core_sigil` (colocación en el CREATE de cada componente vía `SolutionUniqueName` — **verificala a mano según §6**, no la des por garantizada). Es **idempotente**: podés re-correrla sin duplicar nada.
+> **Qué hace la herramienta automáticamente** (para que sepas qué NO tenés que hacer a mano): registra el plugin package `sanic_Sigil`, espera que la plataforma descubra los plugin types, crea/actualiza las Custom APIs con sus parámetros, propiedades de respuesta, binding, privilegio de ejecución e `IsPrivate`, setea los valores de env vars que el backend lee, e **intenta** colocar todo en la solución `sigil_core_sigil` (colocación en el CREATE de cada componente vía `SolutionUniqueName` — **verificala a mano según §6**, no la des por garantizada). Es **idempotente**: podés re-correrla sin duplicar nada.
 >
 > **Modos:** sin flags = despliegue completo (package + APIs + env values). `--grant` = solo otorgar privilegios al SP (§2). `--package-only` = solo (re)subir el package sin tocar las APIs (útil para redeploy rápido del assembly tras un bump).
 
@@ -73,7 +73,7 @@ dotnet run --project tools/Sigil.Deploy -c Release
 ```
 El programa imprime cada paso. Espera hasta ~120 s a que la plataforma descubra los plugin types (propagación asíncrona — normal).
 
-**Éxito:** termina con `[OK] Despliegue completo. package=<guid>`. Muestra las 4 Custom APIs creadas/actualizadas y los valores de env vars.
+**Éxito:** termina con `[OK] Despliegue completo. package=<guid>`. Muestra las Custom APIs creadas/actualizadas, el step del worker y los valores de env vars.
 
 **Si falla:**
 - `no aparecieron todos los plugintypes tras 120 s` → el package no se procesó. Verificá que el nupkg contenga `Sigil.Plugins.dll` (con los 4 `IPlugin`) y que NO contenga `Microsoft.Xrm.Sdk.dll` (`unzip -l <nupkg> | grep Xrm.Sdk` debe dar vacío). Re-corré.
@@ -89,9 +89,9 @@ El programa imprime cada paso. Espera hasta ~120 s a que la plataforma descubra 
 source .env
 dotnet test tests/conformance/Sigil.Conformance.Tests -c Release --filter 'FullyQualifiedName~RunbookD'
 ```
-**Éxito:** `CF-D01..D05` verdes (22 de registro + 1 smoke E2E):
+**Éxito:** `CF-D01..D13` verdes (registro de las 15 APIs + step + 6 smokes E2E: D05 lectura, D06 ciclo, D08 firma, D10 sellado con TSA real, D11 verificación, D12/D13 jobs):
 - **CF-D01** — el plugin package `sanic_Sigil` existe.
-- **CF-D02** — las 4 Custom APIs con binding/isfunction/isprivate/executeprivilege correctos.
+- **CF-D02** — cada Custom API con binding/isfunction/isprivate/executeprivilege correcto (los 3 jobs con el privilegio de SERVICIO).
 - **CF-D03/D04** — los parámetros de request y propiedades de respuesta con su tipo.
 - **CF-D05** — **smoke E2E real**: crea un borrador con un PDF de verdad, lo recupera con `GetDocumentContent` (round-trip byte a byte) y lo borra. Es el criterio de salida de F1 (doc 10).
 
@@ -105,7 +105,7 @@ dotnet test tests/conformance/Sigil.Conformance.Tests -c Release --filter 'Fully
 
 ## 5. Valores de variables de entorno (responsabilidad por ambiente)
 
-La herramienta setea **solo los valores que el código desplegado HOY lee**: `MaxPdfSizeKB=20480` (20 MB) y `MaxParticipants=20` (doc 03 §8, doc 04 §3.4). El resto de la configuración por-ambiente se setea **cuando su consumidor se despliega** (doc 09 §6):
+La herramienta setea **los 9 valores de env var** que el backend lee (doc 03 §8): `MaxPdfSizeKB=20480`, `MaxParticipants=20`, `ExpirationDefaultDays=7`, `SignatureImageSpec`, `TsaEnabled=yes`, `TsaEndpoints` (Sectigo primero en Dev), `ReminderCadenceDays=2`, `DefaultLanguage=es`, `AppPlayUrl` (placeholder Dev). Valores de Dev; en Test/Prod los fija el pipeline por ambiente (doc 09 §6):
 
 | Env var | Cuándo se setea | Quién |
 |---------|-----------------|-------|
@@ -123,9 +123,9 @@ La herramienta setea **solo los valores que el código desplegado HOY lee**: `Ma
 
 **Cómo:** en make.powerapps.com → Solutions → **Sigil | Core | Sigil** → objetos:
 
-1. **Confirmá que aparecen dentro de la solución** (no solo en el ambiente): el plugin package `sanic_Sigil` y las 4 Custom APIs. La herramienta pasa `SolutionUniqueName` **solo al CREAR cada componente** (no en re-deploys de componentes existentes), y es comportamiento de plataforma no garantizado — por eso verificá visualmente que quedaron **como componentes de la solución** (crítico para el pipeline ALM — doc 09 §4).
+1. **Confirmá que aparecen dentro de la solución** (no solo en el ambiente): el plugin package `sanic_Sigil`, las 15 Custom APIs y el step del worker. La herramienta pasa `SolutionUniqueName` **solo al CREAR cada componente** (no en re-deploys de componentes existentes), y es comportamiento de plataforma no garantizado — por eso verificá visualmente que quedaron **como componentes de la solución** (crítico para el pipeline ALM — doc 09 §4).
 
-**Éxito:** los 5 objetos figuran en la solución.
+**Éxito:** los objetos (package + 15 APIs + step) figuran en la solución.
 **Si falla** (aparecen en el ambiente pero NO en la solución): agregalas a mano — Solution → Add existing → (Plugin package / Custom API) → seleccioná los `sanic_*`. Registrá el hallazgo (la colocación por `SolutionUniqueName` no funcionó como se espera).
 
 ---
@@ -133,7 +133,7 @@ La herramienta setea **solo los valores que el código desplegado HOY lee**: `Ma
 ## 7. Rollback
 
 **Cómo (revertir el despliegue en Dev):**
-1. En make.powerapps.com → Solutions → Sigil | Core | Sigil → borrá las 4 Custom APIs (esto borra sus params/response props en cascada).
+1. En make.powerapps.com → Solutions → Sigil | Core | Sigil → borrá las 15 Custom APIs + el step del worker (esto borra params/response props/imagen en cascada).
 2. Borrá el plugin package `sanic_Sigil` (comportamiento de plataforma: borra en cascada el pluginassembly y los 4 plugintypes).
 3. Los valores de env vars (`environmentvariablevalue`) podés dejarlos o borrarlos; no rompen nada.
 

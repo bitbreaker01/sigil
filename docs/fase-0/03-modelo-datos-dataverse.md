@@ -110,6 +110,7 @@ Todas globales (se reutilizan entre tablas/APIs y la Code App las lee como forma
 | 10 | Expirada |
 | 11 | Verificación realizada |
 | 12 | Cancelada por el creador |
+| 13 | TSA abandonada — *agregado por el negocio 2026-07-16: evento de `capi_ResealPending` al mover un ledger a Sin sello TSA con la TSA deshabilitada (cierra el gap de catálogo del doc 04 §3.1)* |
 
 ## 4. Tablas
 

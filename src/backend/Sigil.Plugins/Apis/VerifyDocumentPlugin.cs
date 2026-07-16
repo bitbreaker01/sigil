@@ -28,6 +28,13 @@ public class VerifyDocumentPlugin : SigilApiPlugin
             : throw new InvalidPluginExecutionException("TransactionId es obligatorio.");
         var hashAVerificar = e.Input<string>("Sha256Hash");
 
+        // Un hash mal formado es un error de CONTRATO (typo del verificador), no un veredicto
+        // "adulterado" — se rechaza claro en vez de devolver IsIntact=false engañoso (S4).
+        if (!string.IsNullOrWhiteSpace(hashAVerificar) &&
+            !System.Text.RegularExpressions.Regex.IsMatch(hashAVerificar!.Trim(), "^[0-9A-Fa-f]{64}$"))
+            throw new InvalidPluginExecutionException(
+                "Sha256Hash debe ser un SHA-256 en hexadecimal (64 caracteres 0-9/A-F).");
+
         var q = new QueryExpression(SchemaNames.Ledger.Entidad)
         {
             ColumnSet = new ColumnSet(SchemaNames.Ledger.ContentHash, SchemaNames.Ledger.FinalHash,
@@ -39,16 +46,31 @@ public class VerifyDocumentPlugin : SigilApiPlugin
 
         if (ledger is null)
         {
-            // Sin ledger no hay constancia NI ancla donde registrar el evento (decisión declarada).
             e.Output("Found", false);
             e.Output("MetadataJson", "{\"found\":false}");
+
+            // Si la TRANSACCIÓN existe, la verificación se registra igual (el evento ancla a la
+            // transacción, no al ledger — doc 03 §4.6; RNF-04 quiere capturar toda verificación,
+            // incluida una sobre una tx aún no sellada). Solo un txId inexistente no deja rastro
+            // (no hay ancla). Corrección del antagonista A3, 2026-07-16.
+            if (TransaccionExiste(e, txId, out var creadorSinLedger))
+            {
+                var actorSinLedger = Consultas.SnapshotDeActor(e.Servicio, e.Llamante);
+                var lectoresSinLedger = LectoresDe(e, txId, creadorSinLedger);
+                Consultas.CrearEvento(e.Servicio, new EntityReference(SchemaNames.Tx.Entidad, txId),
+                    EventType.VerificacionRealizada, actorSinLedger,
+                    "Verificación realizada sobre una transacción sin sellar (sin constancia).",
+                    creadorSinLedger, lectores: lectoresSinLedger);
+            }
             e.Trace.Trace("VerifyDocument: {0} sin ledger — Found=false.", txId);
             return;
         }
 
         var finalHash = ledger.GetAttributeValue<string>(SchemaNames.Ledger.FinalHash) ?? string.Empty;
         var contentHash = ledger.GetAttributeValue<string>(SchemaNames.Ledger.ContentHash) ?? string.Empty;
-        var tsaStatus = (TsaStatus)ledger.GetAttributeValue<OptionSetValue>(SchemaNames.Ledger.TsaStatus).Value;
+        var tsaStatusOpt = ledger.GetAttributeValue<OptionSetValue>(SchemaNames.Ledger.TsaStatus)
+            ?? throw new InvalidPluginExecutionException($"El ledger de {txId} no tiene estado TSA (registro corrupto).");
+        var tsaStatus = (TsaStatus)tsaStatusOpt.Value;
 
         bool? esIntacto = null;
         if (!string.IsNullOrWhiteSpace(hashAVerificar))
@@ -84,14 +106,8 @@ public class VerifyDocumentPlugin : SigilApiPlugin
             e.Output("TsaTokenBase64", token);
 
         // Evento 11 (RNF-04): cada verificación queda registrada con su actor.
-        var (estado, creador) = Consultas.EstadoYCreador(e.Servicio, txId);
-        _ = estado;
-        var participantes = Consultas.ParticipantesDe(e.Servicio, txId);
-        var lectores = participantes
-            .Select(p => p.GetAttributeValue<EntityReference>(SchemaNames.Participante.UserId).Id)
-            .Where(u => u != creador)
-            .Distinct()
-            .ToList();
+        var (_, creador) = Consultas.EstadoYCreador(e.Servicio, txId);
+        var lectores = LectoresDe(e, txId, creador);
         var actor = Consultas.SnapshotDeActor(e.Servicio, e.Llamante);
         var veredicto = esIntacto switch
         {
@@ -106,6 +122,22 @@ public class VerifyDocumentPlugin : SigilApiPlugin
 
         e.Trace.Trace("VerifyDocument: {0} — intacto={1}, historial={2}.", txId, esIntacto, historiaIntacta);
     }
+
+    private static bool TransaccionExiste(EntornoDeApi e, Guid txId, out Guid creador)
+    {
+        var q = new QueryExpression(SchemaNames.Tx.Entidad) { ColumnSet = new ColumnSet(SchemaNames.Tx.OwnerId) };
+        q.Criteria.AddCondition($"{SchemaNames.Tx.Entidad}id", ConditionOperator.Equal, txId);
+        var fila = e.Servicio.RetrieveMultiple(q).Entities.FirstOrDefault();
+        creador = fila?.GetAttributeValue<EntityReference>(SchemaNames.Tx.OwnerId)?.Id ?? Guid.Empty;
+        return fila is not null;
+    }
+
+    private static System.Collections.Generic.List<Guid> LectoresDe(EntornoDeApi e, Guid txId, Guid creador)
+        => Consultas.ParticipantesDe(e.Servicio, txId)
+            .Select(p => p.GetAttributeValue<EntityReference>(SchemaNames.Participante.UserId).Id)
+            .Where(u => u != creador)
+            .Distinct()
+            .ToList();
 
     /// <summary>
     /// Verificación cruzada del historial (doc 03 §4.6): eventos de firma con documenthash

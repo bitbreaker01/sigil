@@ -123,6 +123,7 @@ Los valores reales de cada opción se **copian del portal al crearse** (Runbook 
 | sanic_sigil_choice_eventtype | Expirada | 159460009 |
 | sanic_sigil_choice_eventtype | Verificación realizada | 159460010 |
 | sanic_sigil_choice_eventtype | Cancelada por el creador | 159460011 |
+| sanic_sigil_choice_eventtype | TSA abandonada | 159460012 |
 
 ---
 

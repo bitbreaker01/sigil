@@ -185,8 +185,8 @@ public class JobsPluginTests
         return txId;
     }
 
-    [Fact] // M10 — TSA off: los pendientes van a Sin sello TSA (sin huérfanos eternos)
-    public void M10_Reseal_ConTsaApagada_MueveASinSello()
+    [Fact] // M10 — TSA off: los pendientes van a Sin sello TSA + evento "TSA abandonada"
+    public void M10_Reseal_ConTsaApagada_MueveASinSello_ConEventoTsaAbandonada()
     {
         _arnes.ConfigurarEnv(SchemaNames.EnvVars.TsaEnabled, "no");
         SembrarLedgerPendiente(ArnesDeApi.PdfDePrueba(1));
@@ -196,6 +196,9 @@ public class JobsPluginTests
         Assert.Equal(1, _arnes.Contexto.OutputParameters["MovedToNoTsaCount"]);
         var ledger = Assert.Single(_arnes.Servicio.FilasDe(SchemaNames.Ledger.Entidad));
         Assert.Equal((int)TsaStatus.SinSelloTsa, ledger.GetAttributeValue<OptionSetValue>(SchemaNames.Ledger.TsaStatus).Value);
+        // el evento del negocio (159460012, agregado 2026-07-16) queda en la línea de tiempo
+        Assert.Contains(_arnes.Servicio.FilasDe(SchemaNames.Evento.Entidad), ev =>
+            ev.GetAttributeValue<OptionSetValue>(SchemaNames.Evento.Type).Value == (int)EventType.TsaAbandonada);
     }
 
     [Fact] // re-sellado exitoso: token + Sellado con TSA + evento 9; sealedon INTACTO
@@ -215,8 +218,8 @@ public class JobsPluginTests
             ev.GetAttributeValue<OptionSetValue>(SchemaNames.Evento.Type).Value == (int)EventType.ReSelladoTsaObtenido);
     }
 
-    [Fact] // ancla rota (archivo ≠ hash del ledger) → JAMÁS se sella; queda pendiente
-    public void M10_Reseal_ConAnclaRota_NoSella()
+    [Fact] // ancla rota (archivo ≠ hash del ledger) → JAMÁS se sella; se cuenta APARTE (A8)
+    public void M10_Reseal_ConAnclaRota_NoSella_YSeCuentaComoAnclaRota()
     {
         _arnes.ConfigurarEnv(SchemaNames.EnvVars.TsaEnabled, "yes");
         _arnes.SelladorTsa = new SelladorOk();
@@ -226,7 +229,36 @@ public class JobsPluginTests
         EjecutarJob(new ResealPendingPlugin(), SchemaNames.Apis.ResealPending);
 
         Assert.Equal(0, _arnes.Contexto.OutputParameters["ResealedCount"]);
+        Assert.Equal(0, _arnes.Contexto.OutputParameters["StillPendingCount"]);
+        Assert.Equal(1, _arnes.Contexto.OutputParameters["AnchorMismatchCount"]); // distinguible de "TSA caída"
+    }
+
+    [Fact] // S10: la TSA sigue caída → StillPendingCount (distinto de ancla rota)
+    public void M10_Reseal_ConTsaCaida_QuedaPendiente()
+    {
+        _arnes.ConfigurarEnv(SchemaNames.EnvVars.TsaEnabled, "yes");
+        _arnes.SelladorTsa = new SelladorCaido();
+        SembrarLedgerPendiente(ArnesDeApi.PdfDePrueba(1));
+
+        EjecutarJob(new ResealPendingPlugin(), SchemaNames.Apis.ResealPending);
+
+        Assert.Equal(0, _arnes.Contexto.OutputParameters["ResealedCount"]);
         Assert.Equal(1, _arnes.Contexto.OutputParameters["StillPendingCount"]);
+        Assert.Equal(0, _arnes.Contexto.OutputParameters["AnchorMismatchCount"]);
+    }
+
+    [Fact] // C1: el cap por corrida acota el lote (los excedentes drenan mañana)
+    public void M10_Reseal_ConMasQueElCap_ProcesaSoloElCap()
+    {
+        _arnes.ConfigurarEnv(SchemaNames.EnvVars.TsaEnabled, "yes");
+        _arnes.SelladorTsa = new SelladorOk();
+        for (var i = 0; i < ResealPendingPlugin.MaxResellosPorCorrida + 2; i++)
+            SembrarLedgerPendiente(ArnesDeApi.PdfDePrueba(1));
+
+        EjecutarJob(new ResealPendingPlugin(), SchemaNames.Apis.ResealPending);
+
+        Assert.Equal(ResealPendingPlugin.MaxResellosPorCorrida, _arnes.Contexto.OutputParameters["ResealedCount"]);
+        Assert.Equal(2, _arnes.Contexto.OutputParameters["StillPendingCount"]);
     }
 
     // ── VerifyDocument (RF-20/21) ────────────────────────────────────────────
@@ -336,18 +368,45 @@ public class JobsPluginTests
         Assert.Contains("\"historyIntact\":false", (string)_arnes.Contexto.OutputParameters["MetadataJson"]);
     }
 
-    [Fact]
-    public void Verify_SinLedger_FoundFalse_SinEvento()
+    [Fact] // A3: la tx EXISTE sin sellar → Found=false PERO la verificación se registra (ancla la tx)
+    public void Verify_TxSinLedger_FoundFalse_PeroRegistraElEvento11()
     {
         var txId = _arnes.SembrarTransaccion(_creador, TransactionStatus.PendienteDeFirma, RoutingType.Paralelo);
         Verificar(txId, hash: null);
         Assert.Equal(false, _arnes.Contexto.OutputParameters["Found"]);
+        Assert.Contains(_arnes.Servicio.FilasDe(SchemaNames.Evento.Entidad), ev =>
+            ev.GetAttributeValue<OptionSetValue>(SchemaNames.Evento.Type).Value == (int)EventType.VerificacionRealizada);
+    }
+
+    [Fact] // txId INEXISTENTE → sin ancla, sin evento (el único caso que no deja rastro)
+    public void Verify_TxInexistente_FoundFalse_SinEvento()
+    {
+        Verificar(Guid.NewGuid(), hash: null);
+        Assert.Equal(false, _arnes.Contexto.OutputParameters["Found"]);
         Assert.Empty(_arnes.Servicio.FilasDe(SchemaNames.Evento.Entidad));
+    }
+
+    [Fact] // S4: un hash mal formado es error de CONTRATO, no veredicto "adulterado"
+    public void Verify_HashMalFormado_EsRechazado_ConMensajeDeContrato()
+    {
+        var (txId, _, _) = SembrarSellada();
+        _arnes.Contexto.InputParameters.Clear();
+        _arnes.Contexto.InputParameters["TransactionId"] = txId;
+        _arnes.Contexto.InputParameters["Sha256Hash"] = "no-es-un-hash";
+        var ex = Assert.Throws<InvalidPluginExecutionException>(() =>
+            _arnes.Ejecutar(new VerifyDocumentPlugin(), SchemaNames.Apis.VerifyDocument, _firmante));
+        Assert.Contains("hexadecimal", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed class SelladorOk : Data.ISelladorTsa
     {
         public ResultadoTsa Sellar(byte[] digest, TsaConfig config)
             => new([7, 7, 7], DateTime.UtcNow, config.Endpoints[0].Url, []);
+    }
+
+    private sealed class SelladorCaido : Data.ISelladorTsa
+    {
+        public ResultadoTsa Sellar(byte[] digest, TsaConfig config)
+            => new(null, null, null, ["todos los endpoints fallaron"]);
     }
 }

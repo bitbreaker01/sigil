@@ -7,10 +7,8 @@
 // (doc 04 §4 — el nivel de evidencia muestra AMBAS fechas).
 // Out: ResealedCount, MovedToNoTsaCount, StillPendingCount.
 //
-// GAP DE CATÁLOGO REGISTRADO (2026-07-16): el doc 04 §3.1 pide "+ evento" al mover a Sin
-// sello TSA, pero sanic_sigil_choice_eventtype no tiene un valor para "TSA abandonada".
-// El re-sellado EXITOSO sí tiene el tipo 9. Hasta que el negocio agregue el valor al
-// choice (portal + Apéndice A), el movimiento queda en el trace y en los contadores.
+// Evento del movimiento a Sin sello TSA: tipo "TSA abandonada" (159460012 — agregado por
+// el negocio el 2026-07-16 al choice + Apéndice A; resuelve el gap de catálogo registrado).
 
 using System;
 using System.Linq;
@@ -24,6 +22,13 @@ namespace Sigil.Plugins.Apis;
 
 public class ResealPendingPlugin : SigilApiPlugin
 {
+    // CAP DE LOTE (antagonista C1, 2026-07-16 — aritmética del presupuesto): por ledger =
+    // descarga (~2-6 s) + TSA (~1-10 s) + rate limit de Sectigo (15 s) ≈ 20-30 s. Sin cap,
+    // el 5º-8º ledger cruza el límite DURO de 2 minutos y el rollback transaccional revierte
+    // TODO (tokens ya pedidos = requests quemados) → el job quedaría rojo para siempre con
+    // backlog. El job es diario e idempotente: drenar de a 3 es correcto (ADR-005).
+    public const int MaxResellosPorCorrida = 3;
+
     protected override void Ejecutar(EntornoDeApi e)
     {
         var env = new EnvVars(e.Servicio);
@@ -35,9 +40,10 @@ public class ResealPendingPlugin : SigilApiPlugin
         };
         q.Criteria.AddCondition(SchemaNames.Ledger.TsaStatus, ConditionOperator.Equal,
             (int)TsaStatus.ReSelladoPendiente);
+        q.AddOrder(SchemaNames.Ledger.SealedOn, OrderType.Ascending); // determinístico: los más viejos primero
         var pendientes = e.Servicio.RetrieveMultiple(q).Entities;
 
-        int resellados = 0, movidos = 0, siguenPendientes = 0;
+        int resellados = 0, movidos = 0, siguenPendientes = 0, anclasRotas = 0;
 
         if (!tsaHabilitada)
         {
@@ -47,15 +53,33 @@ public class ResealPendingPlugin : SigilApiPlugin
                 cambio[SchemaNames.Ledger.TsaStatus] = new OptionSetValue((int)TsaStatus.SinSelloTsa);
                 e.Servicio.Update(cambio);
                 movidos++;
-                e.Trace.Trace("ResealPending: ledger {0} → Sin sello TSA (TSA deshabilitada).", ledger.Id);
+
+                var txRef = ledger.GetAttributeValue<EntityReference>(SchemaNames.Ledger.TransactionId);
+                var (_, creador) = Consultas.EstadoYCreador(e.Servicio, txRef.Id);
+                var lectores = Consultas.ParticipantesDe(e.Servicio, txRef.Id)
+                    .Select(p => p.GetAttributeValue<EntityReference>(SchemaNames.Participante.UserId).Id)
+                    .Where(u => u != creador)
+                    .Distinct()
+                    .ToList();
+                Consultas.CrearEvento(e.Servicio, txRef, EventType.TsaAbandonada, ("Sistema", string.Empty),
+                    "El re-intento de sello TSA fue abandonado (TSA deshabilitada en el ambiente) — " +
+                    "el nivel de evidencia queda en 'Sin sello TSA'.", creador, lectores: lectores);
+                e.Trace.Trace("ResealPending: ledger {0} → Sin sello TSA (TSA deshabilitada) + evento.", ledger.Id);
             }
         }
         else
         {
             var sellador = e.SelladorTsa;
             var config = TsaConfig.Parse(env.TextoObligatorio(SchemaNames.EnvVars.TsaEndpoints));
+            var procesados = 0;
             foreach (var ledger in pendientes)
             {
+                if (procesados >= MaxResellosPorCorrida)
+                {
+                    siguenPendientes++; // el resto drena en las próximas corridas diarias
+                    continue;
+                }
+                procesados++;
                 var txRef = ledger.GetAttributeValue<EntityReference>(SchemaNames.Ledger.TransactionId);
                 byte[] finalBytes;
                 try
@@ -74,8 +98,12 @@ public class ResealPendingPlugin : SigilApiPlugin
                 var hashLedger = ledger.GetAttributeValue<string>(SchemaNames.Ledger.FinalHash);
                 if (!string.Equals(hashReal, hashLedger, StringComparison.OrdinalIgnoreCase))
                 {
-                    e.Trace.Trace("ResealPending: ANCLA ROTA en {0} — jamás se sella un mismatch.", txRef.Id);
-                    siguenPendientes++;
+                    // Señal de integridad CATASTRÓFICA (el archivo durable no coincide con el
+                    // ledger inmutable): jamás se sella, y se cuenta APARTE de "TSA caída" para
+                    // que el operador lo distinga de una degradación normal (antagonista A8).
+                    e.Trace.Trace("ResealPending: !!! ANCLA ROTA en {0} — archivo {1}... vs ledger {2}...; requiere intervención.",
+                        txRef.Id, hashReal.Substring(0, 8), hashLedger?.Substring(0, 8) ?? "(vacío)");
+                    anclasRotas++;
                     continue;
                 }
 
@@ -83,6 +111,9 @@ public class ResealPendingPlugin : SigilApiPlugin
                 var resultado = sellador.Sellar(sha.ComputeHash(finalBytes), config);
                 if (!resultado.Exitoso)
                 {
+                    // El diagnóstico por endpoint que el ClienteTsa construye va al trace (S5).
+                    e.Trace.Trace("ResealPending: TSA sigue caída para {0}: {1}",
+                        txRef.Id, string.Join(" | ", resultado.Errores));
                     siguenPendientes++;
                     continue;
                 }
@@ -109,8 +140,9 @@ public class ResealPendingPlugin : SigilApiPlugin
         e.Output("ResealedCount", resellados);
         e.Output("MovedToNoTsaCount", movidos);
         e.Output("StillPendingCount", siguenPendientes);
-        e.Trace.Trace("ResealPending: {0} resellados, {1} a Sin sello, {2} pendientes.",
-            resellados, movidos, siguenPendientes);
+        e.Output("AnchorMismatchCount", anclasRotas); // 0 en operación normal; >0 = integridad rota
+        e.Trace.Trace("ResealPending: {0} resellados, {1} a Sin sello, {2} pendientes, {3} anclas rotas.",
+            resellados, movidos, siguenPendientes, anclasRotas);
     }
 
 }

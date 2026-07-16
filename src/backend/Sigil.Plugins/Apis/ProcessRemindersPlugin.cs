@@ -35,7 +35,8 @@ public class ProcessRemindersPlugin : SigilApiPlugin
         var activos = e.Servicio.RetrieveMultiple(qActivos).Entities;
 
         var recordatorios = new List<object>();
-        var transacciones = new Dictionary<Guid, Entity>(); // caché por tx del lote
+        var transacciones = new Dictionary<Guid, Entity>();                  // caché de tx del lote
+        var emisores = new Dictionary<Guid, (string Nombre, string Email)>(); // caché de creador (evita N+1, A2)
 
         foreach (var p in activos)
         {
@@ -48,7 +49,12 @@ public class ProcessRemindersPlugin : SigilApiPlugin
                 transacciones[txId] = tx;
             }
 
-            // FILTRO OBLIGATORIO por estado de la transacción (doc 06 §3).
+            // FILTRO OBLIGATORIO por estado de la transacción (doc 06 §3): los participantes
+            // conservan Turno Activo como verdad histórica en estados terminales — sin esto
+            // recordaríamos muertas eternamente. LÍMITE de escala declarado (antagonista A2):
+            // el filtro es en memoria, así que el job lee todos los Turno Activo históricos;
+            // aceptable para el volumen de Sigil (doc 03 §9). Si crece, empujar a SQL con un
+            // LinkEntity de estado.
             var estadoTx = (TransactionStatus)tx.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.Status).Value;
             if (estadoTx is not (TransactionStatus.PendienteDeFirma or TransactionStatus.FirmadoParcialmente))
                 continue;
@@ -65,7 +71,8 @@ public class ProcessRemindersPlugin : SigilApiPlugin
             var destinatario = e.Servicio.Retrieve(SchemaNames.Usuario.Entidad, userId,
                 new ColumnSet(SchemaNames.Usuario.FullName, SchemaNames.Usuario.Email, SchemaNames.Usuario.Upn));
             var creadorId = tx.GetAttributeValue<EntityReference>(SchemaNames.Tx.OwnerId).Id;
-            var emisor = Consultas.SnapshotDeActor(e.Servicio, creadorId);
+            if (!emisores.TryGetValue(creadorId, out var emisor)) // sin N+1 por creador (A2)
+                emisores[creadorId] = emisor = Consultas.SnapshotDeActor(e.Servicio, creadorId);
 
             recordatorios.Add(new
             {

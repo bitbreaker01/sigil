@@ -27,8 +27,9 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
         Assert.True(apendice.Count == 5,
             $"El Apéndice A del doc 12 debe tener los 5 choices; el parser leyó {apendice.Count}. ¿Cambió el formato de la tabla?");
         var totalOpciones = apendice.Values.Sum(o => o.Count);
-        Assert.True(totalOpciones == 30,
-            $"El Apéndice A debe tener 30 opciones (9+4+2+3+12 — doc 03 §3); el parser leyó {totalOpciones}.");
+        // 31 = 9+4+2+3+13 (doc 03 §3; eventtype creció a 13 el 2026-07-16 con "TSA abandonada")
+        Assert.True(totalOpciones == 31,
+            $"El Apéndice A debe tener 31 opciones (9+4+2+3+13 — doc 03 §3); el parser leyó {totalOpciones}.");
     }
 
     [SkippableFact] // CF-A16

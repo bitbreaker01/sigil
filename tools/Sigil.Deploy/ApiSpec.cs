@@ -283,6 +283,7 @@ internal static class Catalogo
                 new ResponseProp("ResealedCount", ParamType.Integer),
                 new ResponseProp("MovedToNoTsaCount", ParamType.Integer),
                 new ResponseProp("StillPendingCount", ParamType.Integer),
+                new ResponseProp("AnchorMismatchCount", ParamType.Integer),
             },
             ExecutePrivilege: ServicePrivilege),
     };

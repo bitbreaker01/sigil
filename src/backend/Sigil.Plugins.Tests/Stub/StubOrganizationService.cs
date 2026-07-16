@@ -156,9 +156,15 @@ public sealed class StubOrganizationService : IOrganizationService
         {
             ConditionOperator.Equal => Iguales(valor, condicion.Values.FirstOrDefault()),
             ConditionOperator.In => condicion.Values.Any(v => Iguales(valor, v)),
-            // Fechas de los jobs (expireson/modifiedon): null NUNCA satisface un rango
-            ConditionOperator.LessThan => valor is IComparable c &&
-                condicion.Values.FirstOrDefault() is { } lim && c.CompareTo(lim) < 0,
+            // Fechas de los jobs (expireson/modifiedon): null NUNCA satisface un rango; un
+            // valor no comparable es un error de uso, no un false silencioso (S9 del antagonista).
+            ConditionOperator.LessThan => valor switch
+            {
+                null => false,
+                IComparable c when condicion.Values.FirstOrDefault() is { } lim => c.CompareTo(lim) < 0,
+                _ => throw new NotSupportedException(
+                    $"LessThan sobre un valor no comparable ({valor.GetType().Name}) no está soportado por el stub."),
+            },
             _ => throw new NotSupportedException($"Operador {condicion.Operator} no soportado por el stub."),
         };
     }

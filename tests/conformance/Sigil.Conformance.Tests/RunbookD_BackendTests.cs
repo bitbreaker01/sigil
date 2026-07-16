@@ -103,6 +103,8 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_RejectTransaction", "Reason", 10, false },
         { "sanic_sigil_capi_CancelTransaction", "Reason", 10, true },
         { "sanic_sigil_capi_ValidateMasterSignature", "ImageBase64", 10, false },
+        { "sanic_sigil_capi_VerifyDocument", "TransactionId", 12, false },
+        { "sanic_sigil_capi_VerifyDocument", "Sha256Hash", 10, true },
     };
 
     [SkippableTheory] // CF-D03 — parámetros de request: nombre EXACTO (case-sensitive), tipo y opcionalidad
@@ -136,6 +138,18 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_ValidateMasterSignature", "NormalizedImageBase64", 10 },
         { "sanic_sigil_capi_GetMasterSignature", "ImageBase64", 10 },
         { "sanic_sigil_capi_GetMasterSignature", "ValidatedOn", 1 },
+        // F2.4
+        { "sanic_sigil_capi_VerifyDocument", "Found", 0 },
+        { "sanic_sigil_capi_VerifyDocument", "IsIntact", 0 },
+        { "sanic_sigil_capi_VerifyDocument", "MetadataJson", 10 },
+        { "sanic_sigil_capi_VerifyDocument", "TsaTokenBase64", 10 },
+        { "sanic_sigil_capi_ExpireTransactions", "ExpiredCount", 7 },
+        { "sanic_sigil_capi_ExpireTransactions", "SanitizedCount", 7 },
+        { "sanic_sigil_capi_ProcessReminders", "RemindersJson", 10 },
+        { "sanic_sigil_capi_ResealPending", "ResealedCount", 7 },
+        { "sanic_sigil_capi_ResealPending", "MovedToNoTsaCount", 7 },
+        { "sanic_sigil_capi_ResealPending", "StillPendingCount", 7 },
+        { "sanic_sigil_capi_ResealPending", "AnchorMismatchCount", 7 },
     };
 
     [SkippableTheory] // CF-D04 — propiedades de respuesta del contrato
