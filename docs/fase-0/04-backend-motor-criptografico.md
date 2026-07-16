@@ -185,7 +185,7 @@ Reglas derivadas:
 - El editor visual del frontend (doc 05) usa este mismo contrato — un solo sistema de coordenadas en todo Sigil.
 
 ### 6.2 Hoja de cierre
-- Una página consolidada, **con overflow a páginas adicionales** si los firmantes no entran (ADR-011 actualizado). Layout: estampa por firmante (imagen del **snapshot** congelado al firmar, nombre, correo, timestamp UTC), `hash_contenido` en texto claro, número de ledger, QR.
+- Una página consolidada, **con overflow a páginas adicionales** si los firmantes no entran (ADR-011 actualizado). Layout: estampa por firmante (imagen del **snapshot** congelado al firmar, nombre, correo, timestamp UTC), `hash_contenido` en texto claro, **identificador de verificación (txId)** y QR. **Enmienda (2026-07-16, hallazgo de implementación):** la versión anterior pedía imprimir el "número de ledger", pero el ledger (autonumber) nace en el paso 8 del pipeline — DESPUÉS de componer y subir el archivo (orden mandatorio por idempotencia, §7): el número **no puede conocerse al componer**. El número de ledger lo muestra la pantalla de verificación (`VerifyDocument`).
 - El QR (`PngByteQRCode`) codifica `{sanic_sigil_env_AppPlayUrl}?screen=verify&txId={guid}` (~100 caracteres — muy por debajo de la capacidad de un QR de corrección M).
 
 ### 6.3 Timestamps
@@ -214,7 +214,7 @@ Todos los timestamps probatorios (estampa, ledger, eventos) se escriben y muestr
 | 1 | Descargar PDF de contenido | `InitializeFileBlocksDownload` + bloques 4 MB | ~2–6 s (20 MB) |
 | 2 | Verificar `hash_contenido` | SHA-256 de los bytes descargados **debe coincidir** con el persistido en `SendTransaction` (doc 03). Mismatch → Error de Sellado + evento crítico: el archivo cambió entre el envío y el sellado — jamás se sella contenido adulterado | < 1 s |
 | 3 | Incrustar firmas | Por participante: `sanic_sigil_signaturesnapshot` (imagen congelada al firmar) dibujada en **sus zonas obligatorias** (RF-28 — sin default; el guard de envío garantiza que existen) — contrato de coordenadas §6.1 | ~2–5 s |
-| 4 | Hoja de cierre + **metadatos XMP** | §6.2 (con overflow) + escritura de metadatos del documento (marca "Firmado con Sigil", número de ledger, `hash_contenido`, URL de verificación — visibles en las propiedades del documento en Acrobat; posible porque ocurre ANTES del paso 5) | ~1–3 s |
+| 4 | Hoja de cierre + **metadatos del documento** | §6.2 (con overflow) + escritura de metadatos (**Info dictionary** — enmienda 2026-07-16: cumple "visibles en las propiedades en Acrobat" sin el paquete XMP completo; XMP real = endurecimiento futuro): marca "Firmado con Sigil", `hash_contenido`, txId, URL de verificación — **sin número de ledger** (nace en el paso 8, ver enmienda §6.2) | ~1–3 s |
 | 5 | `hash_final` | SHA-256 del PDF final serializado (una sola serialización; los bytes quedan en memoria para 6 y 7) | < 1 s |
 | 6 | Token TSA (si `sanic_sigil_env_TsaEnabled`) | §6.4 sobre `hash_final`; fallback en orden; si todos fallan → se continúa con estado `Re-sellado pendiente` | ~1–10 s (o skip) |
 | 7 | **Subir PDF final** | `InitializeFileBlocksUpload` a `sanic_sigil_finalfile`. **Antes que el ledger, deliberadamente** — ver "Idempotencia" | ~2–6 s |

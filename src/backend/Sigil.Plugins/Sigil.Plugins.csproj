@@ -14,7 +14,7 @@
     <!-- Bump OBLIGATORIO por cada cambio de código: Dataverse cachea el assembly del plugin
          package por VERSIÓN — actualizar el content sin subir la versión NO recarga el código
          (lección del spike, 2026-07-15). El deploy tool lee esta versión del nupkg. -->
-    <Version>1.0.6</Version>
+    <Version>1.0.8</Version>
     <Authors>Sistemas Abiertos Nicaragua</Authors>
     <Description>Sigil — motor de firma digital (Custom APIs de negocio).</Description>
     <!-- Sin firma: los plugin packages no la requieren (doc 04 §2: solo si el principal está firmado). -->
@@ -31,6 +31,12 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
     <!-- SDK que empaqueta el assembly + sus dependent assemblies como plugin package (nupkg) -->
     <PackageReference Include="Microsoft.PowerApps.MSBuild.Plugin" Version="1.*" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WCF del framework (net462): FaultException<OrganizationServiceFault> — la clasificación
+         de fallos del worker se hace por ErrorCode, jamás por texto del mensaje. -->
+    <Reference Include="System.ServiceModel" />
   </ItemGroup>
 
   <ItemGroup>

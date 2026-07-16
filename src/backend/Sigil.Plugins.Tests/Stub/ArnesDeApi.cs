@@ -91,6 +91,10 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
         ConfigurarEnv(SchemaNames.EnvVars.ExpirationDefaultDays, "15");
         ConfigurarEnv(SchemaNames.EnvVars.SignatureImageSpec,
             """{ "targetWidthPx": 600, "targetHeightPx": 200, "maxKB": 150, "minAlphaRatio": 0.15, "minRmsContrast": 0.25, "minLaplacianVar": 80 }""");
+        ConfigurarEnv(SchemaNames.EnvVars.TsaEnabled, "no"); // los tests que prueban TSA lo prenden
+        ConfigurarEnv(SchemaNames.EnvVars.TsaEndpoints,
+            """{ "endpoints": [ { "url": "https://tsa.prueba", "timeoutSeconds": 5, "minIntervalSeconds": 0 } ] }""");
+        ConfigurarEnv(SchemaNames.EnvVars.AppPlayUrl, "https://apps.powerapps.com/play/e/test/a/test");
     }
 
     private readonly Dictionary<string, string> _env = new();
@@ -230,12 +234,16 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
 
     // ── plumbing ─────────────────────────────────────────────────────────────
 
+    /// <summary>Seam de TSA para el worker (doc 11 §3) — null usa el real (jamás en tests).</summary>
+    public ISelladorTsa? SelladorTsa { get; set; }
+
     object? IServiceProvider.GetService(Type serviceType)
     {
         if (serviceType == typeof(IPluginExecutionContext)) return Contexto;
         if (serviceType == typeof(ITracingService)) return Trace;
         if (serviceType == typeof(IOrganizationServiceFactory)) return this;
         if (serviceType == typeof(IFileTransfer)) return Archivos; // seam (doc 11 §2)
+        if (serviceType == typeof(ISelladorTsa)) return SelladorTsa;
         return null;
     }
 

@@ -37,6 +37,9 @@ public sealed class StubOrganizationService : IOrganizationService
     /// <summary>GrantAccess registrados — para los asserts de M13 (sharing verificable, no mockeado).</summary>
     public List<(string Entidad, Guid Id, Guid UserId)> Compartidos { get; } = new();
 
+    /// <summary>Inyección de fallos en Create (M4): si devuelve una excepción, se lanza en vez de crear.</summary>
+    public Func<Entity, Exception?>? InterceptarCreate { get; set; }
+
     public Entity Sembrar(Entity fila)
     {
         if (fila.Id == Guid.Empty)
@@ -54,6 +57,8 @@ public sealed class StubOrganizationService : IOrganizationService
 
     public Guid Create(Entity entity)
     {
+        if (InterceptarCreate?.Invoke(entity) is { } ex)
+            throw ex;
         var id = entity.Id == Guid.Empty ? Guid.NewGuid() : entity.Id;
         var clon = Clonar(entity);
         clon.Id = id;

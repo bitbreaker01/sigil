@@ -55,7 +55,11 @@ Console.WriteLine($"[2] nupkg: {nupkgPath} ({nupkgBytes.Length:N0} bytes, versi�
 Guid packageId = UpsertPackage(client, contentB64, pkgVersion);
 
 // ── 3. Esperar los plugintypes auto-descubiertos ───────────────────────────
-var typePorNombre = await EsperarPluginTypesAsync(client, Catalogo.Apis.Select(a => a.PluginTypeName).Distinct().ToArray());
+var typesEsperados = Catalogo.Apis.Select(a => a.PluginTypeName)
+    .Append(Catalogo.WorkerPluginType)
+    .Distinct()
+    .ToArray();
+var typePorNombre = await EsperarPluginTypesAsync(client, typesEsperados);
 if (typePorNombre is null)
     return 1;
 
@@ -74,6 +78,9 @@ foreach (var api in Catalogo.Apis)
     ReemplazarResponseProps(client, apiId, api);
     Console.WriteLine($"[4]   OK ({api.RequestParams.Length} params, {api.ResponseProps.Length} response props).");
 }
+
+// ── 4b. Step ASÍNCRONO del worker de sellado (doc 04 §7) ────────────────────
+RegistrarStepDelWorker(client, typePorNombre[Catalogo.WorkerPluginType]);
 
 // ── 5. Valores de env vars que el backend LEE (sin ellos las APIs no funcionan) ──
 // Solo los que el código desplegado consume hoy (doc 04 §3.4). El resto de la config
@@ -253,6 +260,79 @@ static void ReemplazarRequestParams(ServiceClient client, Guid apiId, CustomApiS
             ["type"] = new OptionSetValue(p.Type),
             ["isoptional"] = p.Optional,
         });
+}
+
+// Step ASÍNCRONO del worker (doc 04 §7): Update de sanic_sigil_tbl_transaction, filtering
+// attribute sanic_sigil_status, post-operation (40), modo async (1), con POST-IMAGE del
+// status (el guard del worker la exige). Idempotente por nombre.
+static void RegistrarStepDelWorker(ServiceClient client, Guid workerTypeId)
+{
+    var stepQ = new QueryExpression("sdkmessageprocessingstep")
+    {
+        ColumnSet = new ColumnSet("sdkmessageprocessingstepid"),
+        Criteria = { Conditions = { new ConditionExpression("name", ConditionOperator.Equal, Catalogo.WorkerStepName) } },
+    };
+    var existentes = client.RetrieveMultiple(stepQ).Entities;
+    if (existentes.Count > 0)
+    {
+        // El plugintypeid puede cambiar entre redeploys del package: re-apuntarlo.
+        client.Update(new Entity("sdkmessageprocessingstep", existentes[0].Id)
+        {
+            ["plugintypeid"] = new EntityReference("plugintype", workerTypeId),
+        });
+        Console.WriteLine($"[4b] step del worker existente ({existentes[0].Id}) — plugintype re-apuntado.");
+        return;
+    }
+
+    // sdkmessage Update + su filter para la tabla de transacciones.
+    var msgQ = new QueryExpression("sdkmessage")
+    {
+        ColumnSet = new ColumnSet("sdkmessageid"),
+        Criteria = { Conditions = { new ConditionExpression("name", ConditionOperator.Equal, "Update") } },
+    };
+    var updateMsg = client.RetrieveMultiple(msgQ).Entities.Single();
+
+    var filterQ = new QueryExpression("sdkmessagefilter")
+    {
+        ColumnSet = new ColumnSet("sdkmessagefilterid"),
+        Criteria =
+        {
+            Conditions =
+            {
+                new ConditionExpression("sdkmessageid", ConditionOperator.Equal, updateMsg.Id),
+                new ConditionExpression("primaryobjecttypecode", ConditionOperator.Equal, Catalogo.TxTable),
+            },
+        },
+    };
+    var filter = client.RetrieveMultiple(filterQ).Entities.Single();
+
+    var step = new Entity("sdkmessageprocessingstep")
+    {
+        ["name"] = Catalogo.WorkerStepName,
+        ["plugintypeid"] = new EntityReference("plugintype", workerTypeId),
+        ["sdkmessageid"] = new EntityReference("sdkmessage", updateMsg.Id),
+        ["sdkmessagefilterid"] = new EntityReference("sdkmessagefilter", filter.Id),
+        ["stage"] = new OptionSetValue(40),          // post-operation
+        ["mode"] = new OptionSetValue(1),            // ASÍNCRONO (doc 04 §7)
+        ["rank"] = 1,
+        ["filteringattributes"] = "sanic_sigil_status", // jamás locktoken (doc 03 §4.1)
+        ["asyncautodelete"] = true,                  // higiene de system jobs exitosos
+        ["description"] = "Pipeline de sellado (ADR-011): compone, sella con TSA y crea el ledger.",
+    };
+    var stepId = CrearEnSolucion(client, step);
+    Console.WriteLine($"[4b] step del worker creado: {stepId}");
+
+    var postImage = new Entity("sdkmessageprocessingstepimage")
+    {
+        ["sdkmessageprocessingstepid"] = new EntityReference("sdkmessageprocessingstep", stepId),
+        ["imagetype"] = new OptionSetValue(1),       // post-image
+        ["name"] = "PostImage",
+        ["entityalias"] = "PostImage",               // el nombre que el worker busca
+        ["messagepropertyname"] = "Target",
+        ["attributes"] = "sanic_sigil_status",
+    };
+    client.Create(postImage);
+    Console.WriteLine("[4b] post-image del step creada (sanic_sigil_status).");
 }
 
 // Upsert del VALOR de una env var (environmentvariablevalue), ligado a su definición.

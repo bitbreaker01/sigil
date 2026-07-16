@@ -44,6 +44,10 @@ internal static class Catalogo
     // Privilegio de nivel usuario (doc 04 §3.2): lo tiene el rol Sigil | SR | User.
     public const string UserPrivilege = "prvReadsanic_sigil_tbl_transaction";
 
+    // El worker de sellado (step asíncrono — no es Custom API).
+    public const string WorkerPluginType = "Sigil.Plugins.Apis.SealingWorkerPlugin";
+    public const string WorkerStepName = "Sigil | Step | SealingWorker on Update of transaction";
+
     // Valores de env vars que el CÓDIGO DESPLEGADO HOY lee (doc 04 §3.4). Derivados de los docs:
     //   MaxPdfSizeKB 20480 = 20 MB (doc 04 §7 dimensiona PDFs de ~20 MB);
     //   MaxParticipants 20 (doc 04 §3.4, default);
@@ -58,6 +62,15 @@ internal static class Catalogo
         // JSON canónico del doc 04 §4 (umbrales iniciales de ADR-009 — calibrables por ambiente)
         ("sanic_sigil_env_SignatureImageSpec",
             """{ "targetWidthPx": 600, "targetHeightPx": 200, "maxKB": 150, "minAlphaRatio": 0.15, "minRmsContrast": 0.25, "minLaplacianVar": 80 }"""),
+        // TSA en Dev: HABILITADA con Sectigo primero (el spike probó que DigiCert está
+        // bloqueada desde la red del sandbox — orden por ambiente, ADR-005). En Prod el
+        // orden de negocio se fija por ambiente.
+        ("sanic_sigil_env_TsaEnabled", "yes"),
+        ("sanic_sigil_env_TsaEndpoints",
+            """{ "endpoints": [ { "url": "https://timestamp.sectigo.com", "timeoutSeconds": 10, "minIntervalSeconds": 15 }, { "url": "https://timestamp.digicert.com", "timeoutSeconds": 10, "minIntervalSeconds": 0 } ] }"""),
+        // Placeholder de Dev: la URL real nace con el primer `pac code push` (doc 09 §6) —
+        // ACTUALIZAR entonces. Los QR de documentos sellados en Dev apuntan acá hasta eso.
+        ("sanic_sigil_env_AppPlayUrl", "https://apps.powerapps.com/play/e/dev-pendiente/a/dev-pendiente"),
     };
 
     public static readonly CustomApiSpec[] Apis =
@@ -175,6 +188,16 @@ internal static class Catalogo
                 new ResponseProp("MetricsJson", ParamType.String),
                 new ResponseProp("NormalizedImageBase64", ParamType.String),
             }),
+
+        new(
+            UniqueName: "sanic_sigil_capi_RetrySealing",
+            DisplayName: "Sigil | CAPI | RetrySealing",
+            Description: "Error de Sellado → Sellando (T10): re-dispara el worker idempotente.",
+            BindingType: Binding.Entity,
+            BoundEntityLogicalName: TxTable,
+            PluginTypeName: "Sigil.Plugins.Apis.RetrySealingPlugin",
+            RequestParams: Array.Empty<RequestParam>(),
+            ResponseProps: Array.Empty<ResponseProp>()),
 
         new(
             UniqueName: "sanic_sigil_capi_GetMasterSignature",

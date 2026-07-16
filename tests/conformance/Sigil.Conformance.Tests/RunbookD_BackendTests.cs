@@ -49,6 +49,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_CancelTransaction", 1, "sanic_sigil_tbl_transaction" },
         { "sanic_sigil_capi_ValidateMasterSignature", 0, null },
         { "sanic_sigil_capi_GetMasterSignature", 0, null },
+        { "sanic_sigil_capi_RetrySealing", 1, "sanic_sigil_tbl_transaction" },
     };
 
     [SkippableTheory] // CF-D02 — cada Custom API existe con binding, tipo y privilegio del doc 04
@@ -299,12 +300,149 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             evQuery.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
             foreach (var ev in client.RetrieveMultiple(evQuery).Entities)
                 client.Delete("sanic_sigil_tbl_event", ev.Id);
+            // el ledger también es Delete Restrict hacia la transacción (doc 03 §2)
+            var lgQuery = new QueryExpression("sanic_sigil_tbl_ledgerentry") { ColumnSet = new ColumnSet(false) };
+            lgQuery.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            foreach (var lg in client.RetrieveMultiple(lgQuery).Entities)
+                client.Delete("sanic_sigil_tbl_ledgerentry", lg.Id);
             client.Delete("sanic_sigil_tbl_transaction", txId);
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"[cleanup] No se pudo limpiar la transacción {txId}: {ex.Message} — borrarla a mano.");
         }
+    }
+
+    // ── CF-D09: el step ASÍNCRONO del worker de sellado (doc 04 §7) ──────────
+
+    [SkippableFact]
+    public void CF_D09_StepDelWorker_RegistradoComoAsincronoConPostImage()
+    {
+        var client = fx.RequireClient();
+        var q = new QueryExpression("sdkmessageprocessingstep")
+        {
+            ColumnSet = new ColumnSet("mode", "stage", "filteringattributes", "statuscode", "asyncautodelete"),
+        };
+        q.Criteria.AddCondition("name", ConditionOperator.Equal, "Sigil | Step | SealingWorker on Update of transaction");
+        var steps = client.RetrieveMultiple(q).Entities;
+        Assert.True(steps.Count == 1, "El step del worker de sellado no está registrado (F2.3).");
+        var step = steps[0];
+
+        Assert.Equal(1, step.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("mode").Value);   // asíncrono
+        Assert.Equal(40, step.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("stage").Value); // post-operation
+        Assert.Equal("sanic_sigil_status", step.GetAttributeValue<string>("filteringattributes"));
+        Assert.Equal(1, step.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("statuscode").Value); // habilitado
+        Assert.True(step.GetAttributeValue<bool>("asyncautodelete"));
+
+        var imgQ = new QueryExpression("sdkmessageprocessingstepimage")
+        {
+            ColumnSet = new ColumnSet("entityalias", "imagetype", "attributes"),
+        };
+        imgQ.Criteria.AddCondition("sdkmessageprocessingstepid", ConditionOperator.Equal, step.Id);
+        var img = Assert.Single(client.RetrieveMultiple(imgQ).Entities);
+        Assert.Equal("PostImage", img.GetAttributeValue<string>("entityalias"));
+        Assert.Equal(1, img.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("imagetype").Value);
+        Assert.Contains("sanic_sigil_status", img.GetAttributeValue<string>("attributes"));
+    }
+
+    // ── CF-D10: el E2E TOTAL — el propósito del sistema de punta a punta ─────
+    // crear → enviar → FIRMAR → worker asíncrono → COMPLETADO → ledger con TSA REAL →
+    // descargar el final → SHA-256 == finalhash del ledger. Si esto pasa, Sigil sella.
+
+    [SkippableFact]
+    public void CF_D10_SmokeTotal_FirmarSellar_YVerificarElLedger()
+    {
+        var client = fx.RequireClient();
+        var yo = ((WhoAmIResponse)client.Execute(new WhoAmIRequest())).UserId;
+
+        Guid txId = Guid.Empty;
+        try
+        {
+            var v = client.Execute(new OrganizationRequest("sanic_sigil_capi_ValidateMasterSignature")
+            {
+                ["ImageBase64"] = Convert.ToBase64String(PngDeFirmaSintetica()),
+            }).Results;
+            Assert.True((bool)v["IsValid"]);
+
+            txId = (Guid)client.Execute(new OrganizationRequest("sanic_sigil_capi_CreateTransaction")
+            {
+                ["Name"] = "CF-D10 smoke total de sellado",
+                ["RoutingType"] = "parallel",
+                ["PdfBase64"] = Convert.ToBase64String(PdfDeUnaPagina()),
+                ["ParticipantsJson"] = JsonSerializer.Serialize(new[] { new { userId = yo } }),
+                ["ZonesJson"] = JsonSerializer.Serialize(new[]
+                    { new { userId = yo, page = 1, x = 40.0, y = 40.0, w = 20.0, h = 8.0 } }),
+            }).Results["TransactionId"];
+            var txRef = new EntityReference("sanic_sigil_tbl_transaction", txId);
+            client.Execute(new OrganizationRequest("sanic_sigil_capi_SendTransaction") { ["Target"] = txRef });
+            var s = client.Execute(new OrganizationRequest("sanic_sigil_capi_SubmitSignature") { ["Target"] = txRef }).Results;
+            Assert.True((bool)s["IsLastSigner"]);
+
+            // esperar al worker ASÍNCRONO (poll hasta 300 s — la cola del async service puede
+            // demorar el arranque bajo carga; corta temprano si cae a Error de Sellado)
+            var estado = EsperarEstado(client, txId, esperado: 159460004 /* Completado */, timeoutSegundos: 300);
+            Assert.True(estado == 159460004,
+                $"la transacción no llegó a Completado en 300 s (estado actual: {estado}) — revisar plugin trace log.");
+
+            // el ledger: hashes, TSA REAL, summary
+            var lq = new QueryExpression("sanic_sigil_tbl_ledgerentry")
+            {
+                ColumnSet = new ColumnSet("sanic_sigil_name", "sanic_sigil_contenthash", "sanic_sigil_finalhash",
+                    "sanic_sigil_tsastatus", "sanic_sigil_tsatoken", "sanic_sigil_signersummary", "sanic_sigil_sealedon"),
+            };
+            lq.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            var ledger = Assert.Single(client.RetrieveMultiple(lq).Entities);
+
+            Assert.Matches("^SIGIL-\\d{4}-", ledger.GetAttributeValue<string>("sanic_sigil_name")); // autonumber intacto
+            Assert.Matches("^[0-9A-F]{64}$", ledger.GetAttributeValue<string>("sanic_sigil_finalhash"));
+            // TSA: Sellado con TSA (con token) es lo esperado; Re-sellado pendiente es la
+            // degradación CORRECTA de ADR-005 si Sectigo tiene un mal día — no rompe el E2E.
+            var tsaStatus = ledger.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_tsastatus").Value;
+            Assert.True(tsaStatus is 159460000 or 159460002,
+                $"tsastatus inesperado: {tsaStatus} (ni Sellado con TSA ni Re-sellado pendiente).");
+            if (tsaStatus == 159460000)
+                Assert.False(string.IsNullOrEmpty(ledger.GetAttributeValue<string>("sanic_sigil_tsatoken"))); // token REAL
+            else
+                Console.Error.WriteLine("[CF-D10] AVISO: la TSA degradó a Re-sellado pendiente (ADR-005) — verificar red/Sectigo.");
+
+            // ancla de verificación (ADR-011): el final descargado hashea EXACTAMENTE al ledger
+            var final = Convert.FromBase64String((string)client.Execute(
+                new OrganizationRequest("sanic_sigil_capi_GetDocumentContent")
+                {
+                    ["Target"] = txRef,
+                    ["DocumentType"] = "final",
+                }).Results["PdfBase64"]);
+            var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(final));
+            Assert.Equal(ledger.GetAttributeValue<string>("sanic_sigil_finalhash"), hash);
+
+            // el evento 7 (sellado completado) quedó en la línea de tiempo
+            var evQ = new QueryExpression("sanic_sigil_tbl_event") { ColumnSet = new ColumnSet("sanic_sigil_type") };
+            evQ.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            Assert.Contains(client.RetrieveMultiple(evQ).Entities, ev =>
+                ev.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_type").Value == 159460006);
+        }
+        finally
+        {
+            if (txId != Guid.Empty)
+                LimpiarTransaccion(client, txId);
+            LimpiarFirmasMaestrasDe(client, yo);
+        }
+    }
+
+    private static int EsperarEstado(Microsoft.PowerPlatform.Dataverse.Client.ServiceClient client,
+        Guid txId, int esperado, int timeoutSegundos)
+    {
+        var limite = DateTime.UtcNow.AddSeconds(timeoutSegundos);
+        var estado = 0;
+        while (DateTime.UtcNow < limite)
+        {
+            estado = client.Retrieve("sanic_sigil_tbl_transaction", txId, new ColumnSet("sanic_sigil_status"))
+                .GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_status").Value;
+            if (estado == esperado || estado == 159460007 /* Error de Sellado — cortar temprano */)
+                return estado;
+            System.Threading.Thread.Sleep(5000);
+        }
+        return estado;
     }
 
     // ── CF-D07: Firma Maestra — validar, versionar y leer de vuelta ─────────

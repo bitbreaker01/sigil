@@ -32,6 +32,13 @@ public sealed class EnvVars(IOrganizationService servicio)
         return (int)valor;
     }
 
+    /// <summary>Variable "Two options" (Boolean): la plataforma persiste "yes"/"no".</summary>
+    public bool BoolObligatorio(string schemaName)
+    {
+        var crudo = TextoObligatorio(schemaName).Trim().ToLowerInvariant();
+        return crudo is "yes" or "true" or "1";
+    }
+
     /// <summary>Variable Text/JSON obligatoria — falla ruidoso si no está configurada.</summary>
     public string TextoObligatorio(string schemaName)
     {

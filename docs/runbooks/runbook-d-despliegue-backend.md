@@ -2,7 +2,9 @@
 
 **Cuándo:** cada vez que se despliega o actualiza el backend de Sigil en un ambiente (Dev primero; Test/Prod por el pipeline). **Fase:** F2. **Verificación:** suite de conformidad `CF-D01..D06`.
 
-**Superficie actual (2026-07-16):** el package `sanic_Sigil` contiene **10 Custom APIs**: las 4 CRUD de borrador (Create/Update/DeleteDraft, GetDocumentContent), las 4 del ciclo de vida (SendTransaction, SubmitSignature, RejectTransaction, CancelTransaction) y las 2 de Firma Maestra (ValidateMasterSignature, GetMasterSignature).
+**Superficie actual (2026-07-16):** el package `sanic_Sigil` contiene **11 Custom APIs** (4 CRUD de borrador, 4 del ciclo de vida, 2 de Firma Maestra, RetrySealing) **+ el step ASÍNCRONO del worker de sellado** (`Sigil | Step | SealingWorker on Update of transaction` con post-image — verificado por CF-D09). Env vars que setea la herramienta: MaxPdfSizeKB, MaxParticipants, ExpirationDefaultDays (7 en Dev), SignatureImageSpec, **TsaEnabled=yes, TsaEndpoints (Sectigo primero en Dev — DigiCert está bloqueada desde el sandbox), AppPlayUrl (placeholder Dev — ACTUALIZAR tras el primer `pac code push`)**.
+
+> **Operación — Sellando eterno (gap conocido hasta F2.4):** si el worker agota los 4 reintentos de plataforma, la transacción queda en Sellando. La salida automática es el saneamiento T14 del job diario (`ExpireTransactions`, F2.4). Mientras no exista: diagnosticar con el plugin trace log y, si el fallo es determinista, un administrador transiciona a Error de Sellado editando el status vía SDK (documentar el caso), y el creador decide RetrySealing o Cancel.
 
 Este runbook cubre el despliegue por **SDK puro** (herramienta `tools/Sigil.Deploy`), que no requiere `pac` CLI ni herramientas de Windows. La sección §7 documenta el camino alternativo con `pac` (doc 09 §4) para quien lo prefiera.
 

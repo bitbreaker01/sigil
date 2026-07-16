@@ -91,6 +91,20 @@ public static class SchemaNames
         public const string OwnerId = "ownerid";
     }
 
+    /// <summary>sanic_sigil_tbl_ledgerentry (doc 03 §4.4).</summary>
+    public static class Ledger
+    {
+        public const string Entidad = "sanic_sigil_tbl_ledgerentry";
+        public const string Name = "sanic_sigil_name"; // autonumber — el plugin JAMÁS lo escribe
+        public const string TransactionId = "sanic_sigil_transactionid";
+        public const string ContentHash = "sanic_sigil_contenthash";
+        public const string FinalHash = "sanic_sigil_finalhash";
+        public const string TsaToken = "sanic_sigil_tsatoken";
+        public const string TsaStatus = "sanic_sigil_tsastatus";
+        public const string SealedOn = "sanic_sigil_sealedon";
+        public const string SignerSummary = "sanic_sigil_signersummary";
+    }
+
     /// <summary>systemuser — columnas que Sigil consulta para snapshots (doc 03 §4.2).</summary>
     public static class Usuario
     {
@@ -116,6 +130,7 @@ public static class SchemaNames
         public const string CancelTransaction = "sanic_sigil_capi_CancelTransaction";
         public const string ValidateMasterSignature = "sanic_sigil_capi_ValidateMasterSignature";
         public const string GetMasterSignature = "sanic_sigil_capi_GetMasterSignature";
+        public const string RetrySealing = "sanic_sigil_capi_RetrySealing";
     }
 
     /// <summary>Variables de entorno (doc 03 §8).</summary>
@@ -125,5 +140,8 @@ public static class SchemaNames
         public const string MaxParticipants = "sanic_sigil_env_MaxParticipants";
         public const string ExpirationDefaultDays = "sanic_sigil_env_ExpirationDefaultDays";
         public const string SignatureImageSpec = "sanic_sigil_env_SignatureImageSpec";
+        public const string TsaEnabled = "sanic_sigil_env_TsaEnabled";
+        public const string TsaEndpoints = "sanic_sigil_env_TsaEndpoints";
+        public const string AppPlayUrl = "sanic_sigil_env_AppPlayUrl";
     }
 }
