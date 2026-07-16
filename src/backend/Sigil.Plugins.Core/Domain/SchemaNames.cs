@@ -131,6 +131,10 @@ public static class SchemaNames
         public const string ValidateMasterSignature = "sanic_sigil_capi_ValidateMasterSignature";
         public const string GetMasterSignature = "sanic_sigil_capi_GetMasterSignature";
         public const string RetrySealing = "sanic_sigil_capi_RetrySealing";
+        public const string VerifyDocument = "sanic_sigil_capi_VerifyDocument";
+        public const string ExpireTransactions = "sanic_sigil_capi_ExpireTransactions";
+        public const string ProcessReminders = "sanic_sigil_capi_ProcessReminders";
+        public const string ResealPending = "sanic_sigil_capi_ResealPending";
     }
 
     /// <summary>Variables de entorno (doc 03 §8).</summary>
@@ -143,5 +147,7 @@ public static class SchemaNames
         public const string TsaEnabled = "sanic_sigil_env_TsaEnabled";
         public const string TsaEndpoints = "sanic_sigil_env_TsaEndpoints";
         public const string AppPlayUrl = "sanic_sigil_env_AppPlayUrl";
+        public const string ReminderCadenceDays = "sanic_sigil_env_ReminderCadenceDays";
+        public const string DefaultLanguage = "sanic_sigil_env_DefaultLanguage";
     }
 }

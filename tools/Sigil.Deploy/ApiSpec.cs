@@ -33,7 +33,11 @@ internal sealed record CustomApiSpec(
     string? BoundEntityLogicalName,
     string PluginTypeName,
     RequestParam[] RequestParams,
-    ResponseProp[] ResponseProps);
+    ResponseProp[] ResponseProps,
+    string? ExecutePrivilege = null) // null = privilegio de usuario (Catalogo.UserPrivilege)
+{
+    public string PrivilegioEfectivo => ExecutePrivilege ?? Catalogo.UserPrivilege;
+}
 
 internal static class Catalogo
 {
@@ -43,6 +47,10 @@ internal static class Catalogo
 
     // Privilegio de nivel usuario (doc 04 §3.2): lo tiene el rol Sigil | SR | User.
     public const string UserPrivilege = "prvReadsanic_sigil_tbl_transaction";
+
+    // Privilegio de SERVICIO (doc 04 §3.2): solo el rol Sigil | SR | Service lo posee —
+    // un usuario común NO puede invocar los jobs aunque conozca su firma.
+    public const string ServicePrivilege = "prvWritesanic_sigil_tbl_ledgerentry";
 
     // El worker de sellado (step asíncrono — no es Custom API).
     public const string WorkerPluginType = "Sigil.Plugins.Apis.SealingWorkerPlugin";
@@ -71,6 +79,9 @@ internal static class Catalogo
         // Placeholder de Dev: la URL real nace con el primer `pac code push` (doc 09 §6) —
         // ACTUALIZAR entonces. Los QR de documentos sellados en Dev apuntan acá hasta eso.
         ("sanic_sigil_env_AppPlayUrl", "https://apps.powerapps.com/play/e/dev-pendiente/a/dev-pendiente"),
+        // Dev: cadencia CORTA para probar recordatorios rápido (doc 09 §6); Test/Prod = negocio.
+        ("sanic_sigil_env_ReminderCadenceDays", "2"),
+        ("sanic_sigil_env_DefaultLanguage", "es"),
     };
 
     public static readonly CustomApiSpec[] Apis =
@@ -212,5 +223,67 @@ internal static class Catalogo
                 new ResponseProp("ImageBase64", ParamType.String),
                 new ResponseProp("ValidatedOn", ParamType.DateTime),
             }),
+
+        new(
+            UniqueName: "sanic_sigil_capi_VerifyDocument",
+            DisplayName: "Sigil | CAPI | VerifyDocument",
+            Description: "Verificación (RF-20/21, ADR-007): constancia + veredicto contra finalhash + verificación cruzada del historial.",
+            BindingType: Binding.Global,
+            BoundEntityLogicalName: null,
+            PluginTypeName: "Sigil.Plugins.Apis.VerifyDocumentPlugin",
+            RequestParams: new[]
+            {
+                new RequestParam("TransactionId", ParamType.Guid, Optional: false),
+                new RequestParam("Sha256Hash", ParamType.String, Optional: true),
+            },
+            ResponseProps: new[]
+            {
+                new ResponseProp("Found", ParamType.Boolean),
+                new ResponseProp("IsIntact", ParamType.Boolean),
+                new ResponseProp("MetadataJson", ParamType.String),
+                new ResponseProp("TsaTokenBase64", ParamType.String),
+            }),
+
+        new(
+            UniqueName: "sanic_sigil_capi_ExpireTransactions",
+            DisplayName: "Sigil | CAPI | ExpireTransactions",
+            Description: "Job diario (RF-27): expira vencidas (T12) + saneamiento de Sellando zombi (T14).",
+            BindingType: Binding.Global,
+            BoundEntityLogicalName: null,
+            PluginTypeName: "Sigil.Plugins.Apis.ExpireTransactionsPlugin",
+            RequestParams: Array.Empty<RequestParam>(),
+            ResponseProps: new[]
+            {
+                new ResponseProp("ExpiredCount", ParamType.Integer),
+                new ResponseProp("SanitizedCount", ParamType.Integer),
+            },
+            ExecutePrivilege: ServicePrivilege),
+
+        new(
+            UniqueName: "sanic_sigil_capi_ProcessReminders",
+            DisplayName: "Sigil | CAPI | ProcessReminders",
+            Description: "Job diario (RF-12): recordatorios por cadencia — RemindersJson autosuficiente para el flow.",
+            BindingType: Binding.Global,
+            BoundEntityLogicalName: null,
+            PluginTypeName: "Sigil.Plugins.Apis.ProcessRemindersPlugin",
+            RequestParams: Array.Empty<RequestParam>(),
+            ResponseProps: new[] { new ResponseProp("RemindersJson", ParamType.String) },
+            ExecutePrivilege: ServicePrivilege),
+
+        new(
+            UniqueName: "sanic_sigil_capi_ResealPending",
+            DisplayName: "Sigil | CAPI | ResealPending",
+            Description: "Job diario (ADR-005): reintenta TSA sobre ledgers pendientes; con TSA off los mueve a Sin sello.",
+            BindingType: Binding.Global,
+            BoundEntityLogicalName: null,
+            PluginTypeName: "Sigil.Plugins.Apis.ResealPendingPlugin",
+            RequestParams: Array.Empty<RequestParam>(),
+            ResponseProps: new[]
+            {
+                new ResponseProp("ResealedCount", ParamType.Integer),
+                new ResponseProp("MovedToNoTsaCount", ParamType.Integer),
+                new ResponseProp("StillPendingCount", ParamType.Integer),
+            },
+            ExecutePrivilege: ServicePrivilege),
     };
 }

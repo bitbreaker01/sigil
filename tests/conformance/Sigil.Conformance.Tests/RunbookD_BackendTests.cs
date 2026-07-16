@@ -22,7 +22,8 @@ namespace Sigil.Conformance.Tests;
 [Collection("dataverse")]
 public class RunbookD_BackendTests(DataverseFixture fx)
 {
-    private const string PrivilegioDeUsuario = "prvReadsanic_sigil_tbl_transaction"; // doc 04 §3.2
+    private const string PrivilegioDeUsuario = "prvReadsanic_sigil_tbl_transaction";   // doc 04 §3.2
+    private const string PrivilegioDeServicio = "prvWritesanic_sigil_tbl_ledgerentry"; // solo Sigil | SR | Service
 
     [SkippableFact] // CF-D01 — el plugin package de Sigil está registrado
     public void CF_D01_PluginPackage_SanicSigil_Registrado()
@@ -36,25 +37,30 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             "No existe el plugin package 'sanic_Sigil' — se registra en F2 (dotnet pack + pac plugin push).");
     }
 
-    public static TheoryData<string, int, string?> ApisEsperadas() => new()
+    public static TheoryData<string, int, string?, string> ApisEsperadas() => new()
     {
-        // uniquename, bindingtype (0=Global, 1=Entity), boundentitylogicalname
-        { "sanic_sigil_capi_CreateTransaction", 0, null },
-        { "sanic_sigil_capi_UpdateDraft", 1, "sanic_sigil_tbl_transaction" },
-        { "sanic_sigil_capi_DeleteDraft", 1, "sanic_sigil_tbl_transaction" },
-        { "sanic_sigil_capi_GetDocumentContent", 1, "sanic_sigil_tbl_transaction" },
-        { "sanic_sigil_capi_SendTransaction", 1, "sanic_sigil_tbl_transaction" },
-        { "sanic_sigil_capi_SubmitSignature", 1, "sanic_sigil_tbl_transaction" },
-        { "sanic_sigil_capi_RejectTransaction", 1, "sanic_sigil_tbl_transaction" },
-        { "sanic_sigil_capi_CancelTransaction", 1, "sanic_sigil_tbl_transaction" },
-        { "sanic_sigil_capi_ValidateMasterSignature", 0, null },
-        { "sanic_sigil_capi_GetMasterSignature", 0, null },
-        { "sanic_sigil_capi_RetrySealing", 1, "sanic_sigil_tbl_transaction" },
+        // uniquename, bindingtype (0=Global, 1=Entity), boundentitylogicalname, ExecutePrivilegeName
+        { "sanic_sigil_capi_CreateTransaction", 0, null, PrivilegioDeUsuario },
+        { "sanic_sigil_capi_UpdateDraft", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
+        { "sanic_sigil_capi_DeleteDraft", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
+        { "sanic_sigil_capi_GetDocumentContent", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
+        { "sanic_sigil_capi_SendTransaction", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
+        { "sanic_sigil_capi_SubmitSignature", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
+        { "sanic_sigil_capi_RejectTransaction", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
+        { "sanic_sigil_capi_CancelTransaction", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
+        { "sanic_sigil_capi_ValidateMasterSignature", 0, null, PrivilegioDeUsuario },
+        { "sanic_sigil_capi_GetMasterSignature", 0, null, PrivilegioDeUsuario },
+        { "sanic_sigil_capi_RetrySealing", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
+        { "sanic_sigil_capi_VerifyDocument", 0, null, PrivilegioDeUsuario },
+        // Jobs: privilegio de SERVICIO — un usuario común no puede invocarlos (doc 04 §3.2)
+        { "sanic_sigil_capi_ExpireTransactions", 0, null, PrivilegioDeServicio },
+        { "sanic_sigil_capi_ProcessReminders", 0, null, PrivilegioDeServicio },
+        { "sanic_sigil_capi_ResealPending", 0, null, PrivilegioDeServicio },
     };
 
     [SkippableTheory] // CF-D02 — cada Custom API existe con binding, tipo y privilegio del doc 04
     [MemberData(nameof(ApisEsperadas))]
-    public void CF_D02_CustomApi_ExisteConBindingYPrivilegio(string uniqueName, int bindingEsperado, string? entidadEsperada)
+    public void CF_D02_CustomApi_ExisteConBindingYPrivilegio(string uniqueName, int bindingEsperado, string? entidadEsperada, string privilegioEsperado)
     {
         var client = fx.RequireClient();
         var query = new QueryExpression("customapi")
@@ -73,7 +79,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             $"{uniqueName} debe ser POST (IsFunction=false): tiene efectos o transporta binarios.");
         Assert.True(api.GetAttributeValue<bool>("isprivate"),
             $"{uniqueName} debe tener IsPrivate=true (higiene de metadata — doc 04 §3).");
-        Assert.Equal(PrivilegioDeUsuario, api.GetAttributeValue<string>("executeprivilegename"));
+        Assert.Equal(privilegioEsperado, api.GetAttributeValue<string>("executeprivilegename"));
     }
 
     public static TheoryData<string, string, int, bool> ParametrosEsperados() => new()
@@ -443,6 +449,174 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             System.Threading.Thread.Sleep(5000);
         }
         return estado;
+    }
+
+    // ── CF-D11: verificación E2E — el CÍRCULO COMPLETO del propósito de Sigil ─
+    // sella de verdad → verifica con el hash correcto (VERDE) → con un hash alterado
+    // (ROJO) → constancia con historial íntegro → evento 11 registrado.
+
+    [SkippableFact]
+    public void CF_D11_VerifyDocument_VerdeYRojo_ContraUnSelladoReal()
+    {
+        var client = fx.RequireClient();
+        var yo = ((WhoAmIResponse)client.Execute(new WhoAmIRequest())).UserId;
+
+        Guid txId = Guid.Empty;
+        try
+        {
+            // sellar de verdad (mismo flujo de CF-D10)
+            var v = client.Execute(new OrganizationRequest("sanic_sigil_capi_ValidateMasterSignature")
+            {
+                ["ImageBase64"] = Convert.ToBase64String(PngDeFirmaSintetica()),
+            }).Results;
+            Assert.True((bool)v["IsValid"]);
+            txId = (Guid)client.Execute(new OrganizationRequest("sanic_sigil_capi_CreateTransaction")
+            {
+                ["Name"] = "CF-D11 smoke de verificación",
+                ["RoutingType"] = "parallel",
+                ["PdfBase64"] = Convert.ToBase64String(PdfDeUnaPagina()),
+                ["ParticipantsJson"] = JsonSerializer.Serialize(new[] { new { userId = yo } }),
+                ["ZonesJson"] = JsonSerializer.Serialize(new[]
+                    { new { userId = yo, page = 1, x = 40.0, y = 40.0, w = 20.0, h = 8.0 } }),
+            }).Results["TransactionId"];
+            var txRef = new EntityReference("sanic_sigil_tbl_transaction", txId);
+            client.Execute(new OrganizationRequest("sanic_sigil_capi_SendTransaction") { ["Target"] = txRef });
+            client.Execute(new OrganizationRequest("sanic_sigil_capi_SubmitSignature") { ["Target"] = txRef });
+            Assert.Equal(159460004, EsperarEstado(client, txId, esperado: 159460004, timeoutSegundos: 300));
+
+            // el hash REAL del documento final (como lo haría un verificador externo)
+            var final = Convert.FromBase64String((string)client.Execute(
+                new OrganizationRequest("sanic_sigil_capi_GetDocumentContent")
+                { ["Target"] = txRef, ["DocumentType"] = "final" }).Results["PdfBase64"]);
+            var hashReal = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(final));
+
+            // VERDE: el hash correcto
+            var verde = client.Execute(new OrganizationRequest("sanic_sigil_capi_VerifyDocument")
+            {
+                ["TransactionId"] = txId,
+                ["Sha256Hash"] = hashReal,
+            }).Results;
+            Assert.True((bool)verde["Found"]);
+            Assert.True((bool)verde["IsIntact"]);
+            Assert.Contains("\"historyIntact\":true", (string)verde["MetadataJson"]);
+            Assert.Contains(hashReal, (string)verde["MetadataJson"]); // hash_final EN CLARO
+
+            // ROJO: un byte alterado (hash distinto)
+            var rojo = client.Execute(new OrganizationRequest("sanic_sigil_capi_VerifyDocument")
+            {
+                ["TransactionId"] = txId,
+                ["Sha256Hash"] = "0".PadLeft(64, '0'),
+            }).Results;
+            Assert.True((bool)rojo["Found"]);
+            Assert.False((bool)rojo["IsIntact"]);
+
+            // la verificación quedó registrada (evento 11, RNF-04)
+            var evQ = new QueryExpression("sanic_sigil_tbl_event") { ColumnSet = new ColumnSet("sanic_sigil_type") };
+            evQ.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            var verificaciones = client.RetrieveMultiple(evQ).Entities.Count(ev =>
+                ev.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_type").Value == 159460010);
+            Assert.Equal(2, verificaciones); // una por cada verificación realizada
+        }
+        finally
+        {
+            if (txId != Guid.Empty)
+                LimpiarTransaccion(client, txId);
+            LimpiarFirmasMaestrasDe(client, yo);
+        }
+    }
+
+    // ── CF-D12: ExpireTransactions real (T12) contra Dev ─────────────────────
+
+    [SkippableFact]
+    public void CF_D12_ExpireTransactions_ExpiraUnaVencida()
+    {
+        var client = fx.RequireClient();
+        var yo = ((WhoAmIResponse)client.Execute(new WhoAmIRequest())).UserId;
+
+        Guid txId = Guid.Empty;
+        try
+        {
+            txId = (Guid)client.Execute(new OrganizationRequest("sanic_sigil_capi_CreateTransaction")
+            {
+                ["Name"] = "CF-D12 smoke de expiración",
+                ["RoutingType"] = "parallel",
+                ["PdfBase64"] = Convert.ToBase64String(PdfDeUnaPagina()),
+                ["ParticipantsJson"] = JsonSerializer.Serialize(new[] { new { userId = yo } }),
+                ["ZonesJson"] = JsonSerializer.Serialize(new[]
+                    { new { userId = yo, page = 1, x = 40.0, y = 40.0, w = 20.0, h = 8.0 } }),
+            }).Results["TransactionId"];
+            var txRef = new EntityReference("sanic_sigil_tbl_transaction", txId);
+            client.Execute(new OrganizationRequest("sanic_sigil_capi_SendTransaction") { ["Target"] = txRef });
+
+            // forzar el vencimiento por SDK (sysadmin — el smoke controla el reloj)
+            var vencida = new Entity("sanic_sigil_tbl_transaction", txId);
+            vencida["sanic_sigil_expireson"] = DateTime.UtcNow.AddDays(-1);
+            client.Update(vencida);
+
+            var r = client.Execute(new OrganizationRequest("sanic_sigil_capi_ExpireTransactions")).Results;
+            Assert.True((int)r["ExpiredCount"] >= 1);
+
+            var tx = client.Retrieve("sanic_sigil_tbl_transaction", txId, new ColumnSet("sanic_sigil_status"));
+            Assert.Equal(159460006, tx.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_status").Value); // Expirado
+        }
+        finally
+        {
+            if (txId != Guid.Empty)
+                LimpiarTransaccion(client, txId);
+        }
+    }
+
+    // ── CF-D13: ProcessReminders real (RF-12) contra Dev ─────────────────────
+
+    [SkippableFact]
+    public void CF_D13_ProcessReminders_GeneraElRecordatorioAutosuficiente()
+    {
+        var client = fx.RequireClient();
+        var yo = ((WhoAmIResponse)client.Execute(new WhoAmIRequest())).UserId;
+
+        Guid txId = Guid.Empty;
+        try
+        {
+            txId = (Guid)client.Execute(new OrganizationRequest("sanic_sigil_capi_CreateTransaction")
+            {
+                ["Name"] = "CF-D13 smoke de recordatorios",
+                ["RoutingType"] = "parallel",
+                ["PdfBase64"] = Convert.ToBase64String(PdfDeUnaPagina()),
+                ["ParticipantsJson"] = JsonSerializer.Serialize(new[] { new { userId = yo } }),
+                ["ZonesJson"] = JsonSerializer.Serialize(new[]
+                    { new { userId = yo, page = 1, x = 40.0, y = 40.0, w = 20.0, h = 8.0 } }),
+            }).Results["TransactionId"];
+            var txRef = new EntityReference("sanic_sigil_tbl_transaction", txId);
+            client.Execute(new OrganizationRequest("sanic_sigil_capi_SendTransaction") { ["Target"] = txRef });
+
+            // simular la espera: turno activado hace 3 días (cadencia Dev = 2)
+            var pQ = new QueryExpression("sanic_sigil_tbl_participant") { ColumnSet = new ColumnSet(false) };
+            pQ.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            var pid = Assert.Single(client.RetrieveMultiple(pQ).Entities).Id;
+            var espera = new Entity("sanic_sigil_tbl_participant", pid);
+            espera["sanic_sigil_turnactivatedon"] = DateTime.UtcNow.AddDays(-3);
+            client.Update(espera);
+
+            var r = client.Execute(new OrganizationRequest("sanic_sigil_capi_ProcessReminders")).Results;
+            var json = (string)r["RemindersJson"];
+            using var doc = JsonDocument.Parse(json);
+            var item = doc.RootElement.EnumerateArray()
+                .Single(x => x.GetProperty("transactionId").GetGuid() == txId);
+            Assert.Equal("CF-D13 smoke de recordatorios", item.GetProperty("transactionName").GetString());
+            Assert.False(string.IsNullOrEmpty(item.GetProperty("recipientEmail").GetString()));
+            Assert.True(item.GetProperty("daysWaiting").GetInt32() >= 3);
+
+            // lastreminderon quedó marcado → una segunda corrida NO duplica
+            var r2 = client.Execute(new OrganizationRequest("sanic_sigil_capi_ProcessReminders")).Results;
+            using var doc2 = JsonDocument.Parse((string)r2["RemindersJson"]);
+            Assert.DoesNotContain(doc2.RootElement.EnumerateArray(),
+                x => x.GetProperty("transactionId").GetGuid() == txId);
+        }
+        finally
+        {
+            if (txId != Guid.Empty)
+                LimpiarTransaccion(client, txId);
+        }
     }
 
     // ── CF-D07: Firma Maestra — validar, versionar y leer de vuelta ─────────

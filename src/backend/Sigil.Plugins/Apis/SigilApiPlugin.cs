@@ -21,11 +21,13 @@ public abstract class SigilApiPlugin : IPlugin
         // null = contexto de sistema (servicio elevado — doc 04 §3, "todo escribe el sistema").
         var servicio = factory.CreateOrganizationService(null);
 
-        // Seam de file blocks (doc 11 §2): si el provider trae un IFileTransfer (tests),
-        // se usa ese; en Dataverse real GetService devuelve null y se crea el de producción.
+        // Seams (doc 11 §2/§3): si el provider trae dobles (tests), se usan; en Dataverse
+        // real GetService devuelve null y se crean los de producción.
         var archivos = serviceProvider.GetService(typeof(IFileTransfer)) as IFileTransfer
                        ?? CrearFileTransfer(servicio);
-        var entorno = new EntornoDeApi(contexto, servicio, trace, archivos);
+        var selladorTsa = serviceProvider.GetService(typeof(ISelladorTsa)) as ISelladorTsa
+                          ?? new SelladorTsaReal();
+        var entorno = new EntornoDeApi(contexto, servicio, trace, archivos, selladorTsa);
 
         try
         {
@@ -58,12 +60,14 @@ public sealed class EntornoDeApi(
     IPluginExecutionContext contexto,
     IOrganizationService servicio,
     ITracingService trace,
-    IFileTransfer archivos)
+    IFileTransfer archivos,
+    ISelladorTsa? selladorTsa = null)
 {
     public IPluginExecutionContext Contexto { get; } = contexto;
     public IOrganizationService Servicio { get; } = servicio;
     public ITracingService Trace { get; } = trace;
     public IFileTransfer Archivos { get; } = archivos;
+    public ISelladorTsa SelladorTsa { get; } = selladorTsa ?? new SelladorTsaReal();
 
     /// <summary>Identidad del llamante — SOLO para autorización y snapshots (doc 04 §3).</summary>
     public Guid Llamante => Contexto.InitiatingUserId;

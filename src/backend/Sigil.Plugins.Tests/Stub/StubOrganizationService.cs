@@ -156,6 +156,9 @@ public sealed class StubOrganizationService : IOrganizationService
         {
             ConditionOperator.Equal => Iguales(valor, condicion.Values.FirstOrDefault()),
             ConditionOperator.In => condicion.Values.Any(v => Iguales(valor, v)),
+            // Fechas de los jobs (expireson/modifiedon): null NUNCA satisface un rango
+            ConditionOperator.LessThan => valor is IComparable c &&
+                condicion.Values.FirstOrDefault() is { } lim && c.CompareTo(lim) < 0,
             _ => throw new NotSupportedException($"Operador {condicion.Operator} no soportado por el stub."),
         };
     }

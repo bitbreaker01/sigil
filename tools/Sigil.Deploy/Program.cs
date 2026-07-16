@@ -207,7 +207,7 @@ static Guid UpsertCustomApi(ServiceClient client, CustomApiSpec api, Guid plugin
         {
             ["description"] = api.Description,
             ["isprivate"] = true,
-            ["executeprivilegename"] = Catalogo.UserPrivilege,
+            ["executeprivilegename"] = api.PrivilegioEfectivo,
             ["allowedcustomprocessingsteptype"] = new OptionSetValue(0), // None
             ["plugintypeid"] = new EntityReference("plugintype", pluginTypeId),
         });
@@ -224,7 +224,7 @@ static Guid UpsertCustomApi(ServiceClient client, CustomApiSpec api, Guid plugin
         ["bindingtype"] = new OptionSetValue(api.BindingType),
         ["isfunction"] = false,
         ["isprivate"] = true,
-        ["executeprivilegename"] = Catalogo.UserPrivilege,
+        ["executeprivilegename"] = api.PrivilegioEfectivo,
         ["allowedcustomprocessingsteptype"] = new OptionSetValue(0), // None
         ["plugintypeid"] = new EntityReference("plugintype", pluginTypeId),
     };
