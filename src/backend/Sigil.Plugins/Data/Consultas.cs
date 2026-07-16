@@ -23,10 +23,11 @@ public static class Consultas
         return (estado, creador);
     }
 
-    /// <summary>La fila completa que usan los handlers de edición (estado + routing + nombre).</summary>
+    /// <summary>La fila completa que usan los handlers de edición y envío (estado + routing + nombre + plazo).</summary>
     public static Entity Transaccion(IOrganizationService servicio, Guid transactionId)
         => servicio.Retrieve(SchemaNames.Tx.Entidad, transactionId,
-            new ColumnSet(SchemaNames.Tx.Status, SchemaNames.Tx.OwnerId, SchemaNames.Tx.RoutingType, SchemaNames.Tx.Name));
+            new ColumnSet(SchemaNames.Tx.Status, SchemaNames.Tx.OwnerId, SchemaNames.Tx.RoutingType,
+                SchemaNames.Tx.Name, SchemaNames.Tx.ExpirationDays));
 
     /// <summary>
     /// Carga y valida a los firmantes: existentes Y habilitados (doc 04 §3.4 — la parte
@@ -72,10 +73,47 @@ public static class Consultas
     {
         var query = new QueryExpression(SchemaNames.Participante.Entidad)
         {
-            ColumnSet = new ColumnSet(SchemaNames.Participante.UserId, SchemaNames.Participante.Name),
+            ColumnSet = new ColumnSet(
+                SchemaNames.Participante.UserId, SchemaNames.Participante.Name,
+                SchemaNames.Participante.Order, SchemaNames.Participante.Status),
         };
         query.Criteria.AddCondition(SchemaNames.Participante.TransactionId, ConditionOperator.Equal, transactionId);
         return servicio.RetrieveMultiple(query).Entities.ToList();
+    }
+
+    /// <summary>
+    /// La versión VIGENTE de la Firma Maestra del usuario (doc 03 §4.5) — null si no tiene.
+    /// Si el riesgo residual documentado se materializa (dos vigentes), gana la de mayor
+    /// versión — determinístico, jamás arbitrario en un sistema probatorio.
+    /// </summary>
+    public static Entity? FirmaMaestraVigenteDe(IOrganizationService servicio, Guid userId)
+    {
+        var query = new QueryExpression(SchemaNames.FirmaMaestra.Entidad)
+        {
+            ColumnSet = new ColumnSet(SchemaNames.FirmaMaestra.Version),
+        };
+        query.Criteria.AddCondition(SchemaNames.FirmaMaestra.UserId, ConditionOperator.Equal, userId);
+        query.Criteria.AddCondition(SchemaNames.FirmaMaestra.IsActive, ConditionOperator.Equal, true);
+        return servicio.RetrieveMultiple(query).Entities
+            .OrderByDescending(f => f.GetAttributeValue<int>(SchemaNames.FirmaMaestra.Version))
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// GrantAccess de LECTURA (doc 03 §2): la cascada de Share solo cubre hijos existentes
+    /// al momento del share — los eventos posteriores se comparten explícitamente acá.
+    /// </summary>
+    public static void CompartirLectura(IOrganizationService servicio, EntityReference registro, Guid userId)
+    {
+        servicio.Execute(new Microsoft.Crm.Sdk.Messages.GrantAccessRequest
+        {
+            Target = registro,
+            PrincipalAccess = new Microsoft.Crm.Sdk.Messages.PrincipalAccess
+            {
+                Principal = new EntityReference(SchemaNames.Usuario.Entidad, userId),
+                AccessMask = Microsoft.Crm.Sdk.Messages.AccessRights.ReadAccess,
+            },
+        });
     }
 
     public static IReadOnlyList<Entity> ZonasDe(IOrganizationService servicio, IReadOnlyCollection<Guid> participantIds)
@@ -108,9 +146,11 @@ public static class Consultas
                 fila.GetAttributeValue<string>(SchemaNames.Usuario.Email) ?? string.Empty);
     }
 
-    public static void CrearEvento(
+    public static Guid CrearEvento(
         IOrganizationService servicio, EntityReference transaccion, EventType tipo,
-        (string Nombre, string Email) actor, string detalles, Guid owner)
+        (string Nombre, string Email) actor, string detalles, Guid owner,
+        Guid? participantId = null, string? documentHash = null,
+        IReadOnlyCollection<Guid>? lectores = null)
     {
         var ev = new Entity(SchemaNames.Evento.Entidad);
         ev[SchemaNames.Evento.Name] = Truncar($"{tipo} — {transaccion.Id}", 300);
@@ -121,7 +161,20 @@ public static class Consultas
         ev[SchemaNames.Evento.OccurredOn] = DateTime.UtcNow;
         ev[SchemaNames.Evento.Details] = Truncar(detalles, 4000);
         ev[SchemaNames.Evento.OwnerId] = new EntityReference(SchemaNames.Usuario.Entidad, owner);
-        servicio.Create(ev);
+        if (participantId.HasValue)
+            ev[SchemaNames.Evento.ParticipantId] = new EntityReference(SchemaNames.Participante.Entidad, participantId.Value);
+        if (documentHash is not null)
+            ev[SchemaNames.Evento.DocumentHash] = documentHash;
+        var id = servicio.Create(ev);
+
+        // Cada evento nuevo se comparte explícitamente (doc 03 §2: Share Cascade None).
+        if (lectores is not null)
+        {
+            var eventoRef = new EntityReference(SchemaNames.Evento.Entidad, id);
+            foreach (var lector in lectores)
+                CompartirLectura(servicio, eventoRef, lector);
+        }
+        return id;
     }
 
     public static string Truncar(string valor, int max)

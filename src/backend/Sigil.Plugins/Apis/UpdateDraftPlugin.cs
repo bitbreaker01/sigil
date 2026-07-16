@@ -142,7 +142,7 @@ public class UpdateDraftPlugin : SigilApiPlugin
             e.Servicio.Update(cambios);
 
         if (pdfNuevo is not null)
-            e.Archivos.Subir(target, SchemaNames.Tx.ContentFile, "content.pdf", pdfNuevo.Bytes);
+            e.Archivos.Subir(target, SchemaNames.Tx.ContentFile, "content.pdf", pdfNuevo.Bytes, "application/pdf");
 
         var participantePorUsuario = new Dictionary<Guid, Guid>();
         if (participantesNuevos?.Valor is not null)

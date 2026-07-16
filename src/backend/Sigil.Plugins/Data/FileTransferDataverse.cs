@@ -13,7 +13,7 @@ public sealed class FileTransferDataverse(IOrganizationService servicio) : IFile
 {
     private const int TamanoDeBloque = 4 * 1024 * 1024;
 
-    public void Subir(EntityReference registro, string columna, string nombreDeArchivo, byte[] bytes)
+    public void Subir(EntityReference registro, string columna, string nombreDeArchivo, byte[] bytes, string mimeType)
     {
         var inicio = new OrganizationRequest("InitializeFileBlocksUpload")
         {
@@ -44,7 +44,7 @@ public sealed class FileTransferDataverse(IOrganizationService servicio) : IFile
         {
             ["FileContinuationToken"] = token,
             ["FileName"] = nombreDeArchivo,
-            ["MimeType"] = "application/pdf",
+            ["MimeType"] = mimeType,
             ["BlockList"] = bloques.ToArray(),
         });
     }

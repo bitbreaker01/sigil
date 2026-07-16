@@ -14,7 +14,7 @@
     <!-- Bump OBLIGATORIO por cada cambio de código: Dataverse cachea el assembly del plugin
          package por VERSIÓN — actualizar el content sin subir la versión NO recarga el código
          (lección del spike, 2026-07-15). El deploy tool lee esta versión del nupkg. -->
-    <Version>1.0.1</Version>
+    <Version>1.0.3</Version>
     <Authors>Sistemas Abiertos Nicaragua</Authors>
     <Description>Sigil — motor de firma digital (Custom APIs de negocio).</Description>
     <!-- Sin firma: los plugin packages no la requieren (doc 04 §2: solo si el principal está firmado). -->

@@ -8,6 +8,7 @@ namespace Sigil.Deploy;
 // customapiresponseproperty.type). Solo los que usamos; valores del option set de la plataforma.
 internal static class ParamType
 {
+    public const int Boolean = 0;
     public const int Integer = 7;
     public const int String = 10;
     public const int Guid = 12;
@@ -44,12 +45,15 @@ internal static class Catalogo
 
     // Valores de env vars que el CÓDIGO DESPLEGADO HOY lee (doc 04 §3.4). Derivados de los docs:
     //   MaxPdfSizeKB 20480 = 20 MB (doc 04 §7 dimensiona PDFs de ~20 MB);
-    //   MaxParticipants 20 (doc 04 §3.4, default). El resto de la config por-ambiente se setea
-    //   cuando su consumidor se despliega (doc 09 §6). En Test/Prod: por pipeline, no por acá.
+    //   MaxParticipants 20 (doc 04 §3.4, default);
+    //   ExpirationDefaultDays 7 = valor de DEV (doc 09 §6 manda plazos CORTOS en Dev para
+    //   probar expiración rápido; el valor de negocio de Test/Prod se fija por ambiente).
+    //   El resto de la config por-ambiente se setea cuando su consumidor se despliega.
     public static readonly (string Schema, string Valor)[] EnvValues =
     {
         ("sanic_sigil_env_MaxPdfSizeKB", "20480"),
         ("sanic_sigil_env_MaxParticipants", "20"),
+        ("sanic_sigil_env_ExpirationDefaultDays", "7"),
     };
 
     public static readonly CustomApiSpec[] Apis =
@@ -111,5 +115,45 @@ internal static class Catalogo
             PluginTypeName: "Sigil.Plugins.Apis.GetDocumentContentPlugin",
             RequestParams: new[] { new RequestParam("DocumentType", ParamType.String, Optional: false) },
             ResponseProps: new[] { new ResponseProp("PdfBase64", ParamType.String) }),
+
+        new(
+            UniqueName: "sanic_sigil_capi_SendTransaction",
+            DisplayName: "Sigil | CAPI | SendTransaction",
+            Description: "Borrador → Pendiente de Firma (T4): valida zonas RF-28, ancla contenthash, comparte y activa turnos.",
+            BindingType: Binding.Entity,
+            BoundEntityLogicalName: TxTable,
+            PluginTypeName: "Sigil.Plugins.Apis.SendTransactionPlugin",
+            RequestParams: Array.Empty<RequestParam>(),
+            ResponseProps: Array.Empty<ResponseProp>()),
+
+        new(
+            UniqueName: "sanic_sigil_capi_SubmitSignature",
+            DisplayName: "Sigil | CAPI | SubmitSignature",
+            Description: "Registra la intención de firma (RF-04) con snapshot de la Firma Maestra vigente.",
+            BindingType: Binding.Entity,
+            BoundEntityLogicalName: TxTable,
+            PluginTypeName: "Sigil.Plugins.Apis.SubmitSignaturePlugin",
+            RequestParams: Array.Empty<RequestParam>(),
+            ResponseProps: new[] { new ResponseProp("IsLastSigner", ParamType.Boolean) }),
+
+        new(
+            UniqueName: "sanic_sigil_capi_RejectTransaction",
+            DisplayName: "Sigil | CAPI | RejectTransaction",
+            Description: "Rechazo por un participante en Turno Activo (RF-13) — motivo obligatorio.",
+            BindingType: Binding.Entity,
+            BoundEntityLogicalName: TxTable,
+            PluginTypeName: "Sigil.Plugins.Apis.RejectTransactionPlugin",
+            RequestParams: new[] { new RequestParam("Reason", ParamType.String, Optional: false) },
+            ResponseProps: Array.Empty<ResponseProp>()),
+
+        new(
+            UniqueName: "sanic_sigil_capi_CancelTransaction",
+            DisplayName: "Sigil | CAPI | CancelTransaction",
+            Description: "Cancelación por el creador (RF-30) — Pendiente de Firma, Firmado Parcialmente o Error de Sellado.",
+            BindingType: Binding.Entity,
+            BoundEntityLogicalName: TxTable,
+            PluginTypeName: "Sigil.Plugins.Apis.CancelTransactionPlugin",
+            RequestParams: new[] { new RequestParam("Reason", ParamType.String, Optional: true) },
+            ResponseProps: Array.Empty<ResponseProp>()),
     };
 }

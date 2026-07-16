@@ -101,7 +101,7 @@ Con esto, un usuario común **no puede** invocar los jobs aunque conozca su firm
 | API | Regla de autorización |
 |-----|----------------------|
 | `UpdateDraft` / `DeleteDraft` / `SendTransaction` | El llamante **es el creador** (owner) y el estado es Borrador |
-| `CancelTransaction` | El llamante **es el creador** y el estado es Pendiente de Firma o Firmado Parcialmente |
+| `CancelTransaction` | El llamante **es el creador** y el estado es Pendiente de Firma, Firmado Parcialmente o **Error de Sellado** (alineado con §3.1 y doc 06 T13 — corrección 2026-07-16, hallazgo del antagonista: esta fila omitía el tercer estado) |
 | `SubmitSignature` | El llamante **es el participante** de esa transacción y su estado es **Turno Activo** |
 | `RejectTransaction` | Ídem Submit: participante con Turno Activo. (Un participante Pendiente en secuencial no puede rechazar — aún no le llegó el documento; si el negocio pide otra cosa, se registra como cambio) |
 | `RetrySealing` | El llamante es el **creador** de la transacción y el estado es Error de Sellado |

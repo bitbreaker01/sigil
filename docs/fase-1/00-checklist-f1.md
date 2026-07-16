@@ -45,6 +45,16 @@ dotnet test tests/conformance/Sigil.Conformance.Tests
 
 > **✅ SALIDA DE F1 LOGRADA (2026-07-16):** spike de sandbox verde (paso 10); **smoke E2E verde** (`CF-D05`: crear borrador con PDF real → `GetDocumentContent` round-trip byte a byte → borrar); backend desplegado en Dev (Runbook D); **88 Core + 105 conformidad verdes**. Hallazgos de F2 cerrados: cache de assembly por versión (bump obligatorio), `uniquename` de request param = clave de `InputParameters`, `version` de pluginpackage no editable por SDK (solo content), Integer opcional de Custom API llega como 0 (`InputOptionalInt`), env vars necesitan VALOR además de definición.
 
+## F2 en curso — Backend del ciclo de vida
+
+| # | Paso | Quién | Prueba que lo garantiza | Estado |
+|---|------|-------|--------------------------|--------|
+| F2.1 | APIs del ciclo de vida: `SendTransaction` (T4), `SubmitSignature` (T5/T6/T7), `RejectTransaction` (T11), `CancelTransaction` (T13) — TDD | Claude | Core 119 verdes (M1/M2/M3/M9 + reglas de enrutamiento doc 06 §3); tests de cáscara (lock-primero, idempotencia M3, no-reescritura de status doc 08 §7, sharing M13); **CF-D01..D06 verdes contra Dev** (113/113 conformidad), package v1.0.3 | ✅ 2026-07-16 — antagonista aplicado (1 crítico real: ColumnSet sin `expirationdays` — el stub ahora HONRA ColumnSet; 6 advertencias corregidas) |
+| F2.2 | Firma Maestra: `ValidateMasterSignature` + `GetMasterSignature` + motor de Imaging (M8) | Claude | Suites M8 + CF-D ampliado; con esto el smoke podrá firmar de verdad (SubmitSignature E2E) | ⬜ |
+| F2.3 | Pipeline de sellado (worker asíncrono, doc 04 §7) + motor Pdf/Crypto (M4/M5/M6) + `RetrySealing` + `VerifyDocument` | Claude | Suites M4/M5/M6 + step asíncrono registrado (CF) + gate 8 | ⬜ |
+| F2.4 | Jobs (`ExpireTransactions`, `ProcessReminders`, `ResealPending`) — M10 | Claude | Suite M10 + CF de registro con `ExecutePrivilegeName` de servicio | ⬜ |
+| F2.5 | Script de carrera de locks contra Dev (doc 11 §3) | Claude + Usuario | N `SubmitSignature` concurrentes → exactamente un Sellando | ⬜ |
+
 ## Decisiones tomadas durante F1
 
 | Fecha | Decisión | Registro |

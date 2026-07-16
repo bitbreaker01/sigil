@@ -1,6 +1,8 @@
 # Runbook D — Despliegue del Backend (plugin package + Custom APIs)
 
-**Cuándo:** cada vez que se despliega o actualiza el backend de Sigil en un ambiente (Dev primero; Test/Prod por el pipeline). **Fase:** F2. **Verificación:** suite de conformidad `CF-D01..D05`.
+**Cuándo:** cada vez que se despliega o actualiza el backend de Sigil en un ambiente (Dev primero; Test/Prod por el pipeline). **Fase:** F2. **Verificación:** suite de conformidad `CF-D01..D06`.
+
+**Superficie actual (2026-07-16):** el package `sanic_Sigil` contiene **8 Custom APIs**: las 4 CRUD de borrador (Create/Update/DeleteDraft, GetDocumentContent) + las 4 del ciclo de vida (SendTransaction, SubmitSignature, RejectTransaction, CancelTransaction).
 
 Este runbook cubre el despliegue por **SDK puro** (herramienta `tools/Sigil.Deploy`), que no requiere `pac` CLI ni herramientas de Windows. La sección §7 documenta el camino alternativo con `pac` (doc 09 §4) para quien lo prefiera.
 
@@ -93,6 +95,7 @@ dotnet test tests/conformance/Sigil.Conformance.Tests -c Release --filter 'Fully
 - `CF-D03 ... parámetro X no existe` → el uniquename de un request parameter debe ser el **nombre desnudo** (ej. `RoutingType`), porque **ES la clave de `InputParameters` que lee el plugin**. La herramienta ya reemplaza los params de forma declarativa; re-corré §3.
 - `CF-D05 ... variable de entorno ... no está configurada` → faltan valores de env vars: la herramienta setea `MaxPdfSizeKB` y `MaxParticipants`; si agregaste APIs que leen otras env vars, sumá sus valores (§5).
 - `CF-D05 ... plazo de expiración debe ser positivo` sin pasar `ExpirationDays` → estás corriendo **código viejo** (cache de versión). Volvé a §1 y **subí la versión**.
+- **Fallo único y transitorio justo tras el redeploy** (`error inesperado — revisar el trace`) → la plataforma está recargando el package; esperá ~30–60 s y re-corré la suite. Si el MISMO test falla dos corridas seguidas, es un bug real: revisá el plugin trace log en Dev.
 
 ---
 
@@ -102,8 +105,9 @@ La herramienta setea **solo los valores que el código desplegado HOY lee**: `Ma
 
 | Env var | Cuándo se setea | Quién |
 |---------|-----------------|-------|
-| `MaxPdfSizeKB`, `MaxParticipants` | Ahora (la herramienta) | Automático |
-| `TsaEnabled`, `TsaEndpoints`, `ExpirationDefaultDays`, `ReminderCadenceDays`, `SignatureImageSpec`, `DefaultLanguage` | Cuando se desplieguen las APIs de sellado/jobs (F2 tardío) | Runbook (a extender) |
+| `MaxPdfSizeKB`, `MaxParticipants` | Con las APIs CRUD (la herramienta) | Automático |
+| `ExpirationDefaultDays` | Con `SendTransaction` (la herramienta). **Valor de Dev: 7** (doc 09 §6 manda plazos cortos en Dev; Test/Prod fijan el valor de negocio por ambiente) | Automático |
+| `TsaEnabled`, `TsaEndpoints`, `ReminderCadenceDays`, `SignatureImageSpec`, `DefaultLanguage` | Cuando se desplieguen las APIs de sellado/jobs (F2 tardío) | Runbook (a extender) |
 | `AppPlayUrl` | Tras el **primer `pac code push`** de la Code App (no existe antes) | Runbook A / doc 09 §6 |
 
 > En **Test/Prod** estos valores NO se copian de Dev: son configuración del ambiente destino (Gate 4 del Runbook B). El pipeline exporta las *definiciones*; los *valores* se fijan por ambiente.

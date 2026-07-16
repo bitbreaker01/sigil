@@ -19,11 +19,14 @@ public sealed class StubFileTransfer : IFileTransfer
     public Dictionary<string, byte[]> Archivos { get; } = new();
     public List<string> Subidas { get; } = new();
 
-    public void Subir(EntityReference registro, string columna, string nombreDeArchivo, byte[] bytes)
+    public void Subir(EntityReference registro, string columna, string nombreDeArchivo, byte[] bytes, string mimeType)
     {
         Archivos[Clave(registro, columna)] = bytes;
         Subidas.Add(Clave(registro, columna));
+        MimeTypes[Clave(registro, columna)] = mimeType;
     }
+
+    public Dictionary<string, string> MimeTypes { get; } = new();
 
     public byte[] Descargar(EntityReference registro, string columna)
         => Archivos.TryGetValue(Clave(registro, columna), out var bytes)
@@ -85,6 +88,7 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
         // Env vars con los defaults del doc (los tests que necesiten otros valores los pisan).
         ConfigurarEnv(SchemaNames.EnvVars.MaxPdfSizeKB, "64");
         ConfigurarEnv(SchemaNames.EnvVars.MaxParticipants, "20");
+        ConfigurarEnv(SchemaNames.EnvVars.ExpirationDefaultDays, "15");
     }
 
     private readonly Dictionary<string, string> _env = new();
@@ -169,6 +173,20 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
     public void SembrarArchivo(Guid transactionId, string columna, byte[] bytes)
         => Archivos.Archivos[StubFileTransfer.Clave(
             new EntityReference(SchemaNames.Tx.Entidad, transactionId), columna)] = bytes;
+
+    /// <summary>Firma Maestra VIGENTE del usuario, con su PNG en el seam de archivos (doc 03 §4.5).</summary>
+    public Guid SembrarFirmaMaestra(Guid userId, byte[] png, int version = 1, bool vigente = true)
+    {
+        var fm = new Entity(SchemaNames.FirmaMaestra.Entidad);
+        fm[SchemaNames.FirmaMaestra.Name] = $"firma v{version}";
+        fm[SchemaNames.FirmaMaestra.UserId] = new EntityReference(SchemaNames.Usuario.Entidad, userId);
+        fm[SchemaNames.FirmaMaestra.Version] = version;
+        fm[SchemaNames.FirmaMaestra.IsActive] = vigente;
+        var id = Servicio.Sembrar(fm).Id;
+        Archivos.Archivos[StubFileTransfer.Clave(
+            new EntityReference(SchemaNames.FirmaMaestra.Entidad, id), SchemaNames.FirmaMaestra.SignatureFile)] = png;
+        return id;
+    }
 
     public static byte[] PdfDePrueba(int paginas)
     {

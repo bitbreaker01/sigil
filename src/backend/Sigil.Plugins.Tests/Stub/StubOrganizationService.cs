@@ -34,6 +34,9 @@ public sealed class StubOrganizationService : IOrganizationService
     /// <summary>Handlers de Execute por RequestName (RetrieveEnvironmentVariableValue, etc.).</summary>
     public Dictionary<string, Func<OrganizationRequest, OrganizationResponse>> Manejadores { get; } = new();
 
+    /// <summary>GrantAccess registrados — para los asserts de M13 (sharing verificable, no mockeado).</summary>
+    public List<(string Entidad, Guid Id, Guid UserId)> Compartidos { get; } = new();
+
     public Entity Sembrar(Entity fila)
     {
         if (fila.Id == Guid.Empty)
@@ -64,7 +67,11 @@ public sealed class StubOrganizationService : IOrganizationService
         Operaciones.Add(new OperacionRegistrada("Read", entityName, id, null));
         if (!Filas(entityName).TryGetValue(id, out var fila))
             throw new InvalidOperationException($"{entityName} {id} no existe en el stub.");
-        return Clonar(fila); // ColumnSet ignorado — límite declarado
+
+        // El ColumnSet se HONRA como en Dataverse real (corrección del antagonista, 2026-07-16):
+        // ignorarlo tapó un bug real de producción — un Contains() sobre una columna que el
+        // ColumnSet no pidió daba true en el stub y false en Dev (caso expirationdays de Send).
+        return Proyectar(Clonar(fila), columnSet);
     }
 
     public void Update(Entity entity)
@@ -89,12 +96,21 @@ public sealed class StubOrganizationService : IOrganizationService
             throw new NotSupportedException($"El stub solo soporta QueryExpression (recibido: {query.GetType().Name}).");
 
         Operaciones.Add(new OperacionRegistrada("Read", qe.EntityName, Guid.Empty, null));
-        var candidatas = FilasDe(qe.EntityName).Where(f => CumpleFiltro(f, qe.EntityName, qe.Criteria));
-        return new EntityCollection(candidatas.Select(Clonar).ToList()) { EntityName = qe.EntityName };
+        var candidatas = FilasDe(qe.EntityName)
+            .Where(f => CumpleFiltro(f, qe.EntityName, qe.Criteria))
+            .Select(f => Proyectar(Clonar(f), qe.ColumnSet));
+        return new EntityCollection(candidatas.ToList()) { EntityName = qe.EntityName };
     }
 
     public OrganizationResponse Execute(OrganizationRequest request)
     {
+        // GrantAccess se registra nativamente (M13): efecto verificable en Compartidos.
+        if (request is Microsoft.Crm.Sdk.Messages.GrantAccessRequest grant)
+        {
+            Compartidos.Add((grant.Target.LogicalName, grant.Target.Id, grant.PrincipalAccess.Principal.Id));
+            return new Microsoft.Crm.Sdk.Messages.GrantAccessResponse();
+        }
+
         if (Manejadores.TryGetValue(request.RequestName, out var manejador))
             return manejador(request);
         throw new NotSupportedException(
@@ -163,5 +179,15 @@ public sealed class StubOrganizationService : IOrganizationService
         foreach (var kv in original.Attributes)
             clon[kv.Key] = kv.Value;
         return clon;
+    }
+
+    // Honra el ColumnSet como Dataverse real — un Contains() sobre columna no pedida debe dar false.
+    private static Entity Proyectar(Entity fila, ColumnSet? columnSet)
+    {
+        if (columnSet is null || columnSet.AllColumns)
+            return fila;
+        foreach (var attr in fila.Attributes.Keys.Where(k => !columnSet.Columns.Contains(k)).ToList())
+            fila.Attributes.Remove(attr);
+        return fila;
     }
 }

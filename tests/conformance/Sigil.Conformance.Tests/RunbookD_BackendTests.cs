@@ -42,6 +42,10 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_UpdateDraft", 1, "sanic_sigil_tbl_transaction" },
         { "sanic_sigil_capi_DeleteDraft", 1, "sanic_sigil_tbl_transaction" },
         { "sanic_sigil_capi_GetDocumentContent", 1, "sanic_sigil_tbl_transaction" },
+        { "sanic_sigil_capi_SendTransaction", 1, "sanic_sigil_tbl_transaction" },
+        { "sanic_sigil_capi_SubmitSignature", 1, "sanic_sigil_tbl_transaction" },
+        { "sanic_sigil_capi_RejectTransaction", 1, "sanic_sigil_tbl_transaction" },
+        { "sanic_sigil_capi_CancelTransaction", 1, "sanic_sigil_tbl_transaction" },
     };
 
     [SkippableTheory] // CF-D02 — cada Custom API existe con binding, tipo y privilegio del doc 04
@@ -86,6 +90,8 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_UpdateDraft", "ParticipantsJson", 10, true },
         { "sanic_sigil_capi_UpdateDraft", "ZonesJson", 10, true },
         { "sanic_sigil_capi_GetDocumentContent", "DocumentType", 10, false },
+        { "sanic_sigil_capi_RejectTransaction", "Reason", 10, false },
+        { "sanic_sigil_capi_CancelTransaction", "Reason", 10, true },
     };
 
     [SkippableTheory] // CF-D03 — parámetros de request: nombre EXACTO (case-sensitive), tipo y opcionalidad
@@ -109,9 +115,10 @@ public class RunbookD_BackendTests(DataverseFixture fx)
 
     public static TheoryData<string, string, int> RespuestasEsperadas() => new()
     {
-        // api, propiedad de respuesta, tipo (10=String, 12=Guid)
+        // api, propiedad de respuesta, tipo (0=Boolean, 10=String, 12=Guid)
         { "sanic_sigil_capi_CreateTransaction", "TransactionId", 12 },
         { "sanic_sigil_capi_GetDocumentContent", "PdfBase64", 10 },
+        { "sanic_sigil_capi_SubmitSignature", "IsLastSigner", 0 },
     };
 
     [SkippableTheory] // CF-D04 — propiedades de respuesta del contrato
@@ -183,12 +190,110 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         {
             if (txId != Guid.Empty)
             {
-                var borrar = new OrganizationRequest("sanic_sigil_capi_DeleteDraft")
+                try
                 {
-                    ["Target"] = new EntityReference("sanic_sigil_tbl_transaction", txId),
-                };
-                client.Execute(borrar); // cleanup — no dejar borradores de prueba en Dev
+                    client.Execute(new OrganizationRequest("sanic_sigil_capi_DeleteDraft")
+                    {
+                        ["Target"] = new EntityReference("sanic_sigil_tbl_transaction", txId),
+                    }); // cleanup — no dejar borradores de prueba en Dev
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"[cleanup] No se pudo borrar el borrador {txId}: {ex.Message} — borrarlo a mano.");
+                }
             }
+        }
+    }
+
+    // ── CF-D06: smoke del CICLO DE VIDA — crear → enviar → verificar anclas → cancelar ──
+    // Ejercita T4 (send: contenthash, turnos, share) y T13 (cancel) contra el ambiente real.
+    // SubmitSignature queda fuera del smoke hasta que exista ValidateMasterSignature (el SP
+    // no tiene Firma Maestra). Limpia TODO al final (eventos primero — Delete Restrict).
+
+    [SkippableFact]
+    public void CF_D06_SmokeCicloDeVida_CrearEnviarYCancelar()
+    {
+        var client = fx.RequireClient();
+        var yo = ((WhoAmIResponse)client.Execute(new WhoAmIRequest())).UserId;
+
+        var participantsJson = JsonSerializer.Serialize(new[] { new { userId = yo } });
+        var zonesJson = JsonSerializer.Serialize(new[]
+        {
+            new { userId = yo, page = 1, x = 40.0, y = 40.0, w = 20.0, h = 8.0 },
+        });
+
+        Guid txId = Guid.Empty;
+        try
+        {
+            var crear = new OrganizationRequest("sanic_sigil_capi_CreateTransaction")
+            {
+                ["Name"] = "CF-D06 smoke ciclo de vida",
+                ["RoutingType"] = "parallel",
+                ["PdfBase64"] = Convert.ToBase64String(PdfDeUnaPagina()),
+                ["ParticipantsJson"] = participantsJson,
+                ["ZonesJson"] = zonesJson,
+            };
+            txId = (Guid)client.Execute(crear).Results["TransactionId"];
+            var txRef = new EntityReference("sanic_sigil_tbl_transaction", txId);
+
+            // T4 — enviar
+            client.Execute(new OrganizationRequest("sanic_sigil_capi_SendTransaction") { ["Target"] = txRef });
+
+            var tx = client.Retrieve("sanic_sigil_tbl_transaction", txId,
+                new ColumnSet("sanic_sigil_status", "sanic_sigil_contenthash", "sanic_sigil_senton", "sanic_sigil_expireson"));
+            Assert.Equal(159460001, tx.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_status").Value); // Pendiente de Firma
+            Assert.Matches("^[0-9A-F]{64}$", tx.GetAttributeValue<string>("sanic_sigil_contenthash")); // ancla temprana
+            Assert.True(tx.Contains("sanic_sigil_senton") && tx.Contains("sanic_sigil_expireson"));
+
+            var pQuery = new QueryExpression("sanic_sigil_tbl_participant")
+            {
+                ColumnSet = new ColumnSet("sanic_sigil_status", "sanic_sigil_turnactivatedon"),
+            };
+            pQuery.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            var participante = Assert.Single(client.RetrieveMultiple(pQuery).Entities);
+            Assert.Equal(159460001, participante.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_status").Value); // Turno Activo
+            Assert.True(participante.Contains("sanic_sigil_turnactivatedon"));
+
+            // T13 — cancelar
+            client.Execute(new OrganizationRequest("sanic_sigil_capi_CancelTransaction")
+            {
+                ["Target"] = txRef,
+                ["Reason"] = "smoke CF-D06 — limpieza automática",
+            });
+            var txFinal = client.Retrieve("sanic_sigil_tbl_transaction", txId, new ColumnSet("sanic_sigil_status"));
+            Assert.Equal(159460008, txFinal.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_status").Value); // Cancelado
+
+            // evento 12 registrado
+            var evQuery = new QueryExpression("sanic_sigil_tbl_event") { ColumnSet = new ColumnSet("sanic_sigil_type") };
+            evQuery.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            var tipos = client.RetrieveMultiple(evQuery).Entities
+                .Select(ev => ev.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_type").Value).ToList();
+            Assert.Contains(159460011, tipos); // Cancelada por el creador
+        }
+        finally
+        {
+            if (txId != Guid.Empty)
+                LimpiarTransaccion(client, txId);
+        }
+    }
+
+    // Cleanup por SDK directo (una cancelada no se puede DeleteDraft): eventos primero
+    // (Delete Restrict), después la transacción (cascada elimina participantes/zonas).
+    // NUNCA lanza: un fallo del cleanup en el finally pisaría la aserción real del test
+    // (antagonista A5) — se reporta a consola y queda para limpieza manual.
+    private static void LimpiarTransaccion(Microsoft.PowerPlatform.Dataverse.Client.ServiceClient client, Guid txId)
+    {
+        try
+        {
+            var evQuery = new QueryExpression("sanic_sigil_tbl_event") { ColumnSet = new ColumnSet(false) };
+            evQuery.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            foreach (var ev in client.RetrieveMultiple(evQuery).Entities)
+                client.Delete("sanic_sigil_tbl_event", ev.Id);
+            client.Delete("sanic_sigil_tbl_transaction", txId);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[cleanup] No se pudo limpiar la transacción {txId}: {ex.Message} — borrarla a mano.");
         }
     }
 

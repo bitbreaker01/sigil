@@ -16,6 +16,9 @@ public static class SchemaNames
         public const string RoutingType = "sanic_sigil_routingtype";
         public const string Message = "sanic_sigil_message";
         public const string ExpirationDays = "sanic_sigil_expirationdays";
+        public const string SentOn = "sanic_sigil_senton";
+        public const string ExpiresOn = "sanic_sigil_expireson";
+        public const string CompletedOn = "sanic_sigil_completedon";
         public const string LockToken = "sanic_sigil_locktoken";
         public const string ContentFile = "sanic_sigil_contentfile";
         public const string ContentHash = "sanic_sigil_contenthash";
@@ -32,6 +35,29 @@ public static class SchemaNames
         public const string UserId = "sanic_sigil_userid";
         public const string Order = "sanic_sigil_order";
         public const string Status = "sanic_sigil_status";
+        public const string TurnActivatedOn = "sanic_sigil_turnactivatedon";
+        public const string LastReminderOn = "sanic_sigil_lastreminderon";
+        public const string SignedOn = "sanic_sigil_signedon";
+        public const string RejectionReason = "sanic_sigil_rejectionreason";
+        public const string SignatureSnapshot = "sanic_sigil_signaturesnapshot";
+        public const string MasterSignatureId = "sanic_sigil_mastersignatureid";
+        public const string SignerName = "sanic_sigil_signername";
+        public const string SignerEmail = "sanic_sigil_signeremail";
+        public const string SignerEntraObjectId = "sanic_sigil_signerentraobjectid";
+        public const string OwnerId = "ownerid";
+    }
+
+    /// <summary>sanic_sigil_tbl_mastersignature (doc 03 §4.5 — versionada).</summary>
+    public static class FirmaMaestra
+    {
+        public const string Entidad = "sanic_sigil_tbl_mastersignature";
+        public const string Name = "sanic_sigil_name";
+        public const string UserId = "sanic_sigil_userid";
+        public const string Version = "sanic_sigil_version";
+        public const string IsActive = "sanic_sigil_isactive";
+        public const string SignatureFile = "sanic_sigil_signaturefile";
+        public const string ValidatedOn = "sanic_sigil_validatedon";
+        public const string ValidationDetails = "sanic_sigil_validationdetails";
         public const string OwnerId = "ownerid";
     }
 
@@ -72,6 +98,8 @@ public static class SchemaNames
         public const string Id = "systemuserid";
         public const string FullName = "fullname";
         public const string Email = "internalemailaddress";
+        public const string Upn = "domainname";
+        public const string EntraObjectId = "azureactivedirectoryobjectid";
         public const string IsDisabled = "isdisabled";
     }
 
@@ -82,6 +110,10 @@ public static class SchemaNames
         public const string UpdateDraft = "sanic_sigil_capi_UpdateDraft";
         public const string DeleteDraft = "sanic_sigil_capi_DeleteDraft";
         public const string GetDocumentContent = "sanic_sigil_capi_GetDocumentContent";
+        public const string SendTransaction = "sanic_sigil_capi_SendTransaction";
+        public const string SubmitSignature = "sanic_sigil_capi_SubmitSignature";
+        public const string RejectTransaction = "sanic_sigil_capi_RejectTransaction";
+        public const string CancelTransaction = "sanic_sigil_capi_CancelTransaction";
     }
 
     /// <summary>Variables de entorno (doc 03 §8).</summary>
@@ -89,5 +121,6 @@ public static class SchemaNames
     {
         public const string MaxPdfSizeKB = "sanic_sigil_env_MaxPdfSizeKB";
         public const string MaxParticipants = "sanic_sigil_env_MaxParticipants";
+        public const string ExpirationDefaultDays = "sanic_sigil_env_ExpirationDefaultDays";
     }
 }

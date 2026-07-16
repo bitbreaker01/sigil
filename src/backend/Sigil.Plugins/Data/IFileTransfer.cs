@@ -9,8 +9,9 @@ namespace Sigil.Plugins.Data;
 
 public interface IFileTransfer
 {
-    /// <summary>Sube bytes a una columna File (sobrescribe si existía).</summary>
-    void Subir(EntityReference registro, string columna, string nombreDeArchivo, byte[] bytes);
+    /// <summary>Sube bytes a una columna File (sobrescribe si existía). El mimeType etiqueta
+    /// la evidencia correctamente ("application/pdf", "image/png"…).</summary>
+    void Subir(EntityReference registro, string columna, string nombreDeArchivo, byte[] bytes, string mimeType);
 
     /// <summary>Descarga los bytes de una columna File. Lanza si la columna está vacía.</summary>
     byte[] Descargar(EntityReference registro, string columna);

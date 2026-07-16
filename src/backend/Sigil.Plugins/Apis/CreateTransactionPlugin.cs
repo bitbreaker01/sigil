@@ -83,7 +83,7 @@ public class CreateTransactionPlugin : SigilApiPlugin
         var txId = e.Servicio.Create(tx);
         var txRef = new EntityReference(SchemaNames.Tx.Entidad, txId);
 
-        e.Archivos.Subir(txRef, SchemaNames.Tx.ContentFile, "content.pdf", pdf.Valor!.Bytes);
+        e.Archivos.Subir(txRef, SchemaNames.Tx.ContentFile, "content.pdf", pdf.Valor!.Bytes, "application/pdf");
 
         var participantePorUsuario = new Dictionary<Guid, Guid>();
         foreach (var p in participantes.Valor!)
