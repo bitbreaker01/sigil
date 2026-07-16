@@ -1,5 +1,6 @@
 // CF-D — Despliegue del backend (F2): existencia y configuración del plugin package y de
-// las primeras 4 Custom APIs (doc 04 §3.1/§3.2). TDD de infraestructura (doc 11 §1 regla 5):
+// las Custom APIs desplegadas (doc 04 §3.1/§3.2), más los smokes E2E (CF-D05..D08).
+// TDD de infraestructura (doc 11 §1 regla 5):
 // estos tests nacen ROJOS contra Dev — se ponen verdes cuando el paquete se registre en F2
 // (pac plugin push / import de solución). El runbook D (despliegue backend) se redacta en F2;
 // los IDs CF-D ya quedan reservados acá.
@@ -46,6 +47,8 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_SubmitSignature", 1, "sanic_sigil_tbl_transaction" },
         { "sanic_sigil_capi_RejectTransaction", 1, "sanic_sigil_tbl_transaction" },
         { "sanic_sigil_capi_CancelTransaction", 1, "sanic_sigil_tbl_transaction" },
+        { "sanic_sigil_capi_ValidateMasterSignature", 0, null },
+        { "sanic_sigil_capi_GetMasterSignature", 0, null },
     };
 
     [SkippableTheory] // CF-D02 — cada Custom API existe con binding, tipo y privilegio del doc 04
@@ -92,6 +95,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_GetDocumentContent", "DocumentType", 10, false },
         { "sanic_sigil_capi_RejectTransaction", "Reason", 10, false },
         { "sanic_sigil_capi_CancelTransaction", "Reason", 10, true },
+        { "sanic_sigil_capi_ValidateMasterSignature", "ImageBase64", 10, false },
     };
 
     [SkippableTheory] // CF-D03 — parámetros de request: nombre EXACTO (case-sensitive), tipo y opcionalidad
@@ -115,10 +119,16 @@ public class RunbookD_BackendTests(DataverseFixture fx)
 
     public static TheoryData<string, string, int> RespuestasEsperadas() => new()
     {
-        // api, propiedad de respuesta, tipo (0=Boolean, 10=String, 12=Guid)
+        // api, propiedad de respuesta, tipo (0=Boolean, 1=DateTime, 10=String, 12=Guid)
         { "sanic_sigil_capi_CreateTransaction", "TransactionId", 12 },
         { "sanic_sigil_capi_GetDocumentContent", "PdfBase64", 10 },
         { "sanic_sigil_capi_SubmitSignature", "IsLastSigner", 0 },
+        { "sanic_sigil_capi_ValidateMasterSignature", "IsValid", 0 },
+        { "sanic_sigil_capi_ValidateMasterSignature", "FailureReasons", 10 },
+        { "sanic_sigil_capi_ValidateMasterSignature", "MetricsJson", 10 },
+        { "sanic_sigil_capi_ValidateMasterSignature", "NormalizedImageBase64", 10 },
+        { "sanic_sigil_capi_GetMasterSignature", "ImageBase64", 10 },
+        { "sanic_sigil_capi_GetMasterSignature", "ValidatedOn", 1 },
     };
 
     [SkippableTheory] // CF-D04 — propiedades de respuesta del contrato
@@ -295,6 +305,147 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         {
             Console.Error.WriteLine($"[cleanup] No se pudo limpiar la transacción {txId}: {ex.Message} — borrarla a mano.");
         }
+    }
+
+    // ── CF-D07: Firma Maestra — validar, versionar y leer de vuelta ─────────
+    // Ejercita ADR-009 real en el sandbox: el motor de Imaging valida/normaliza y el
+    // versionado crea la vigente. El roundtrip Get == Normalized cierra el contrato.
+
+    [SkippableFact]
+    public void CF_D07_FirmaMaestra_ValidarYLeerDeVuelta()
+    {
+        var client = fx.RequireClient();
+        var yo = ((WhoAmIResponse)client.Execute(new WhoAmIRequest())).UserId;
+
+        try
+        {
+            var validar = new OrganizationRequest("sanic_sigil_capi_ValidateMasterSignature")
+            {
+                ["ImageBase64"] = Convert.ToBase64String(PngDeFirmaSintetica()),
+            };
+            var r = client.Execute(validar).Results;
+            Assert.True((bool)r["IsValid"], "la firma sintética debía pasar los umbrales: " +
+                (r.Contains("FailureReasons") ? r["FailureReasons"] : "(sin motivos)"));
+            var normalizada = (string)r["NormalizedImageBase64"];
+            Assert.False(string.IsNullOrEmpty(normalizada));
+
+            var g = client.Execute(new OrganizationRequest("sanic_sigil_capi_GetMasterSignature")).Results;
+            Assert.Equal(normalizada, (string)g["ImageBase64"]); // roundtrip byte a byte
+            Assert.IsType<DateTime>(g["ValidatedOn"]);
+        }
+        finally
+        {
+            LimpiarFirmasMaestrasDe(client, yo);
+        }
+    }
+
+    // ── CF-D08: el E2E de FIRMA — crear → enviar → FIRMAR → Sellando ─────────
+    // El propósito del sistema de punta a punta hasta donde existe motor (el worker de
+    // sellado llega en F2.3; la transacción queda en Sellando y se limpia).
+
+    [SkippableFact]
+    public void CF_D08_SmokeDeFirma_CrearEnviarFirmar_QuedaSellando()
+    {
+        var client = fx.RequireClient();
+        var yo = ((WhoAmIResponse)client.Execute(new WhoAmIRequest())).UserId;
+
+        Guid txId = Guid.Empty;
+        try
+        {
+            // firma maestra vigente para el SP
+            var v = client.Execute(new OrganizationRequest("sanic_sigil_capi_ValidateMasterSignature")
+            {
+                ["ImageBase64"] = Convert.ToBase64String(PngDeFirmaSintetica()),
+            }).Results;
+            Assert.True((bool)v["IsValid"]);
+
+            // crear + enviar
+            txId = (Guid)client.Execute(new OrganizationRequest("sanic_sigil_capi_CreateTransaction")
+            {
+                ["Name"] = "CF-D08 smoke de firma",
+                ["RoutingType"] = "parallel",
+                ["PdfBase64"] = Convert.ToBase64String(PdfDeUnaPagina()),
+                ["ParticipantsJson"] = JsonSerializer.Serialize(new[] { new { userId = yo } }),
+                ["ZonesJson"] = JsonSerializer.Serialize(new[]
+                    { new { userId = yo, page = 1, x = 40.0, y = 40.0, w = 20.0, h = 8.0 } }),
+            }).Results["TransactionId"];
+            var txRef = new EntityReference("sanic_sigil_tbl_transaction", txId);
+            client.Execute(new OrganizationRequest("sanic_sigil_capi_SendTransaction") { ["Target"] = txRef });
+
+            // FIRMAR — el único firmante: IsLastSigner true, la tx queda Sellando (T6)
+            var s = client.Execute(new OrganizationRequest("sanic_sigil_capi_SubmitSignature") { ["Target"] = txRef }).Results;
+            Assert.True((bool)s["IsLastSigner"]);
+
+            var tx = client.Retrieve("sanic_sigil_tbl_transaction", txId, new ColumnSet("sanic_sigil_status", "sanic_sigil_contenthash"));
+            Assert.Equal(159460003, tx.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_status").Value); // Sellando
+
+            // el participante quedó Firmado, con snapshots y lookup a la versión exacta
+            var pQuery = new QueryExpression("sanic_sigil_tbl_participant")
+            {
+                ColumnSet = new ColumnSet("sanic_sigil_status", "sanic_sigil_signedon",
+                    "sanic_sigil_signername", "sanic_sigil_mastersignatureid"),
+            };
+            pQuery.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            var p = Assert.Single(client.RetrieveMultiple(pQuery).Entities);
+            Assert.Equal(159460002, p.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_status").Value); // Firmado
+            Assert.True(p.Contains("sanic_sigil_signedon"));
+            Assert.NotNull(p.GetAttributeValue<EntityReference>("sanic_sigil_mastersignatureid"));
+
+            // el evento de firma trae el documenthash == contenthash (verificación cruzada, doc 03 §4.6)
+            var evQuery = new QueryExpression("sanic_sigil_tbl_event")
+            {
+                ColumnSet = new ColumnSet("sanic_sigil_type", "sanic_sigil_documenthash"),
+            };
+            evQuery.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
+            var eventos = client.RetrieveMultiple(evQuery).Entities;
+            var firma = eventos.Single(ev => ev.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_type").Value == 159460002);
+            Assert.Equal(tx.GetAttributeValue<string>("sanic_sigil_contenthash"),
+                firma.GetAttributeValue<string>("sanic_sigil_documenthash"));
+            Assert.Contains(eventos, ev => ev.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_type").Value == 159460005); // Sellado iniciado
+        }
+        finally
+        {
+            if (txId != Guid.Empty)
+                LimpiarTransaccion(client, txId);
+            LimpiarFirmasMaestrasDe(client, yo);
+        }
+    }
+
+    private static void LimpiarFirmasMaestrasDe(Microsoft.PowerPlatform.Dataverse.Client.ServiceClient client, Guid userId)
+    {
+        try
+        {
+            var q = new QueryExpression("sanic_sigil_tbl_mastersignature") { ColumnSet = new ColumnSet(false) };
+            q.Criteria.AddCondition("sanic_sigil_userid", ConditionOperator.Equal, userId);
+            foreach (var f in client.RetrieveMultiple(q).Entities)
+                client.Delete("sanic_sigil_tbl_mastersignature", f.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[cleanup] No se pudieron limpiar las firmas maestras del SP: {ex.Message}.");
+        }
+    }
+
+    private static byte[] PngDeFirmaSintetica()
+    {
+        using var img = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(600, 200);
+        var negro = new SixLabors.ImageSharp.PixelFormats.Rgba32(0, 0, 0, 255);
+        for (var i = 0; i < 5; i++)
+        {
+            double x0 = 30 + i * 100, y0 = 170, x1 = x0 + 70, y1 = 30;
+            for (var s = 0; s <= 400; s++)
+            {
+                var t = s / 400.0;
+                int cx = (int)(x0 + (x1 - x0) * t), cy = (int)(y0 + (y1 - y0) * t);
+                for (var dy = -4; dy <= 4; dy++)
+                for (var dx = -4; dx <= 4; dx++)
+                    if (cx + dx >= 0 && cx + dx < 600 && cy + dy >= 0 && cy + dy < 200 && dx * dx + dy * dy <= 16)
+                        img[cx + dx, cy + dy] = negro;
+            }
+        }
+        using var ms = new MemoryStream();
+        img.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
+        return ms.ToArray();
     }
 
     private static byte[] PdfDeUnaPagina()

@@ -2,7 +2,7 @@
 
 **Cuándo:** cada vez que se despliega o actualiza el backend de Sigil en un ambiente (Dev primero; Test/Prod por el pipeline). **Fase:** F2. **Verificación:** suite de conformidad `CF-D01..D06`.
 
-**Superficie actual (2026-07-16):** el package `sanic_Sigil` contiene **8 Custom APIs**: las 4 CRUD de borrador (Create/Update/DeleteDraft, GetDocumentContent) + las 4 del ciclo de vida (SendTransaction, SubmitSignature, RejectTransaction, CancelTransaction).
+**Superficie actual (2026-07-16):** el package `sanic_Sigil` contiene **10 Custom APIs**: las 4 CRUD de borrador (Create/Update/DeleteDraft, GetDocumentContent), las 4 del ciclo de vida (SendTransaction, SubmitSignature, RejectTransaction, CancelTransaction) y las 2 de Firma Maestra (ValidateMasterSignature, GetMasterSignature).
 
 Este runbook cubre el despliegue por **SDK puro** (herramienta `tools/Sigil.Deploy`), que no requiere `pac` CLI ni herramientas de Windows. La sección §7 documenta el camino alternativo con `pac` (doc 09 §4) para quien lo prefiera.
 
@@ -107,7 +107,8 @@ La herramienta setea **solo los valores que el código desplegado HOY lee**: `Ma
 |---------|-----------------|-------|
 | `MaxPdfSizeKB`, `MaxParticipants` | Con las APIs CRUD (la herramienta) | Automático |
 | `ExpirationDefaultDays` | Con `SendTransaction` (la herramienta). **Valor de Dev: 7** (doc 09 §6 manda plazos cortos en Dev; Test/Prod fijan el valor de negocio por ambiente) | Automático |
-| `TsaEnabled`, `TsaEndpoints`, `ReminderCadenceDays`, `SignatureImageSpec`, `DefaultLanguage` | Cuando se desplieguen las APIs de sellado/jobs (F2 tardío) | Runbook (a extender) |
+| `SignatureImageSpec` | Con `ValidateMasterSignature` (la herramienta) — el JSON canónico del doc 04 §4 | Automático |
+| `TsaEnabled`, `TsaEndpoints`, `ReminderCadenceDays`, `DefaultLanguage` | Cuando se desplieguen las APIs de sellado/jobs (F2 tardío) | Runbook (a extender) |
 | `AppPlayUrl` | Tras el **primer `pac code push`** de la Code App (no existe antes) | Runbook A / doc 09 §6 |
 
 > En **Test/Prod** estos valores NO se copian de Dev: son configuración del ambiente destino (Gate 4 del Runbook B). El pipeline exporta las *definiciones*; los *valores* se fijan por ambiente.

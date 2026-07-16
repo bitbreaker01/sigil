@@ -32,6 +32,18 @@ public sealed class EnvVars(IOrganizationService servicio)
         return (int)valor;
     }
 
+    /// <summary>Variable Text/JSON obligatoria — falla ruidoso si no está configurada.</summary>
+    public string TextoObligatorio(string schemaName)
+    {
+        var valor = Leer(schemaName);
+        if (string.IsNullOrWhiteSpace(valor))
+        {
+            throw new InvalidPluginExecutionException(
+                $"La variable de entorno {schemaName} no está configurada — revisar el Runbook A (CF-A09).");
+        }
+        return valor!;
+    }
+
     private string? Leer(string schemaName)
     {
         if (_cache.TryGetValue(schemaName, out var cacheado))

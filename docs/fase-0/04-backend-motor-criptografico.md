@@ -117,7 +117,7 @@ Con esto, un usuario común **no puede** invocar los jobs aunque conozca su firm
 - `ParticipantsJson`: schema §4; usuarios existentes y habilitados; sin duplicados; el creador puede ser firmante; máximo de participantes según `sanic_sigil_env_MaxParticipants` (env var, default 20). **Enrutamiento secuencial:** `order` obligatorio y consecutivo `1..N` (sin huecos ni repetidos); **paralelo:** `order` ausente (su presencia es error de contrato).
 - `Name` ≤ 200, `Message` ≤ 2.000, `ExpirationDays` null o entero positivo (límites de schema del doc 03 §4.1 validados antes de escribir — error accionable, no error de plataforma).
 - `ZonesJson`: schema §4; página existente en el PDF (`1..PageCount`); coordenadas `0–100`; **`w`/`h` > 0 y `x+w ≤ 100`, `y+h ≤ 100`** (una zona debe caber físicamente en la página — el frontend espeja esta regla, M11); el userId de cada zona pertenece a un participante. **Completitud (RF-28): en `SendTransaction`, TODO participante debe tener ≥1 zona — error explícito listando a quiénes les falta.** En `UpdateDraft`, reemplazar `ParticipantsJson` descarta las zonas de los participantes salientes; para evitar pérdida silenciosa (prohibida, §3.1) se exige reenviar `ZonesJson` (aunque sea `[]`) cuando había zonas persistidas.
-- `ImageBase64` (firma): longitud antes de decodificar; PNG válido decodificable por ImageSharp.
+- `ImageBase64` (firma): longitud antes de decodificar — **límite de carga = 10 × `maxKB` del spec** (una firma cruda legítima pesa más que su normalizada; decisión 2026-07-16); **dimensiones verificadas sobre el header (`Image.Identify`, sin decodificar píxeles) con techo 4096×4096** — anti bomba de descompresión; PNG válido decodificable por ImageSharp. **Semántica**: los errores de contrato (base64 roto, tamaño de carga) son excepciones; los fallos de calidad (formato no-PNG, dimensiones, alfa/contraste/nitidez) son **veredicto** (`IsValid=false` + motivos, uno por línea) — el frontend los muestra (RF-02).
 
 ## 4. Contratos JSON (deuda del doc 03, saldada)
 
@@ -135,6 +135,9 @@ Con esto, un usuario común **no puede** invocar los jobs aunque conozca su firm
 { "targetWidthPx": 600, "targetHeightPx": 200, "maxKB": 150,
   "minAlphaRatio": 0.15, "minRmsContrast": 0.25, "minLaplacianVar": 80 }
 // umbrales iniciales: calibrar con imágenes reales en la implementación
+// minRmsContrast: RMS del apartamiento de la TINTA vs fondo blanco sobre píxeles no
+//   transparentes (enmienda ADR-009 2026-07-16 — el RMS global castiga trazos finos)
+// minLaplacianVar: sensible a la resolución de origen (~1/lado) — calibrado implícito a 600×200
 // contrato de salida de la normalización: PNG RGBA 8-bit NO entrelazado (ver §10, riesgo PDFsharp)
 
 // sanic_sigil_env_TsaEndpoints (env var — orden = prioridad; hostnames obligatorios, jamás IPs)

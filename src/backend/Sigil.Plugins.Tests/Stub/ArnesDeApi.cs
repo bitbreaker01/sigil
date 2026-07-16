@@ -89,6 +89,8 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
         ConfigurarEnv(SchemaNames.EnvVars.MaxPdfSizeKB, "64");
         ConfigurarEnv(SchemaNames.EnvVars.MaxParticipants, "20");
         ConfigurarEnv(SchemaNames.EnvVars.ExpirationDefaultDays, "15");
+        ConfigurarEnv(SchemaNames.EnvVars.SignatureImageSpec,
+            """{ "targetWidthPx": 600, "targetHeightPx": 200, "maxKB": 150, "minAlphaRatio": 0.15, "minRmsContrast": 0.25, "minLaplacianVar": 80 }""");
     }
 
     private readonly Dictionary<string, string> _env = new();
@@ -194,6 +196,35 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
         for (var i = 0; i < paginas; i++) doc.AddPage();
         using var ms = new MemoryStream();
         doc.Save(ms, closeStream: false);
+        return ms.ToArray();
+    }
+
+    /// <summary>PNG sintético que PASA los tres umbrales de ADR-009 (trazos negros sobre transparente).</summary>
+    public static byte[] PngDeFirmaQueValida()
+    {
+        using var img = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(600, 200);
+        var negro = new SixLabors.ImageSharp.PixelFormats.Rgba32(0, 0, 0, 255);
+        for (var i = 0; i < 5; i++)
+        {
+            double x0 = 30 + i * 100, y0 = 170, x1 = x0 + 70, y1 = 30;
+            var pasos = 400;
+            for (var s = 0; s <= pasos; s++)
+            {
+                var t = (double)s / pasos;
+                int cx = (int)(x0 + (x1 - x0) * t), cy = (int)(y0 + (y1 - y0) * t);
+                for (var dy = -4; dy <= 4; dy++)
+                for (var dx = -4; dx <= 4; dx++)
+                    if (cx + dx >= 0 && cx + dx < 600 && cy + dy >= 0 && cy + dy < 200 && dx * dx + dy * dy <= 16)
+                        img[cx + dx, cy + dy] = negro;
+            }
+        }
+        using var ms = new MemoryStream();
+        img.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder
+        {
+            ColorType = SixLabors.ImageSharp.Formats.Png.PngColorType.RgbWithAlpha,
+            BitDepth = SixLabors.ImageSharp.Formats.Png.PngBitDepth.Bit8,
+            InterlaceMethod = SixLabors.ImageSharp.Formats.Png.PngInterlaceMode.None,
+        });
         return ms.ToArray();
     }
 

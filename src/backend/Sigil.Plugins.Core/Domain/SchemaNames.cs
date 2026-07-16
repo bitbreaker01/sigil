@@ -114,6 +114,8 @@ public static class SchemaNames
         public const string SubmitSignature = "sanic_sigil_capi_SubmitSignature";
         public const string RejectTransaction = "sanic_sigil_capi_RejectTransaction";
         public const string CancelTransaction = "sanic_sigil_capi_CancelTransaction";
+        public const string ValidateMasterSignature = "sanic_sigil_capi_ValidateMasterSignature";
+        public const string GetMasterSignature = "sanic_sigil_capi_GetMasterSignature";
     }
 
     /// <summary>Variables de entorno (doc 03 §8).</summary>
@@ -122,5 +124,6 @@ public static class SchemaNames
         public const string MaxPdfSizeKB = "sanic_sigil_env_MaxPdfSizeKB";
         public const string MaxParticipants = "sanic_sigil_env_MaxParticipants";
         public const string ExpirationDefaultDays = "sanic_sigil_env_ExpirationDefaultDays";
+        public const string SignatureImageSpec = "sanic_sigil_env_SignatureImageSpec";
     }
 }

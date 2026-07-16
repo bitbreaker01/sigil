@@ -83,20 +83,34 @@ public static class Consultas
 
     /// <summary>
     /// La versión VIGENTE de la Firma Maestra del usuario (doc 03 §4.5) — null si no tiene.
-    /// Si el riesgo residual documentado se materializa (dos vigentes), gana la de mayor
-    /// versión — determinístico, jamás arbitrario en un sistema probatorio.
+    /// Si el riesgo residual documentado se materializa (dos vigentes — incluso con el MISMO
+    /// número de versión, si el usuario compitió consigo mismo), el desempate es total:
+    /// mayor versión, y a igual versión el Id mayor — determinístico en cualquier caso.
+    /// La siguiente subida auto-sana (desactiva TODAS las vigentes).
     /// </summary>
     public static Entity? FirmaMaestraVigenteDe(IOrganizationService servicio, Guid userId)
     {
         var query = new QueryExpression(SchemaNames.FirmaMaestra.Entidad)
         {
-            ColumnSet = new ColumnSet(SchemaNames.FirmaMaestra.Version),
+            ColumnSet = new ColumnSet(SchemaNames.FirmaMaestra.Version, SchemaNames.FirmaMaestra.ValidatedOn),
         };
         query.Criteria.AddCondition(SchemaNames.FirmaMaestra.UserId, ConditionOperator.Equal, userId);
         query.Criteria.AddCondition(SchemaNames.FirmaMaestra.IsActive, ConditionOperator.Equal, true);
         return servicio.RetrieveMultiple(query).Entities
             .OrderByDescending(f => f.GetAttributeValue<int>(SchemaNames.FirmaMaestra.Version))
+            .ThenByDescending(f => f.Id)
             .FirstOrDefault();
+    }
+
+    /// <summary>TODAS las versiones de Firma Maestra del usuario (para versionar y desactivar).</summary>
+    public static IReadOnlyList<Entity> VersionesDeFirmaDe(IOrganizationService servicio, Guid userId)
+    {
+        var query = new QueryExpression(SchemaNames.FirmaMaestra.Entidad)
+        {
+            ColumnSet = new ColumnSet(SchemaNames.FirmaMaestra.Version, SchemaNames.FirmaMaestra.IsActive),
+        };
+        query.Criteria.AddCondition(SchemaNames.FirmaMaestra.UserId, ConditionOperator.Equal, userId);
+        return servicio.RetrieveMultiple(query).Entities.ToList();
     }
 
     /// <summary>

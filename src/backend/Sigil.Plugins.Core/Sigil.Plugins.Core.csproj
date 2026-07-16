@@ -13,10 +13,12 @@
   </PropertyGroup>
 
   <!-- Dependencias del stack (doc 04 §1) se agregan cuando su primer test las exija (Strict TDD).
-       Pendientes: BouncyCastle.Cryptography 2.x, QRCoder (PngByteQRCode), ImageSharp >= 2.1.11. -->
+       Pendientes: BouncyCastle.Cryptography 2.x, QRCoder (PngByteQRCode). -->
   <ItemGroup>
     <!-- 6.2.4 exacto: la versión validada por los spikes (jamás 6.2.0 — issue #187 de transparencia) -->
     <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <!-- 2.1.13: la versión que el spike resolvió y validó DENTRO del sandbox (rama 2.1.x Apache-2.0) -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
     <!-- Contratos JSON de las Custom APIs (doc 04 §4). netstandard2.0: viaja como dependent
          assembly del plugin package. Versión 9.0.6 = la que el sandbox real UNIFICA en runtime
          (spike 2026-07-15: shippeamos 8.0.5 y el sandbox cargó 9.0.0.6 — la plataforma provee

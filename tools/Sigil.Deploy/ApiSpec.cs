@@ -1,4 +1,4 @@
-// Especificación DECLARATIVA de las 4 Custom APIs de la Fase 2 — es la fuente única de
+// Especificación DECLARATIVA de las Custom APIs desplegadas (F2) — la fuente única de
 // verdad del despliegue y el espejo EXACTO de doc 04 §3.1/§3.2 y de las pruebas CF-D
 // (RunbookD_BackendTests). Si esto y CF-D divergen, CF-D queda rojo — por diseño.
 
@@ -9,6 +9,7 @@ namespace Sigil.Deploy;
 internal static class ParamType
 {
     public const int Boolean = 0;
+    public const int DateTime = 1;
     public const int Integer = 7;
     public const int String = 10;
     public const int Guid = 12;
@@ -54,6 +55,9 @@ internal static class Catalogo
         ("sanic_sigil_env_MaxPdfSizeKB", "20480"),
         ("sanic_sigil_env_MaxParticipants", "20"),
         ("sanic_sigil_env_ExpirationDefaultDays", "7"),
+        // JSON canónico del doc 04 §4 (umbrales iniciales de ADR-009 — calibrables por ambiente)
+        ("sanic_sigil_env_SignatureImageSpec",
+            """{ "targetWidthPx": 600, "targetHeightPx": 200, "maxKB": 150, "minAlphaRatio": 0.15, "minRmsContrast": 0.25, "minLaplacianVar": 80 }"""),
     };
 
     public static readonly CustomApiSpec[] Apis =
@@ -155,5 +159,35 @@ internal static class Catalogo
             PluginTypeName: "Sigil.Plugins.Apis.CancelTransactionPlugin",
             RequestParams: new[] { new RequestParam("Reason", ParamType.String, Optional: true) },
             ResponseProps: Array.Empty<ResponseProp>()),
+
+        new(
+            UniqueName: "sanic_sigil_capi_ValidateMasterSignature",
+            DisplayName: "Sigil | CAPI | ValidateMasterSignature",
+            Description: "Valida (ADR-009: alfa/contraste/nitidez, cómputo local) y normaliza la Firma Maestra; crea la nueva versión vigente.",
+            BindingType: Binding.Global,
+            BoundEntityLogicalName: null,
+            PluginTypeName: "Sigil.Plugins.Apis.ValidateMasterSignaturePlugin",
+            RequestParams: new[] { new RequestParam("ImageBase64", ParamType.String, Optional: false) },
+            ResponseProps: new[]
+            {
+                new ResponseProp("IsValid", ParamType.Boolean),
+                new ResponseProp("FailureReasons", ParamType.String),
+                new ResponseProp("MetricsJson", ParamType.String),
+                new ResponseProp("NormalizedImageBase64", ParamType.String),
+            }),
+
+        new(
+            UniqueName: "sanic_sigil_capi_GetMasterSignature",
+            DisplayName: "Sigil | CAPI | GetMasterSignature",
+            Description: "Devuelve el PNG normalizado de la Firma Maestra vigente del llamante (RF-01).",
+            BindingType: Binding.Global,
+            BoundEntityLogicalName: null,
+            PluginTypeName: "Sigil.Plugins.Apis.GetMasterSignaturePlugin",
+            RequestParams: Array.Empty<RequestParam>(),
+            ResponseProps: new[]
+            {
+                new ResponseProp("ImageBase64", ParamType.String),
+                new ResponseProp("ValidatedOn", ParamType.DateTime),
+            }),
     };
 }

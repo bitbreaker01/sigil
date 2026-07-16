@@ -30,7 +30,12 @@ public sealed class FileTransferDataverse(IOrganizationService servicio) : IFile
             var bloque = new byte[largo];
             Buffer.BlockCopy(bytes, offset, bloque, 0, largo);
 
-            var blockId = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+            // Base64 del índice como STRING de dígitos (patrón del SDK de Azure): la plataforma
+            // pasa el blockid a Azure Blob como query param SIN url-encodear — un '+' en el
+            // base64 llega como espacio y revienta con InvalidQueryParameterValue (cazado en
+            // CF-D08, 2026-07-16). El base64 de ASCII de dígitos jamás emite '+' ni '/'
+            // (grupos de 6 bits ≤ 57 < 62) y sin padding con largo múltiplo de 3.
+            var blockId = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes((offset / TamanoDeBloque).ToString("d6")));
             bloques.Add(blockId);
             servicio.Execute(new OrganizationRequest("UploadBlock")
             {

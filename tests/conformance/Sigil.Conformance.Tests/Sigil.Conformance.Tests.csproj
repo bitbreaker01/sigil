@@ -19,8 +19,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
     <PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.2.26" />
-    <!-- Solo para el smoke E2E (CF-D05): fabricar un PDF real que el motor acepte. -->
+    <!-- Solo para los smokes E2E: fabricar un PDF real (CF-D05/D06/D08) y una firma
+         sintética que pasa los umbrales de ADR-009 (CF-D07/D08). -->
     <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
   </ItemGroup>
 
 </Project>
