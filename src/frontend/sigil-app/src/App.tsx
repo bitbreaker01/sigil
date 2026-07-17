@@ -10,6 +10,7 @@ import { Header } from './components/Header';
 import { parseRoute, type Screen, type Route } from './lib/navigation';
 
 const Dashboard = lazy(() => import('./screens/dashboard/DashboardScreen'));
+const Detail = lazy(() => import('./screens/detail/DetailScreen'));
 const Onboarding = lazy(() => import('./screens/onboarding/OnboardingScreen'));
 const Verify = lazy(() => import('./screens/verify/VerifyScreen'));
 const CreateWizard = lazy(() => import('./screens/create/CreateWizardScreen'));
@@ -62,8 +63,12 @@ function renderScreen(route: Route, navigate: (p: Screen, txId?: string) => void
       return <CreateWizard onExit={() => navigate('dashboard')} />;
     case 'dashboard':
       return <Dashboard onNavigate={navigate} />;
+    case 'detail':
+      return route.txId
+        ? <Detail txId={route.txId} onBack={() => navigate('dashboard')} />
+        : <Placeholder screen={route.screen} onGoToOnboarding={() => navigate('onboarding')} onGoToVerify={() => navigate('verify')} />;
     default:
-      // sign / detail arrive in the next batches
+      // sign arrives in the next batch
       return <Placeholder screen={route.screen} onGoToOnboarding={() => navigate('onboarding')} onGoToVerify={() => navigate('verify')} />;
   }
 }

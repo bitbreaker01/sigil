@@ -89,7 +89,7 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
         d.pending.length === 0 ? emptyState(t('dashboard.emptyPending')) : (
           <div className={s.list}>
             {d.pending.map(({ tx }) => (
-              <TransactionCard key={tx.id} tx={tx} now={now} showDue>
+              <TransactionCard key={tx.id} tx={tx} now={now} showDue onOpen={() => props.onNavigate('detail', tx.id)}>
                 <Button appearance="primary" icon={<SignatureRegular />} onClick={() => props.onNavigate('sign', tx.id)}>
                   {t('dashboard.reviewAndSign')}
                 </Button>
@@ -104,7 +104,7 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
               <div className={s.section}>
                 <MessageBar intent="error"><MessageBarBody>{t('dashboard.needsAttention')}</MessageBarBody></MessageBar>
                 {d.sealingErrors.map((tx) => (
-                  <TransactionCard key={tx.id} tx={tx} now={now}>
+                  <TransactionCard key={tx.id} tx={tx} now={now} onOpen={() => props.onNavigate('detail', tx.id)}>
                     <Button appearance="primary" icon={<ArrowClockwiseRegular />} onClick={() => void d.retrySealing(tx.id)}>
                       {t('dashboard.retrySealing')}
                     </Button>
@@ -113,7 +113,7 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
               </div>
             )}
             {d.requests.filter((tx) => !d.sealingErrors.includes(tx)).map((tx) => (
-              <TransactionCard key={tx.id} tx={tx} now={now}>
+              <TransactionCard key={tx.id} tx={tx} now={now} onOpen={() => props.onNavigate('detail', tx.id)}>
                 {isCompleted(tx.state) && download(tx)}
                 {isSealing(tx.state) && <Text size={200} className={s.hint}>{t('dashboard.sealingNote')}</Text>}
               </TransactionCard>
@@ -127,7 +127,7 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
             <div className={s.list}>
               <Switch checked={onlyCompleted} onChange={(_e, data) => setOnlyCompleted(!!data.checked)} label={t('dashboard.onlyCompleted')} />
               {list.length === 0 ? emptyState(t('dashboard.emptyParticipations')) : list.map((tx) => (
-                <TransactionCard key={tx.id} tx={tx} now={now}>
+                <TransactionCard key={tx.id} tx={tx} now={now} onOpen={() => props.onNavigate('detail', tx.id)}>
                   {isCompleted(tx.state) && download(tx)}
                 </TransactionCard>
               ))}

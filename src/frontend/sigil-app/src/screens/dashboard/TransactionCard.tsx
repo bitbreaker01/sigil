@@ -1,7 +1,7 @@
 // A transaction card for the dashboard lists (doc 05 §4.1): name, sender, state badge, optional
 // due-date urgency (RF-27), and a slot for the context's CTAs. Presentational — all labels via i18n.
 
-import { makeStyles, tokens, Card, Text, Badge, type BadgeProps } from '@fluentui/react-components';
+import { makeStyles, tokens, Card, Text, Badge, Link, type BadgeProps } from '@fluentui/react-components';
 import { useT } from '../../i18n/useT';
 import { transactionStateOf, type TransactionState } from '../../domain/states';
 import type { TransactionView } from '../../api/SigilApi';
@@ -10,6 +10,7 @@ import { dueLevel, type DueLevel } from './dashboardModel';
 const useStyles = makeStyles({
   card: { padding: tokens.spacingVerticalM, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
   head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: tokens.spacingHorizontalM },
+  title: { fontWeight: tokens.fontWeightSemibold, textAlign: 'left' },
   meta: { color: tokens.colorNeutralForeground3 },
   actions: { display: 'flex', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
 });
@@ -36,6 +37,7 @@ export function TransactionCard(props: {
   tx: TransactionView;
   now: number;
   showDue?: boolean;
+  onOpen?: () => void; // open the detail screen
   children?: React.ReactNode; // CTAs
 }): JSX.Element {
   const s = useStyles();
@@ -47,7 +49,9 @@ export function TransactionCard(props: {
   return (
     <Card className={s.card}>
       <div className={s.head}>
-        <Text weight="semibold">{tx.name}</Text>
+        {props.onOpen
+          ? <Link appearance="subtle" onClick={props.onOpen} className={s.title}>{tx.name}</Link>
+          : <Text weight="semibold">{tx.name}</Text>}
         {stateName && <Badge appearance="tint" color={BADGE[stateName]}>{t(`transactionState.${stateName}`)}</Badge>}
       </div>
       {tx.creatorName && <Text size={200} className={s.meta}>{t('dashboard.sentBy', { name: tx.creatorName })}</Text>}
