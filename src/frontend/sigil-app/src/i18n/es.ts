@@ -11,6 +11,7 @@ export const es = {
     dashboard: 'Inicio',
     create: 'Nueva solicitud',
     verify: 'Verificar',
+    menu: 'Menú',
   },
   transactionState: {
     draft: 'Borrador',
@@ -50,9 +51,9 @@ export const es = {
     tsaAbandoned: 'Marca de tiempo abandonada',
   },
   dashboard: {
-    pendingTab: 'Pendientes por mi firma',
-    myRequestsTab: 'Mis solicitudes',
-    myParticipationsTab: 'Mis participaciones',
+    pendingTab: 'Pendientes',
+    myRequestsTab: 'Solicitudes',
+    myParticipationsTab: 'Participaciones',
     dueDate: 'Vence {{date}}',
     dueToday: 'Vence hoy',
     overdue: 'Vencido',

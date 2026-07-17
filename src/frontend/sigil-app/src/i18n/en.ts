@@ -12,6 +12,7 @@ export const en = {
     dashboard: 'Home',
     create: 'New request',
     verify: 'Verify',
+    menu: 'Menu',
   },
   transactionState: {
     draft: 'Draft',
@@ -51,9 +52,9 @@ export const en = {
     tsaAbandoned: 'Timestamp abandoned',
   },
   dashboard: {
-    pendingTab: 'Awaiting my signature',
-    myRequestsTab: 'My requests',
-    myParticipationsTab: 'My participations',
+    pendingTab: 'Pending',
+    myRequestsTab: 'Requests',
+    myParticipationsTab: 'Participations',
     dueDate: 'Due {{date}}',
     dueToday: 'Due today',
     overdue: 'Overdue',

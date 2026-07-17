@@ -17,7 +17,15 @@ import { TransactionCard } from './TransactionCard';
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL },
   topbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: tokens.spacingHorizontalM, flexWrap: 'wrap' },
-  tabs: { minWidth: 0, maxWidth: '100%', overflowX: 'auto' }, // tabs scroll instead of overflowing on phones
+  // Tabs never widen the page; if they don't fit they swipe (scrollbar hidden — the standard
+  // mobile tab-strip pattern, not a visible bar).
+  tabs: {
+    minWidth: 0,
+    maxWidth: '100%',
+    overflowX: 'auto',
+    scrollbarWidth: 'none',
+    '::-webkit-scrollbar': { display: 'none' },
+  },
   toolbar: { display: 'flex', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
   list: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM },
   empty: { padding: tokens.spacingVerticalXL, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: tokens.spacingVerticalM },

@@ -46,6 +46,7 @@ export function App(): JSX.Element {
         userName={user.fullName ?? '—'}
         navLabels={{ dashboard: t('nav.dashboard'), create: t('nav.create'), verify: t('nav.verify') }}
         toggleLangLabel={t('app.languageToggle')}
+        menuLabel={t('nav.menu')}
         currentScreen={route.screen}
         onNavigate={(p) => navigate(p)}
         onToggleLang={changeLang}

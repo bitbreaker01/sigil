@@ -9,9 +9,11 @@ import { dueLevel, type DueLevel } from './dashboardModel';
 
 const useStyles = makeStyles({
   card: { padding: tokens.spacingVerticalM, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
-  head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: tokens.spacingHorizontalM },
-  title: { fontWeight: tokens.fontWeightSemibold, textAlign: 'left' },
-  meta: { color: tokens.colorNeutralForeground3 },
+  head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: tokens.spacingHorizontalS },
+  // Title takes the remaining space and wraps; the state badge keeps its size.
+  title: { fontWeight: tokens.fontWeightSemibold, textAlign: 'left', minWidth: 0, overflowWrap: 'anywhere' },
+  badge: { flexShrink: 0 },
+  meta: { color: tokens.colorNeutralForeground3, overflowWrap: 'anywhere' },
   actions: { display: 'flex', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
 });
 
@@ -51,8 +53,8 @@ export function TransactionCard(props: {
       <div className={s.head}>
         {props.onOpen
           ? <Link appearance="subtle" onClick={props.onOpen} className={s.title}>{tx.name}</Link>
-          : <Text weight="semibold">{tx.name}</Text>}
-        {stateName && <Badge appearance="tint" color={BADGE[stateName]}>{t(`transactionState.${stateName}`)}</Badge>}
+          : <Text className={s.title}>{tx.name}</Text>}
+        {stateName && <Badge className={s.badge} appearance="tint" color={BADGE[stateName]}>{t(`transactionState.${stateName}`)}</Badge>}
       </div>
       {tx.creatorName && <Text size={200} className={s.meta}>{t('dashboard.sentBy', { name: tx.creatorName })}</Text>}
       {props.showDue && tx.expiresOn && (
