@@ -82,6 +82,7 @@ export function validateHeader(name: string, message: string | undefined, expira
   if (!name.trim()) errors.push('validation.titleRequired');
   else if (name.length > 200) errors.push('validation.titleTooLong');
   if (message && message.length > 2000) errors.push('validation.messageTooLong');
-  if (expirationDays !== undefined && expirationDays <= 0) errors.push('validation.invalidExpiration');
+  if (expirationDays !== undefined && (expirationDays <= 0 || !Number.isInteger(expirationDays)))
+    errors.push('validation.invalidExpiration');
   return errors.length ? { ok: false, errors } : ok;
 }

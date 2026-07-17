@@ -37,10 +37,10 @@ export function percentToPx(rect: RectPct, widthPx: number, heightPx: number): R
   };
 }
 
-function clamp(v: number, min: number, max: number): number {
+export function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
 }
 
-function round(v: number): number {
+export function round(v: number): number {
   return Math.round(v * 10000) / 10000; // precision 4 (doc 03 §4.3)
 }

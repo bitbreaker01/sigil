@@ -21,7 +21,17 @@ import type {
   ParticipantView,
   EventView,
   ZoneView,
+  UserSummary,
 } from './SigilApi';
+
+// A small fake directory for the people picker in dev (real impl searches Dataverse systemuser).
+const FAKE_USERS: UserSummary[] = [
+  { id: 'mock-user-0000-0000-000000000002', name: 'Ana Creator', email: 'ana@sigil.local' },
+  { id: 'mock-user-0000-0000-000000000003', name: 'Bruno Signer', email: 'bruno@sigil.local' },
+  { id: 'mock-user-0000-0000-000000000004', name: 'Carla Reviewer', email: 'carla@sigil.local' },
+  { id: 'mock-user-0000-0000-000000000005', name: 'Diego Legal', email: 'diego@sigil.local' },
+  { id: 'mock-user-0000-0000-000000000006', name: 'Elena Finance', email: 'elena@sigil.local' },
+];
 
 // A transparent 1x1 PNG in base64 (for the mock normalized preview).
 const PNG_1X1 =
@@ -51,6 +61,13 @@ export class MockSigilApi implements SigilApi {
 
   currentUser() {
     return { id: this.seed.userId, name: this.seed.userName, upn: this.seed.userUpn };
+  }
+
+  async searchUsers(query: string): Promise<UserSummary[]> {
+    await this.delay();
+    const q = query.trim().toLowerCase();
+    if (!q) return FAKE_USERS.slice(0, 5);
+    return FAKE_USERS.filter((u) => u.name.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q));
   }
 
   async validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput> {

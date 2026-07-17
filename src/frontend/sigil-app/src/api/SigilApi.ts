@@ -60,9 +60,19 @@ export interface ZoneView {
   h: number;
 }
 
+// A pickable signer (people picker). Real impl: Dataverse systemuser search; mock: fake set.
+export interface UserSummary {
+  id: string;
+  name: string;
+  email?: string;
+}
+
 export interface SigilApi {
   // Identity (getContext) — never authoritative (doc 05 §9).
   currentUser(): { id?: string; name?: string; upn?: string };
+
+  // People picker (create wizard): search selectable signers.
+  searchUsers(query: string): Promise<UserSummary[]>;
 
   // Master Signature
   validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput>;

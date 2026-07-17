@@ -11,6 +11,7 @@ import { parseRoute, type Screen, type Route } from './lib/navigation';
 
 const Onboarding = lazy(() => import('./screens/onboarding/OnboardingScreen'));
 const Verify = lazy(() => import('./screens/verify/VerifyScreen'));
+const CreateWizard = lazy(() => import('./screens/create/CreateWizardScreen'));
 const Placeholder = lazy(() => import('./screens/Placeholder'));
 
 const useStyles = makeStyles({
@@ -56,8 +57,10 @@ function renderScreen(route: Route, navigate: (p: Screen, txId?: string) => void
       return <Onboarding onBack={() => navigate('dashboard')} />;
     case 'verify':
       return <Verify initialTxId={route.txId} />;
+    case 'create':
+      return <CreateWizard onExit={() => navigate('dashboard')} />;
     default:
-      // dashboard / sign / detail / create arrive in the next batches
+      // dashboard / sign / detail arrive in the next batches
       return <Placeholder screen={route.screen} onGoToOnboarding={() => navigate('onboarding')} onGoToVerify={() => navigate('verify')} />;
   }
 }

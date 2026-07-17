@@ -25,6 +25,7 @@ import type {
   ParticipantView,
   EventView,
   ZoneView,
+  UserSummary,
 } from './SigilApi';
 
 // Schema names (doc 12) — the only schema strings in the frontend, centralized here.
@@ -49,6 +50,11 @@ export class PowerAppsSigilApi implements SigilApi {
   // exists for the seam contract; in production the UI uses the React context.
   currentUser() {
     return {};
+  }
+
+  // People picker: a systemuser datasource search (pac code add-data-source systemuser).
+  async searchUsers(_query: string): Promise<UserSummary[]> {
+    throw new Error(PENDING_DATASOURCE);
   }
 
   async validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput> {
