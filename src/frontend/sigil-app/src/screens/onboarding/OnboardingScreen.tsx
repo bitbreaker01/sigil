@@ -13,7 +13,7 @@ import {
   MessageBarBody,
   Image,
 } from '@fluentui/react-components';
-import { ArrowUpload24Regular, CheckmarkCircle24Filled } from '@fluentui/react-icons';
+import { ArrowUpload24Regular, CheckmarkCircle24Filled, ArrowLeft20Regular } from '@fluentui/react-icons';
 import { useT } from '../../i18n/useT';
 import { useOnboarding } from './useOnboarding';
 
@@ -30,7 +30,7 @@ const useStyles = makeStyles({
   reasons: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS },
 });
 
-export default function OnboardingScreen(_props: { onBack: () => void }): JSX.Element {
+export default function OnboardingScreen(props: { onBack: () => void }): JSX.Element {
   const s = useStyles();
   const { t } = useT();
   const { state, upload, formatError } = useOnboarding();
@@ -40,6 +40,7 @@ export default function OnboardingScreen(_props: { onBack: () => void }): JSX.El
 
   return (
     <Card className={s.card}>
+      <Button appearance="subtle" icon={<ArrowLeft20Regular />} onClick={props.onBack} style={{ alignSelf: 'flex-start' }}>{t('detail.back')}</Button>
       <Text size={600} weight="semibold">{t('onboarding.title')}</Text>
       <Text className={s.intro}>{t('onboarding.intro')}</Text>
 
@@ -66,6 +67,7 @@ export default function OnboardingScreen(_props: { onBack: () => void }): JSX.El
           </MessageBar>
           <Text weight="semibold">{t('onboarding.normalizedPreview')}</Text>
           <div className={s.preview}><Image src={png(state.normalized)} alt={t('onboarding.normalizedPreview')} fit="contain" /></div>
+          <Button appearance="primary" onClick={props.onBack} style={{ alignSelf: 'flex-start' }}>{t('common.continue')}</Button>
         </>
       )}
 

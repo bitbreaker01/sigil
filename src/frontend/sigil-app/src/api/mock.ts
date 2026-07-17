@@ -37,6 +37,10 @@ const FAKE_USERS: UserSummary[] = [
 const PNG_1X1 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
+// A minimal single-page PDF (Letter) so the Sign viewer can render a real document in dev.
+const SAMPLE_PDF =
+  'JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI+Pj4+L0NvbnRlbnRzIDQgMCBSPj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDU4Pj4Kc3RyZWFtCkJUIC9GMSAyNCBUZiA3MiA3MDAgVGQgKFNpZ2lsIC0gZG9jdW1lbnRvIGRlIHBydWViYSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYT4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1NCAwMDAwMCBuIAowMDAwMDAwMTA1IDAwMDAwIG4gCjAwMDAwMDAyMTcgMDAwMDAgbiAKMDAwMDAwMDMyMyAwMDAwMCBuIAp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjM4NgolJUVPRg==';
+
 interface Seed {
   userId: string;
   userName: string;
@@ -48,6 +52,7 @@ export class MockSigilApi implements SigilApi {
   private readonly participants = new Map<string, ParticipantView[]>();
   private readonly zones = new Map<string, ZoneView[]>();
   private readonly events = new Map<string, EventView[]>();
+  private readonly docs = new Map<string, string>(); // txId → PdfBase64 (kept out of the app's Query cache)
   private masterSignature: string | undefined;
   private seq = 1;
 
@@ -108,13 +113,24 @@ export class MockSigilApi implements SigilApi {
     };
     if (input.Message !== undefined) tx.message = input.Message;
     this.txs.set(id, tx);
+    this.docs.set(id, input.PdfBase64);
 
     const parsed = JSON.parse(input.ParticipantsJson) as { userId: string; order?: number }[];
-    this.participants.set(id, parsed.map((p, i): ParticipantView => {
+    const parts = parsed.map((p, i): ParticipantView => {
       const pv: ParticipantView = { id: this.newId(), userId: p.userId, state: 159460000, name: `Signer ${i + 1}` };
       if (p.order !== undefined) pv.order = p.order;
       return pv;
-    }));
+    });
+    this.participants.set(id, parts);
+
+    // Zones arrive by userId (ZonesJson); the view links to the participant record (participantId).
+    if (input.ZonesJson) {
+      const zs = JSON.parse(input.ZonesJson) as { userId: string; page: number; x: number; y: number; w: number; h: number }[];
+      this.zones.set(id, zs.flatMap((z) => {
+        const part = parts.find((p) => p.userId === z.userId);
+        return part ? [{ id: this.newId(), participantId: part.id, page: z.page, x: z.x, y: z.y, w: z.w, h: z.h }] : [];
+      }));
+    }
     this.events.set(id, [this.event(159460000, 'Request created')]);
     return id;
   }
@@ -181,9 +197,9 @@ export class MockSigilApi implements SigilApi {
     if (tx) tx.state = 159460003;
   }
 
-  async getDocumentContent(_input: GetDocumentContentInput): Promise<string> {
+  async getDocumentContent(input: GetDocumentContentInput): Promise<string> {
     await this.delay();
-    return PNG_1X1; // a placeholder — the real viewer receives a base64 PDF
+    return this.docs.get(input.Target) ?? SAMPLE_PDF;
   }
 
   async verifyDocument(input: VerifyDocumentInput): Promise<VerifyDocumentOutput> {
@@ -272,10 +288,21 @@ export class MockSigilApi implements SigilApi {
     return new Promise((r) => setTimeout(r, 120));
   }
 
-  private seedTx(tx: Omit<TransactionView, 'id'>, parts: Omit<ParticipantView, 'id'>[]): void {
+  private seedTx(
+    tx: Omit<TransactionView, 'id'>,
+    parts: Omit<ParticipantView, 'id'>[],
+    zones: { userId: string; page: number; x: number; y: number; w: number; h: number }[] = [],
+  ): void {
     const id = this.newId();
     this.txs.set(id, { ...tx, id });
-    this.participants.set(id, parts.map((p) => ({ ...p, id: this.newId() })));
+    const participants = parts.map((p) => ({ ...p, id: this.newId() }));
+    this.participants.set(id, participants);
+    if (zones.length) {
+      this.zones.set(id, zones.flatMap((z) => {
+        const part = participants.find((p) => p.userId === z.userId);
+        return part ? [{ id: this.newId(), participantId: part.id, page: z.page, x: z.x, y: z.y, w: z.w, h: z.h }] : [];
+      }));
+    }
     this.events.set(id, [this.event(159460000, 'Request created')]);
   }
 
@@ -289,11 +316,16 @@ export class MockSigilApi implements SigilApi {
     // Pending by my signature (I'm an active-turn signer) — one comfortable, one urgent (<24h).
     this.seedTx(
       { name: 'Services Agreement 2026', state: 159460001, routing: 'parallel', creatorId: ana, creatorName: 'Ana Creator', sentOn: iso(now - 2 * 86400_000), expiresOn: iso(now + 5 * 86400_000) },
-      [{ userId: me, name: meName, state: 159460001, turnActivatedOn: iso(now) }],
+      [
+        { userId: me, name: meName, state: 159460001, turnActivatedOn: iso(now) },
+        { userId: ana, name: 'Ana Creator', state: 159460002, signedOn: iso(now - 86400_000) },
+      ],
+      [{ userId: me, page: 1, x: 12, y: 78, w: 30, h: 10 }, { userId: ana, page: 1, x: 55, y: 78, w: 30, h: 10 }],
     );
     this.seedTx(
       { name: 'NDA — Project Falcon', state: 159460001, routing: 'sequential', creatorId: ana, creatorName: 'Ana Creator', sentOn: iso(now - 6 * 86400_000), expiresOn: iso(now + 12 * 3600_000) },
       [{ userId: me, name: meName, order: 1, state: 159460001, turnActivatedOn: iso(now) }],
+      [{ userId: me, page: 1, x: 30, y: 60, w: 30, h: 10 }],
     );
 
     // My requests (created by me) — Sealing, Sealing Error, Completed.

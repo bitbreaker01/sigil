@@ -11,6 +11,7 @@ import { parseRoute, type Screen, type Route } from './lib/navigation';
 
 const Dashboard = lazy(() => import('./screens/dashboard/DashboardScreen'));
 const Detail = lazy(() => import('./screens/detail/DetailScreen'));
+const Sign = lazy(() => import('./screens/sign/SignScreen'));
 const Onboarding = lazy(() => import('./screens/onboarding/OnboardingScreen'));
 const Verify = lazy(() => import('./screens/verify/VerifyScreen'));
 const CreateWizard = lazy(() => import('./screens/create/CreateWizardScreen'));
@@ -29,9 +30,14 @@ export function App(): JSX.Element {
 
   const initialRoute = useMemo(() => parseRoute(queryParams), [queryParams]);
   const [route, setRoute] = useState<Route>(initialRoute);
+  // When onboarding is opened mid-flow (e.g. from Sign without a Master Signature), remember where
+  // to return so the user lands back on that screen after configuring — doc 05 §4.3 "auto-return".
+  const [returnTo, setReturnTo] = useState<Route | undefined>(undefined);
 
   const navigate = (screen: Screen, txId?: string) =>
     setRoute(txId ? { screen, txId } : { screen });
+  const openOnboarding = (ret?: Route) => { setReturnTo(ret); setRoute({ screen: 'onboarding' }); };
+  const leaveOnboarding = () => { const r = returnTo; setReturnTo(undefined); setRoute(r ?? { screen: 'dashboard' }); };
 
   return (
     <div className={s.layout}>
@@ -46,17 +52,19 @@ export function App(): JSX.Element {
       />
       <main className={s.main}>
         <Suspense fallback={<div className={s.center}><Spinner label={t('common.loading')} /></div>}>
-          {renderScreen(route, navigate)}
+          {renderScreen(route, navigate, { openOnboarding, leaveOnboarding })}
         </Suspense>
       </main>
     </div>
   );
 }
 
-function renderScreen(route: Route, navigate: (p: Screen, txId?: string) => void): JSX.Element {
+interface Nav { openOnboarding: (ret?: Route) => void; leaveOnboarding: () => void }
+
+function renderScreen(route: Route, navigate: (p: Screen, txId?: string) => void, nav: Nav): JSX.Element {
   switch (route.screen) {
     case 'onboarding':
-      return <Onboarding onBack={() => navigate('dashboard')} />;
+      return <Onboarding onBack={nav.leaveOnboarding} />;
     case 'verify':
       return <Verify initialTxId={route.txId} />;
     case 'create':
@@ -67,8 +75,11 @@ function renderScreen(route: Route, navigate: (p: Screen, txId?: string) => void
       return route.txId
         ? <Detail txId={route.txId} onBack={() => navigate('dashboard')} />
         : <Placeholder screen={route.screen} onGoToOnboarding={() => navigate('onboarding')} onGoToVerify={() => navigate('verify')} />;
+    case 'sign':
+      return route.txId
+        ? <Sign txId={route.txId} onSigned={(txId) => navigate('detail', txId)} onNeedOnboarding={() => nav.openOnboarding(route)} onBack={() => navigate('dashboard')} />
+        : <Placeholder screen={route.screen} onGoToOnboarding={() => nav.openOnboarding()} onGoToVerify={() => navigate('verify')} />;
     default:
-      // sign arrives in the next batch
       return <Placeholder screen={route.screen} onGoToOnboarding={() => navigate('onboarding')} onGoToVerify={() => navigate('verify')} />;
   }
 }
