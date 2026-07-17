@@ -10,14 +10,14 @@ html,
 body {
   margin: 0;
   padding: 0;
-}
-
-body {
+  /* Guard on BOTH (body alone is unreliable): nothing produces a sideways scrollbar on phones. */
   overflow-x: hidden;
+  max-width: 100%;
 }
 
 #root {
   min-height: 100vh;
+  max-width: 100%;
 }
 
 img,

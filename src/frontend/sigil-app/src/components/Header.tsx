@@ -18,18 +18,18 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingInline: tokens.spacingHorizontalL,
+    gap: tokens.spacingHorizontalS,
+    paddingInline: tokens.spacingHorizontalM,
     height: '56px',
+    maxWidth: '100%', // never push the page wider than the viewport (mobile, doc §8)
     backgroundColor: tokens.colorNeutralBackground1,
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    position: 'sticky',
-    top: 0,
-    zIndex: 10,
   },
-  brand: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, cursor: 'pointer' },
+  brand: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, cursor: 'pointer', flexShrink: 0 },
   logo: { color: tokens.colorBrandForeground1 },
-  nav: { display: 'flex', gap: tokens.spacingHorizontalXS },
-  right: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM },
+  // The nav can shrink and scroll horizontally WITHIN itself instead of widening the page.
+  nav: { display: 'flex', gap: tokens.spacingHorizontalXS, minWidth: 0, overflowX: 'auto', flexShrink: 1 },
+  right: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, flexShrink: 0 },
 });
 
 export interface HeaderProps {
@@ -71,9 +71,8 @@ export function Header(props: HeaderProps): JSX.Element {
       </Toolbar>
 
       <div className={s.right}>
-        <Button appearance="subtle" icon={<Translate24Regular />} onClick={props.onToggleLang}>
-          {props.toggleLangLabel}
-        </Button>
+        {/* Icon-only: the label (target language) is the aria-label — keeps the header narrow on phones. */}
+        <Button appearance="subtle" icon={<Translate24Regular />} aria-label={props.toggleLangLabel} onClick={props.onToggleLang} />
         <Avatar name={props.userName} size={32} color="brand" />
       </div>
     </header>

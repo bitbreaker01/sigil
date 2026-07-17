@@ -20,13 +20,21 @@ import { useOnboarding } from './useOnboarding';
 const useStyles = makeStyles({
   card: { padding: tokens.spacingVerticalXL, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL },
   intro: { color: tokens.colorNeutralForeground2 },
+  // 3:1 box (600×200, the Master Signature ratio the backend normalizes to) so you see exactly
+  // how your signature will be letterboxed on documents — not its raw aspect.
   preview: {
-    maxWidth: '320px',
+    width: '100%',
+    maxWidth: '360px',
+    aspectRatio: '3 / 1',
     border: `1px solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusMedium,
     backgroundColor: tokens.colorNeutralBackground3,
-    padding: tokens.spacingVerticalM,
+    padding: tokens.spacingVerticalS,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  previewImg: { maxWidth: '100%', maxHeight: '100%' },
   reasons: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS },
 });
 
@@ -49,7 +57,7 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
       {state.phase === 'ready' && state.currentSignature && (
         <div>
           <Text weight="semibold">{t('onboarding.currentSignature')}</Text>
-          <div className={s.preview}><Image src={png(state.currentSignature)} alt={t('onboarding.currentSignature')} fit="contain" /></div>
+          <div className={s.preview}><Image className={s.previewImg} src={png(state.currentSignature)} alt={t('onboarding.currentSignature')} fit="contain" /></div>
           {state.validatedOn && (
             <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
               {t('onboarding.validatedOn', { date: new Date(state.validatedOn).toLocaleDateString() })}
@@ -66,7 +74,7 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
             <MessageBarBody><CheckmarkCircle24Filled /> {t('onboarding.success')}</MessageBarBody>
           </MessageBar>
           <Text weight="semibold">{t('onboarding.normalizedPreview')}</Text>
-          <div className={s.preview}><Image src={png(state.normalized)} alt={t('onboarding.normalizedPreview')} fit="contain" /></div>
+          <div className={s.preview}><Image className={s.previewImg} src={png(state.normalized)} alt={t('onboarding.normalizedPreview')} fit="contain" /></div>
           <Button appearance="primary" onClick={props.onBack} style={{ alignSelf: 'flex-start' }}>{t('common.continue')}</Button>
         </>
       )}

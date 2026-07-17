@@ -17,7 +17,8 @@ import { TransactionCard } from './TransactionCard';
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL },
   topbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: tokens.spacingHorizontalM, flexWrap: 'wrap' },
-  toolbar: { display: 'flex', gap: tokens.spacingHorizontalS },
+  tabs: { minWidth: 0, maxWidth: '100%', overflowX: 'auto' }, // tabs scroll instead of overflowing on phones
+  toolbar: { display: 'flex', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
   list: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM },
   empty: { padding: tokens.spacingVerticalXL, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: tokens.spacingVerticalM },
   section: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
@@ -57,7 +58,7 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
       )}
 
       <div className={s.topbar}>
-        <TabList selectedValue={tab} onTabSelect={(_e, data) => setTab(data.value as TabKey)}>
+        <TabList className={s.tabs} selectedValue={tab} onTabSelect={(_e, data) => setTab(data.value as TabKey)}>
           <Tab value="pending">{t('dashboard.pendingTab')}</Tab>
           <Tab value="requests">{t('dashboard.myRequestsTab')}</Tab>
           <Tab value="participations">{t('dashboard.myParticipationsTab')}</Tab>
