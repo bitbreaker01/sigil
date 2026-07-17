@@ -9,6 +9,7 @@ import { useT } from './i18n/useT';
 import { Header } from './components/Header';
 import { parseRoute, type Screen, type Route } from './lib/navigation';
 
+const Dashboard = lazy(() => import('./screens/dashboard/DashboardScreen'));
 const Onboarding = lazy(() => import('./screens/onboarding/OnboardingScreen'));
 const Verify = lazy(() => import('./screens/verify/VerifyScreen'));
 const CreateWizard = lazy(() => import('./screens/create/CreateWizardScreen'));
@@ -59,8 +60,10 @@ function renderScreen(route: Route, navigate: (p: Screen, txId?: string) => void
       return <Verify initialTxId={route.txId} />;
     case 'create':
       return <CreateWizard onExit={() => navigate('dashboard')} />;
+    case 'dashboard':
+      return <Dashboard onNavigate={navigate} />;
     default:
-      // dashboard / sign / detail arrive in the next batches
+      // sign / detail arrive in the next batches
       return <Placeholder screen={route.screen} onGoToOnboarding={() => navigate('onboarding')} onGoToVerify={() => navigate('verify')} />;
   }
 }

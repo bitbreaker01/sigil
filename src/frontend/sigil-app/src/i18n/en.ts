@@ -65,6 +65,13 @@ export const en = {
     createFirst: 'Create your first request',
     setUpSignature: 'Set up your Master Signature to be able to sign documents.',
     goToOnboarding: 'Set up signature',
+    emptyParticipations: "You're not part of any request yet.",
+    onlyCompleted: 'Completed only',
+    sealingNote: "In progress — we'll notify you when it finishes.",
+    refresh: 'Refresh',
+    needsAttention: 'Needs your attention',
+    stillProcessing: "Still processing — you'll be notified when it finishes.",
+    actionError: "Couldn't complete the action. Please try again.",
   },
   create: {
     steps: { pdf: 'Document', participants: 'Signers', zones: 'Signature zones', review: 'Review' },

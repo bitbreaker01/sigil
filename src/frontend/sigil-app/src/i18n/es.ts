@@ -64,6 +64,13 @@ export const es = {
     createFirst: 'Crear tu primera solicitud',
     setUpSignature: 'Configurá tu Firma Maestra para poder firmar documentos.',
     goToOnboarding: 'Configurar firma',
+    emptyParticipations: 'Todavía no participás en ninguna solicitud.',
+    onlyCompleted: 'Solo completados',
+    sealingNote: 'En proceso — te avisaremos cuando termine.',
+    refresh: 'Actualizar',
+    needsAttention: 'Requieren tu atención',
+    stillProcessing: 'Sigue en proceso — te llegará la notificación cuando termine.',
+    actionError: 'No se pudo completar la acción. Intentá de nuevo.',
   },
   create: {
     steps: { pdf: 'Documento', participants: 'Firmantes', zones: 'Zonas de firma', review: 'Revisión' },

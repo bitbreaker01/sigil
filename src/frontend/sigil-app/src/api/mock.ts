@@ -212,6 +212,8 @@ export class MockSigilApi implements SigilApi {
     return output;
   }
 
+  // Reads return fresh COPIES (like a real backend returning new JSON each call) so callers —
+  // e.g. TanStack Query's structural sharing — correctly detect changes after a mutation.
   async myPending() {
     await this.delay();
     return [...this.txs.values()]
@@ -220,25 +222,26 @@ export class MockSigilApi implements SigilApi {
         const me = (this.participants.get(tx.id) ?? []).find(
           (p) => p.userId === this.seed.userId && p.state === 159460001,
         );
-        return me ? [{ tx, participant: me }] : [];
+        return me ? [{ tx: { ...tx }, participant: { ...me } }] : [];
       });
   }
 
   async myRequests() {
     await this.delay();
-    return [...this.txs.values()].filter((tx) => tx.creatorId === this.seed.userId);
+    return [...this.txs.values()].filter((tx) => tx.creatorId === this.seed.userId).map((tx) => ({ ...tx }));
   }
 
   async myParticipations() {
     await this.delay();
-    return [...this.txs.values()].filter((tx) =>
-      (this.participants.get(tx.id) ?? []).some((p) => p.userId === this.seed.userId),
-    );
+    return [...this.txs.values()]
+      .filter((tx) => (this.participants.get(tx.id) ?? []).some((p) => p.userId === this.seed.userId))
+      .map((tx) => ({ ...tx }));
   }
 
   async getTransaction(txId: string) {
     await this.delay();
-    return this.txs.get(txId);
+    const tx = this.txs.get(txId);
+    return tx ? { ...tx } : undefined;
   }
 
   async participantsOf(txId: string) {
@@ -269,22 +272,45 @@ export class MockSigilApi implements SigilApi {
     return new Promise((r) => setTimeout(r, 120));
   }
 
+  private seedTx(tx: Omit<TransactionView, 'id'>, parts: Omit<ParticipantView, 'id'>[]): void {
+    const id = this.newId();
+    this.txs.set(id, { ...tx, id });
+    this.participants.set(id, parts.map((p) => ({ ...p, id: this.newId() })));
+    this.events.set(id, [this.event(159460000, 'Request created')]);
+  }
+
+  // A varied fixture so the dashboard's three tabs demo every case (pending/sealing/error/done).
   private seedExamples(): void {
-    const other = 'mock-user-0000-0000-000000000002';
-    const txId = this.newId();
-    this.txs.set(txId, {
-      id: txId,
-      name: 'Services Agreement 2026',
-      state: 159460001,
-      routing: 'parallel',
-      creatorId: other,
-      creatorName: 'Ana Creator',
-      sentOn: new Date(Date.now() - 2 * 86400_000).toISOString(),
-      expiresOn: new Date(Date.now() + 5 * 86400_000).toISOString(),
-    });
-    this.participants.set(txId, [
-      { id: this.newId(), userId: this.seed.userId, name: this.seed.userName, state: 159460001, turnActivatedOn: new Date().toISOString() },
-    ]);
-    this.events.set(txId, [this.event(159460000, 'Request created'), this.event(159460001, 'Sent for signature')]);
+    const me = this.seed.userId, meName = this.seed.userName;
+    const ana = 'mock-user-0000-0000-000000000002';
+    const now = Date.now();
+    const iso = (ms: number) => new Date(ms).toISOString();
+
+    // Pending by my signature (I'm an active-turn signer) — one comfortable, one urgent (<24h).
+    this.seedTx(
+      { name: 'Services Agreement 2026', state: 159460001, routing: 'parallel', creatorId: ana, creatorName: 'Ana Creator', sentOn: iso(now - 2 * 86400_000), expiresOn: iso(now + 5 * 86400_000) },
+      [{ userId: me, name: meName, state: 159460001, turnActivatedOn: iso(now) }],
+    );
+    this.seedTx(
+      { name: 'NDA — Project Falcon', state: 159460001, routing: 'sequential', creatorId: ana, creatorName: 'Ana Creator', sentOn: iso(now - 6 * 86400_000), expiresOn: iso(now + 12 * 3600_000) },
+      [{ userId: me, name: meName, order: 1, state: 159460001, turnActivatedOn: iso(now) }],
+    );
+
+    // My requests (created by me) — Sealing, Sealing Error, Completed.
+    this.seedTx(
+      { name: 'Vendor Contract Q3', state: 159460003, routing: 'parallel', creatorId: me, creatorName: meName, sentOn: iso(now - 3600_000) },
+      [{ userId: ana, name: 'Ana Creator', state: 159460002, signedOn: iso(now - 600_000) }],
+    );
+    this.seedTx(
+      { name: 'Board Resolution 12', state: 159460007, routing: 'parallel', creatorId: me, creatorName: meName, sentOn: iso(now - 7200_000) },
+      [{ userId: ana, name: 'Ana Creator', state: 159460002, signedOn: iso(now - 3600_000) }],
+    );
+    this.seedTx(
+      { name: 'Employment Offer — R. Diaz', state: 159460004, routing: 'parallel', creatorId: me, creatorName: meName, sentOn: iso(now - 10 * 86400_000), completedOn: iso(now - 8 * 86400_000) },
+      [
+        { userId: ana, name: 'Ana Creator', state: 159460002, signedOn: iso(now - 8 * 86400_000) },
+        { userId: me, name: meName, state: 159460002, signedOn: iso(now - 9 * 86400_000) },
+      ],
+    );
   }
 }
