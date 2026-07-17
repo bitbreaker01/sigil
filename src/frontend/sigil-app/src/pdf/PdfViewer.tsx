@@ -21,7 +21,9 @@ const ZOOM_STEPS = [1, 1.5, 2, 3];
 const MAX_BASE_PX = 900;
 
 const useStyles = makeStyles({
-  root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, minWidth: 0 },
+  // width:100% so the viewer fills its container (even under a flex `align-items:center` parent),
+  // instead of shrinking to the canvas's own content width.
+  root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, minWidth: 0, width: '100%' },
   bar: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacingHorizontalXS, flexWrap: 'wrap' },
   sep: { width: '1px', alignSelf: 'stretch', backgroundColor: tokens.colorNeutralStroke2, marginInline: tokens.spacingHorizontalXS },
   // Scrolls when the zoomed page is larger than the container — never widens the page itself.
