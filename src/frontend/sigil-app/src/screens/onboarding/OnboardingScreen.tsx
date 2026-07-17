@@ -12,6 +12,7 @@ import {
   MessageBar,
   MessageBarBody,
   Image,
+  Badge,
 } from '@fluentui/react-components';
 import { ArrowUpload24Regular, CheckmarkCircle24Filled, ArrowLeft20Regular } from '@fluentui/react-icons';
 import { useT } from '../../i18n/useT';
@@ -38,12 +39,17 @@ const useStyles = makeStyles({
   previewImg: { maxWidth: '100%', maxHeight: '100%' },
   reasons: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS },
   currentBlock: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
+  history: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, marginTop: tokens.spacingVerticalM },
+  historyRow: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM },
+  historyThumb: { width: '96px', aspectRatio: '3 / 1', flexShrink: 0, border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusSmall, backgroundColor: tokens.colorNeutralBackground3, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px' },
+  thumbImg: { maxWidth: '100%', maxHeight: '100%' },
+  meta: { color: tokens.colorNeutralForeground3 },
 });
 
 export default function OnboardingScreen(props: { onBack: () => void }): JSX.Element {
   const s = useStyles();
   const { t } = useT();
-  const { state, upload, formatError } = useOnboarding();
+  const { state, history, upload, formatError } = useOnboarding();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const png = (b64: string) => `data:image/png;base64,${b64}`;
@@ -103,6 +109,23 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
 
       {formatError && (
         <MessageBar intent="warning"><MessageBarBody>{t('onboarding.invalidFormat')}</MessageBarBody></MessageBar>
+      )}
+
+      {history.length > 0 && (
+        <div className={s.history}>
+          <Text weight="semibold">{t('onboarding.historyTitle')}</Text>
+          {history.map((v) => (
+            <div key={v.version} className={s.historyRow}>
+              <div className={s.historyThumb}><Image className={s.thumbImg} src={png(v.imageBase64)} alt={t('onboarding.version', { n: v.version })} fit="contain" /></div>
+              <div>
+                <Text weight="semibold">{t('onboarding.version', { n: v.version })}</Text>
+                {v.isActive && <> <Badge appearance="tint" color="success" size="small">{t('onboarding.activeVersion')}</Badge></>}
+                <br />
+                <Text size={200} className={s.meta}>{new Date(v.validatedOn).toLocaleString()}</Text>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       <div>

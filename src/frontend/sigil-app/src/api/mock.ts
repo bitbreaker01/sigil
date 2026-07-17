@@ -22,6 +22,7 @@ import type {
   EventView,
   ZoneView,
   UserSummary,
+  MasterSignatureVersion,
 } from './SigilApi';
 
 // A small fake directory for the people picker in dev (real impl searches Dataverse systemuser).
@@ -50,6 +51,7 @@ export class MockSigilApi implements SigilApi {
   private readonly events = new Map<string, EventView[]>();
   private readonly docs = new Map<string, string>(); // txId → PdfBase64 (kept out of the app's Query cache)
   private masterSignature: string | undefined;
+  private readonly signatureVersions: MasterSignatureVersion[] = []; // immutable history (doc 03 §4.5)
   private seq = 1;
 
   constructor(private readonly seed: Seed = {
@@ -83,6 +85,9 @@ export class MockSigilApi implements SigilApi {
     }
     // Echo the uploaded image back as the "normalized" preview (the real backend normalizes to
     // 600×200; the mock just shows what you uploaded so the preview isn't a stretched placeholder).
+    // Each upload is a new immutable version; the previous ones are deactivated (doc 03 §4.5).
+    this.signatureVersions.forEach((v) => (v.isActive = false));
+    this.signatureVersions.push({ version: this.signatureVersions.length + 1, imageBase64, validatedOn: new Date().toISOString(), isActive: true });
     this.masterSignature = imageBase64;
     return {
       IsValid: true,
@@ -96,6 +101,11 @@ export class MockSigilApi implements SigilApi {
     return this.masterSignature
       ? { ImageBase64: this.masterSignature, ValidatedOn: new Date().toISOString() }
       : {};
+  }
+
+  async getMasterSignatureHistory(): Promise<MasterSignatureVersion[]> {
+    await this.delay();
+    return [...this.signatureVersions].reverse().map((v) => ({ ...v })); // newest first, copies
   }
 
   async createTransaction(input: CreateTransactionInput): Promise<string> {

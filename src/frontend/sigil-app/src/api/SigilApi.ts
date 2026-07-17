@@ -67,6 +67,14 @@ export interface UserSummary {
   email?: string;
 }
 
+// One version of the user's Master Signature (immutable history, doc 03 §4.5).
+export interface MasterSignatureVersion {
+  version: number;
+  imageBase64: string;
+  validatedOn: string; // ISO UTC
+  isActive: boolean;
+}
+
 export interface SigilApi {
   // Identity (getContext) — never authoritative (doc 05 §9).
   currentUser(): { id?: string; name?: string; upn?: string };
@@ -77,6 +85,9 @@ export interface SigilApi {
   // Master Signature
   validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput>;
   getMasterSignature(): Promise<GetMasterSignatureOutput>;
+  // Immutable version history (doc 03 §4.5 — each upload is a new version). Needs a backend
+  // GetMasterSignatureHistory Custom API (not yet built); mock serves it today.
+  getMasterSignatureHistory(): Promise<MasterSignatureVersion[]>;
 
   // Lifecycle (Custom APIs)
   createTransaction(input: CreateTransactionInput): Promise<string>; // → transactionId

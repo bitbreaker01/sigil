@@ -26,6 +26,7 @@ import type {
   EventView,
   ZoneView,
   UserSummary,
+  MasterSignatureVersion,
 } from './SigilApi';
 
 // Schema names (doc 12) — the only schema strings in the frontend, centralized here.
@@ -62,6 +63,11 @@ export class PowerAppsSigilApi implements SigilApi {
   }
   async getMasterSignature(): Promise<GetMasterSignatureOutput> {
     return this.execute(CAPI.getFm, {});
+  }
+  async getMasterSignatureHistory(): Promise<MasterSignatureVersion[]> {
+    // TODO(backend): needs a `sanic_sigil_capi_GetMasterSignatureHistory` Custom API — the versions
+    // exist in Dataverse (doc 03 §4.5) but no read-all API is deployed yet.
+    throw new Error(PENDING_GENERATED);
   }
   async createTransaction(input: CreateTransactionInput): Promise<string> {
     return (await this.execute<{ TransactionId: string }>(CAPI.create, input)).TransactionId;

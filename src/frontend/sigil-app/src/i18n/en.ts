@@ -174,6 +174,9 @@ export const en = {
     invalidFormat: 'Please upload a PNG file.',
     mockupTitle: 'Preview on a document',
     mockupSignatory: 'Authorized signature',
+    historyTitle: 'Signature history',
+    version: 'Version {{n}}',
+    activeVersion: 'Active',
   },
   verify: {
     title: 'Verify a document',

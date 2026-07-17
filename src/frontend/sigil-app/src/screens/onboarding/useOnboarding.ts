@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { sigilApi } from '../../api';
+import type { MasterSignatureVersion } from '../../api/SigilApi';
 
 export type OnboardingState =
   | { phase: 'loading' }
@@ -15,12 +16,14 @@ export type OnboardingState =
 
 export interface UseOnboarding {
   state: OnboardingState;
+  history: MasterSignatureVersion[];
   upload: (file: File) => void;
   formatError: boolean;
 }
 
 export function useOnboarding(): UseOnboarding {
   const [state, setState] = useState<OnboardingState>({ phase: 'loading' });
+  const [history, setHistory] = useState<MasterSignatureVersion[]>([]);
   const [formatError, setFormatError] = useState(false);
 
   const loadCurrent = useCallback(async () => {
@@ -35,9 +38,19 @@ export function useOnboarding(): UseOnboarding {
     }
   }, []);
 
+  // History is best-effort: if the backend API isn't available (real mode), just show none.
+  const loadHistory = useCallback(async () => {
+    try {
+      setHistory(await sigilApi.getMasterSignatureHistory());
+    } catch {
+      setHistory([]);
+    }
+  }, []);
+
   useEffect(() => {
     void loadCurrent();
-  }, [loadCurrent]);
+    void loadHistory();
+  }, [loadCurrent, loadHistory]);
 
   const upload = useCallback((file: File) => {
     setFormatError(false);
@@ -54,6 +67,7 @@ export function useOnboarding(): UseOnboarding {
         const r = await sigilApi.validateMasterSignature(base64);
         if (r.IsValid && r.NormalizedImageBase64) {
           setState({ phase: 'success', normalized: r.NormalizedImageBase64 });
+          void loadHistory(); // the upload added a new version
         } else {
           // FailureReasons: one reason per line (doc 04 §3.1)
           const reasons = (r.FailureReasons ?? '').split('\n').map((m) => m.trim()).filter(Boolean);
@@ -63,7 +77,7 @@ export function useOnboarding(): UseOnboarding {
         setState({ phase: 'error', message: 'common.genericError' });
       }
     })();
-  }, []);
+  }, [loadHistory]);
 
-  return { state, upload, formatError };
+  return { state, history, upload, formatError };
 }

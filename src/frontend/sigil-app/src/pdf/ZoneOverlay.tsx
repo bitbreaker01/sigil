@@ -31,18 +31,20 @@ const useStyles = makeStyles({
   // names and never intercepts the drag.
   label: {
     position: 'absolute',
-    top: '-17px',
     left: '-2px',
-    maxWidth: '180px',
+    maxWidth: '200px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    fontSize: tokens.fontSizeBase100,
+    fontSize: tokens.fontSizeBase200,
     fontWeight: tokens.fontWeightSemibold,
-    padding: '1px 6px',
-    color: tokens.colorNeutralForegroundOnBrand,
+    lineHeight: '18px',
+    padding: '1px 8px',
+    color: '#fff',
     whiteSpace: 'nowrap',
-    borderRadius: tokens.borderRadiusSmall,
+    borderRadius: tokens.borderRadiusMedium,
+    boxShadow: '0 1px 4px rgba(0,0,0,0.45)', // lifts the pill off busy document text
     pointerEvents: 'none',
+    zIndex: 1,
   },
   handle: {
     position: 'absolute',
@@ -163,7 +165,9 @@ export function ZoneOverlay(props: {
             }}
             onPointerDown={(e) => onZonePointerDown(e, z)}
           >
-            <span className={s.label} style={{ backgroundColor: color }}>{style?.label ?? z.userId}</span>
+            {/* Solid, shadowed pill so the name reads over any document content; flips inside the
+                zone when it's flush against the page's top edge. */}
+            <span className={s.label} style={{ backgroundColor: color, top: px.yPx < 24 ? 2 : -22 }}>{style?.label ?? z.userId}</span>
             {selected && (
               <span className={s.del}>
                 <Button

@@ -173,6 +173,9 @@ export const es = {
     invalidFormat: 'Subí un archivo PNG.',
     mockupTitle: 'Vista previa sobre un documento',
     mockupSignatory: 'Firma autorizada',
+    historyTitle: 'Historial de firmas',
+    version: 'Versión {{n}}',
+    activeVersion: 'Vigente',
   },
   verify: {
     title: 'Verificar un documento',
