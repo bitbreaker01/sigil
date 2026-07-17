@@ -1,6 +1,7 @@
 // Read-only zone overlay for the Sign screen (doc 05 §4.3): the signer SEES where their signature
-// will land — their zones highlighted with a label, everyone else's shown neutral. No interaction
-// (this is consent, not editing). Coordinates via the shared %-contract on the rendered canvas.
+// will land — and, when their Master Signature is available, the actual signature is rendered INSIDE
+// their zones (stretched to fill, exactly as the sealing engine embeds it), so "what you see is what
+// gets stamped". Other signers' zones are shown neutral. No interaction (this is consent).
 
 import { makeStyles, tokens, Text } from '@fluentui/react-components';
 import { percentToPx } from '../../api/coordinates';
@@ -10,8 +11,9 @@ import type { RenderedSize } from '../../pdf/PdfPage';
 const useStyles = makeStyles({
   layer: { position: 'absolute', inset: 0, pointerEvents: 'none' },
   zone: { position: 'absolute', boxSizing: 'border-box', borderRadius: tokens.borderRadiusSmall },
-  mine: { border: `2px solid ${tokens.colorBrandStroke1}`, backgroundColor: 'rgba(15,108,189,0.18)' },
+  mine: { border: `2px solid ${tokens.colorBrandStroke1}`, backgroundColor: 'rgba(15,108,189,0.08)' },
   other: { border: `2px dashed ${tokens.colorNeutralStroke1}`, backgroundColor: 'rgba(0,0,0,0.05)' },
+  sig: { width: '100%', height: '100%', objectFit: 'fill' }, // 'fill' mirrors the backend stretch
   label: {
     position: 'absolute', top: '-18px', left: 0, whiteSpace: 'nowrap',
     fontSize: tokens.fontSizeBase100, padding: '0 4px', borderRadius: tokens.borderRadiusSmall,
@@ -25,9 +27,11 @@ export function SignZoneOverlay(props: {
   otherZones: readonly ZoneView[];
   size: RenderedSize;
   myLabel: string;
+  masterSignature?: string | undefined; // base64 PNG
 }): JSX.Element {
   const s = useStyles();
   const rect = (z: ZoneView) => percentToPx({ x: z.x, y: z.y, w: z.w, h: z.h }, props.size.width, props.size.height);
+  const sigSrc = props.masterSignature ? `data:image/png;base64,${props.masterSignature}` : undefined;
   return (
     <div className={s.layer}>
       {props.otherZones.filter((z) => z.page === props.page).map((z) => {
@@ -38,7 +42,9 @@ export function SignZoneOverlay(props: {
         const px = rect(z);
         return (
           <div key={z.id} className={`${s.zone} ${s.mine}`} style={{ left: px.xPx, top: px.yPx, width: px.wPx, height: px.hPx }}>
-            <Text className={s.label}>{props.myLabel}</Text>
+            {sigSrc
+              ? <img className={s.sig} src={sigSrc} alt={props.myLabel} />
+              : <Text className={s.label}>{props.myLabel}</Text>}
           </div>
         );
       })}

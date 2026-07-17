@@ -16,6 +16,7 @@ import {
 import { ArrowUpload24Regular, CheckmarkCircle24Filled, ArrowLeft20Regular } from '@fluentui/react-icons';
 import { useT } from '../../i18n/useT';
 import { useOnboarding } from './useOnboarding';
+import { SignatureMockup } from './SignatureMockup';
 
 const useStyles = makeStyles({
   card: { padding: tokens.spacingVerticalXL, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL },
@@ -36,6 +37,7 @@ const useStyles = makeStyles({
   },
   previewImg: { maxWidth: '100%', maxHeight: '100%' },
   reasons: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS },
+  currentBlock: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
 });
 
 export default function OnboardingScreen(props: { onBack: () => void }): JSX.Element {
@@ -55,7 +57,7 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
       {state.phase === 'loading' && <Spinner label={t('common.loading')} />}
 
       {state.phase === 'ready' && state.currentSignature && (
-        <div>
+        <div className={s.currentBlock}>
           <Text weight="semibold">{t('onboarding.currentSignature')}</Text>
           <div className={s.preview}><Image className={s.previewImg} src={png(state.currentSignature)} alt={t('onboarding.currentSignature')} fit="contain" /></div>
           {state.validatedOn && (
@@ -63,6 +65,8 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
               {t('onboarding.validatedOn', { date: new Date(state.validatedOn).toLocaleDateString() })}
             </Text>
           )}
+          <Text weight="semibold" style={{ marginTop: 8 }}>{t('onboarding.mockupTitle')}</Text>
+          <SignatureMockup signature={state.currentSignature} />
         </div>
       )}
 
@@ -75,6 +79,8 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
           </MessageBar>
           <Text weight="semibold">{t('onboarding.normalizedPreview')}</Text>
           <div className={s.preview}><Image className={s.previewImg} src={png(state.normalized)} alt={t('onboarding.normalizedPreview')} fit="contain" /></div>
+          <Text weight="semibold" style={{ marginTop: 8 }}>{t('onboarding.mockupTitle')}</Text>
+          <SignatureMockup signature={state.normalized} />
           <Button appearance="primary" onClick={props.onBack} style={{ alignSelf: 'flex-start' }}>{t('common.continue')}</Button>
         </>
       )}

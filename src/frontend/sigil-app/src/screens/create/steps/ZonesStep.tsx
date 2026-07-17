@@ -2,15 +2,16 @@
 // PDF (no default position). Provides, besides drag/resize, numeric x/y/w/h inputs (accessibility
 // + precision) and a per-signer checklist that blocks the step until every signer has a zone.
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   makeStyles, tokens, Text, Button, Spinner, Field, Input, MessageBar, MessageBarBody,
 } from '@fluentui/react-components';
-import { ChevronLeftRegular, ChevronRightRegular, CheckmarkCircleFilled, ErrorCircleRegular, EditRegular } from '@fluentui/react-icons';
+import { CheckmarkCircleFilled, ErrorCircleRegular, EditRegular } from '@fluentui/react-icons';
 import { useT } from '../../../i18n/useT';
 import { setZoneField } from '../../../pdf/zoneGeometry';
 import { usePdfDocument } from '../../../pdf/usePdfDocument';
-import { PdfPage, type RenderedSize } from '../../../pdf/PdfPage';
+import { PdfViewer } from '../../../pdf/PdfViewer';
+import type { RenderedSize } from '../../../pdf/PdfPage';
 import { ZoneOverlay, type SignerStyle } from '../../../pdf/ZoneOverlay';
 import type { CreateWizard } from '../useCreateWizard';
 
@@ -41,9 +42,10 @@ const useStyles = makeStyles({
     transition: 'transform 80ms, box-shadow 80ms',
   },
   chipOn: { transform: 'scale(1.06)', boxShadow: tokens.shadow8 },
-  pager: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, justifyContent: 'center' },
   checkRow: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS },
-  coords: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: tokens.spacingHorizontalS },
+  // minmax(0,1fr) lets the cells shrink below the input's intrinsic width (no overflow).
+  coords: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: tokens.spacingHorizontalS },
+  numInput: { minWidth: 0 },
   hint: { color: tokens.colorNeutralForeground3 },
 });
 
@@ -51,24 +53,10 @@ export function ZonesStep({ wizard }: { wizard: CreateWizard }): JSX.Element {
   const s = useStyles();
   const { t } = useT();
   const pdf = usePdfDocument(wizard.draft.pdf?.base64);
-  const [page, setPage] = useState(1);
   const [size, setSize] = useState<RenderedSize | undefined>(undefined);
   const [armed, setArmed] = useState<string | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const [width, setWidth] = useState(0); // measured before paint (useLayoutEffect) — see below
-  const viewerRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const el = viewerRef.current;
-    if (!el) return;
-    // Match the canvas to the actual container width (never wider than it), so the pointer↔canvas
-    // mapping stays 1:1 even on very narrow screens (no hard floor above the container, no flash).
-    const measure = () => setWidth(Math.max(1, Math.min(el.clientWidth, 900)));
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const onSize = useCallback((sz: RenderedSize) => setSize(sz), []);
 
   const styleMap = useMemo(() => {
     const m = new Map<string, SignerStyle>();
@@ -76,7 +64,6 @@ export function ZonesStep({ wizard }: { wizard: CreateWizard }): JSX.Element {
     return m;
   }, [wizard.draft.participants]);
 
-  const onRendered = useCallback((sz: RenderedSize) => setSize(sz), []);
   const selected = wizard.draft.zones.find((z) => z.id === selectedId);
   const armedSigner = wizard.draft.participants.find((p) => p.userId === armed);
   const armedColor = armed ? styleMap.get(armed)?.color : undefined;
@@ -99,35 +86,26 @@ export function ZonesStep({ wizard }: { wizard: CreateWizard }): JSX.Element {
         : <div className={`${s.banner} ${s.bannerIdle}`}>{t('create.pickSigner')}</div>}
 
       <div className={s.layout}>
-        <div className={s.viewer} ref={viewerRef}>
+        <div className={s.viewer}>
           {pdf.phase === 'loading' && <Spinner label={t('create.pdfProcessing')} />}
           {pdf.phase === 'error' && <MessageBar intent="error"><MessageBarBody>{t('common.genericError')}</MessageBarBody></MessageBar>}
           {pdf.phase === 'ready' && (
-            <>
-              <div className={s.pager}>
-                <Button appearance="subtle" icon={<ChevronLeftRegular />} aria-label={t('create.prev')} disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} />
-                <Text>{t('create.pageOf', { n: page, total: pdf.pageCount })}</Text>
-                <Button appearance="subtle" icon={<ChevronRightRegular />} aria-label={t('create.nextPage')} disabled={page >= pdf.pageCount} onClick={() => setPage((p) => Math.min(pdf.pageCount, p + 1))} />
-              </div>
-              {width > 0 && (
-                <PdfPage doc={pdf.doc} pageNumber={page} width={width} onRendered={onRendered}>
-                  {size && (
-                    <ZoneOverlay
-                      page={page}
-                      zones={wizard.draft.zones}
-                      size={size}
-                      styles={styleMap}
-                      armedSignerId={armed}
-                      selectedZoneId={selectedId}
-                      onSelect={setSelectedId}
-                      onAdd={(z) => { const id = wizard.addZone(z); setSelectedId(id); }}
-                      onUpdate={(id, r) => wizard.updateZone(id, r)}
-                      onRemove={(id) => { wizard.removeZone(id); setSelectedId(undefined); }}
-                    />
-                  )}
-                </PdfPage>
+            <PdfViewer doc={pdf.doc} pageCount={pdf.pageCount} onSize={onSize}>
+              {({ page, size: rsz }) => (
+                <ZoneOverlay
+                  page={page}
+                  zones={wizard.draft.zones}
+                  size={rsz}
+                  styles={styleMap}
+                  armedSignerId={armed}
+                  selectedZoneId={selectedId}
+                  onSelect={setSelectedId}
+                  onAdd={(z) => { const id = wizard.addZone(z); setSelectedId(id); }}
+                  onUpdate={(id, r) => wizard.updateZone(id, r)}
+                  onRemove={(id) => { wizard.removeZone(id); setSelectedId(undefined); }}
+                />
               )}
-            </>
+            </PdfViewer>
           )}
         </div>
 
@@ -170,11 +148,11 @@ export function ZonesStep({ wizard }: { wizard: CreateWizard }): JSX.Element {
           <Text weight="semibold">{t('create.selected')}</Text>
           {selected ? (
             <div className={s.coords}>
-              <Field label={t('create.coordX')}><Input type="number" value={round1(selected.x).toString()} onChange={(_e, d) => setCoord('x', d.value)} /></Field>
-              <Field label={t('create.coordY')}><Input type="number" value={round1(selected.y).toString()} onChange={(_e, d) => setCoord('y', d.value)} /></Field>
-              <Field label={t('create.coordW')}><Input type="number" value={round1(selected.w).toString()} onChange={(_e, d) => setCoord('w', d.value)} /></Field>
+              <Field label={t('create.coordX')}><Input className={s.numInput} type="number" value={round1(selected.x).toString()} onChange={(_e, d) => setCoord('x', d.value)} /></Field>
+              <Field label={t('create.coordY')}><Input className={s.numInput} type="number" value={round1(selected.y).toString()} onChange={(_e, d) => setCoord('y', d.value)} /></Field>
+              <Field label={t('create.coordW')}><Input className={s.numInput} type="number" value={round1(selected.w).toString()} onChange={(_e, d) => setCoord('w', d.value)} /></Field>
               {/* Height is derived from width to keep the 3:1 signature ratio — read-only. */}
-              <Field label={t('create.coordH')} hint={t('create.ratioLocked')}><Input type="number" readOnly value={round1(selected.h).toString()} /></Field>
+              <Field label={t('create.coordH')} hint={t('create.ratioLocked')}><Input className={s.numInput} type="number" readOnly value={round1(selected.h).toString()} /></Field>
             </div>
           ) : (
             <Text size={200} className={s.hint}>{t('create.noSelection')}</Text>

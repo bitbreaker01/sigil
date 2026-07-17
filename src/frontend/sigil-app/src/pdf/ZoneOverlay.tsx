@@ -27,12 +27,22 @@ const useStyles = makeStyles({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
+  // Sits ABOVE the zone (not inside it) so it stays legible even on small zones; truncates long
+  // names and never intercepts the drag.
   label: {
+    position: 'absolute',
+    top: '-17px',
+    left: '-2px',
+    maxWidth: '180px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
     fontSize: tokens.fontSizeBase100,
-    padding: '1px 4px',
+    fontWeight: tokens.fontWeightSemibold,
+    padding: '1px 6px',
     color: tokens.colorNeutralForegroundOnBrand,
     whiteSpace: 'nowrap',
-    borderBottomRightRadius: tokens.borderRadiusSmall,
+    borderRadius: tokens.borderRadiusSmall,
+    pointerEvents: 'none',
   },
   handle: {
     position: 'absolute',

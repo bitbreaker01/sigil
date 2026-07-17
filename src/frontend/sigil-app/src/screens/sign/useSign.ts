@@ -79,6 +79,7 @@ export function useSign(txId: string) {
     docError: doc.phase === 'error',
     myZones,
     otherZones,
+    masterSignature: masterSignature.data?.ImageBase64,
     needsMasterSignature: masterSignature.isSuccess && !masterSignature.data?.ImageBase64,
     loading: tx.isLoading || participants.isLoading || zones.isLoading || masterSignature.isLoading,
     notFound: tx.isSuccess && !tx.data,

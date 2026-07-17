@@ -34,8 +34,10 @@ export function App(): JSX.Element {
   // to return so the user lands back on that screen after configuring — doc 05 §4.3 "auto-return".
   const [returnTo, setReturnTo] = useState<Route | undefined>(undefined);
 
-  const navigate = (screen: Screen, txId?: string) =>
+  const navigate = (screen: Screen, txId?: string) => {
+    if (screen !== 'onboarding') setReturnTo(undefined); // drop any stale sign→onboarding return target
     setRoute(txId ? { screen, txId } : { screen });
+  };
   const openOnboarding = (ret?: Route) => { setReturnTo(ret); setRoute({ screen: 'onboarding' }); };
   const leaveOnboarding = () => { const r = returnTo; setReturnTo(undefined); setRoute(r ?? { screen: 'dashboard' }); };
 
@@ -44,7 +46,7 @@ export function App(): JSX.Element {
       <Header
         appName={t('app.name')}
         userName={user.fullName ?? '—'}
-        navLabels={{ dashboard: t('nav.dashboard'), create: t('nav.create'), verify: t('nav.verify') }}
+        navLabels={{ dashboard: t('nav.dashboard'), create: t('nav.create'), verify: t('nav.verify'), signature: t('nav.signature') }}
         toggleLangLabel={t('app.languageToggle')}
         menuLabel={t('nav.menu')}
         currentScreen={route.screen}

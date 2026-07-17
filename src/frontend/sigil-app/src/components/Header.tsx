@@ -34,7 +34,7 @@ const useStyles = makeStyles({
 export interface HeaderProps {
   appName: string;
   userName: string;
-  navLabels: { dashboard: string; create: string; verify: string };
+  navLabels: { dashboard: string; create: string; verify: string; signature: string };
   toggleLangLabel: string;
   menuLabel: string;
   currentScreen: Screen;
@@ -49,6 +49,7 @@ export function Header(props: HeaderProps): JSX.Element {
     { key: 'dashboard', label: navLabels.dashboard },
     { key: 'create', label: navLabels.create },
     { key: 'verify', label: navLabels.verify },
+    { key: 'onboarding', label: navLabels.signature },
   ];
 
   return (

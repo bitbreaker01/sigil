@@ -10,10 +10,11 @@ import {
   Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions, DialogTrigger,
   type BadgeProps,
 } from '@fluentui/react-components';
-import { ArrowLeftRegular, ArrowDownloadRegular, ArrowClockwiseRegular, DismissCircleRegular } from '@fluentui/react-icons';
+import { ArrowLeftRegular, ArrowDownloadRegular, ArrowClockwiseRegular, DismissCircleRegular, DocumentRegular } from '@fluentui/react-icons';
 import { useT } from '../../i18n/useT';
 import { transactionStateOf, type TransactionState } from '../../domain/states';
-import { isSealing } from '../dashboard/dashboardModel';
+import { isSealing, isCompleted } from '../dashboard/dashboardModel';
+import { DocumentView } from '../../pdf/DocumentView';
 import { useDetail } from './useDetail';
 import { terminationReason, canCancel, canRetry, canDownloadFinal } from './detailModel';
 import { Timeline } from './Timeline';
@@ -40,6 +41,7 @@ export default function DetailScreen(props: { txId: string; onBack: () => void }
   const d = useDetail(props.txId);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState('');
+  const [showDoc, setShowDoc] = useState(false);
 
   if (d.loading) return <Spinner label={t('common.loading')} />;
   if (d.notFound || !d.tx) {
@@ -85,6 +87,9 @@ export default function DetailScreen(props: { txId: string; onBack: () => void }
             {stateName && <Badge appearance="tint" color={BADGE[stateName]}>{t(`transactionState.${stateName}`)}</Badge>}
           </div>
           <div className={s.actions}>
+            <Button appearance="subtle" icon={<DocumentRegular />} onClick={() => setShowDoc((v) => !v)}>
+              {showDoc ? t('detail.hideDocument') : t('detail.viewDocument')}
+            </Button>
             {canDownloadFinal(tx.state) && (
               <Button icon={<ArrowDownloadRegular />} onClick={() => void d.downloadFinal()}>{t('common.download')}</Button>
             )}
@@ -107,6 +112,12 @@ export default function DetailScreen(props: { txId: string; onBack: () => void }
           <MessageBar intent="warning"><MessageBarBody>{t('detail.reason', { reason: reasonText })}</MessageBarBody></MessageBar>
         )}
       </Card>
+
+      {showDoc && (
+        <Card className={s.card}>
+          <DocumentView txId={tx.id} documentType={isCompleted(tx.state) ? 'final' : 'content'} />
+        </Card>
+      )}
 
       <Card className={s.card}>
         <Text weight="semibold">{t('detail.participants')}</Text>
