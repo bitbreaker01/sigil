@@ -6,8 +6,8 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { makeStyles, tokens, Button } from '@fluentui/react-components';
 import { Delete16Regular } from '@fluentui/react-icons';
-import { pxToPercent, percentToPx, type RectPct } from '../api/coordinates';
-import { moveZone, resizeZone } from './zoneGeometry';
+import { percentToPx, type RectPct } from '../api/coordinates';
+import { makeZone, moveZone, resizeZone } from './zoneGeometry';
 import type { WizardZone } from '../screens/create/createWizardModel';
 import type { RenderedSize } from './PdfPage';
 
@@ -105,15 +105,16 @@ export function ZoneOverlay(props: {
     if (!d) return;
     const p = localPx(e);
     if (d.mode === 'draw') {
+      if (Math.abs(p.x - d.startX) < 4 && Math.abs(p.y - d.startY) < 4) return; // ignore a click
+      // Ratio-locked preview: the drawn width sets the size; height follows 3:1 (makeZone).
       const xPx = Math.min(d.startX, p.x);
       const yPx = Math.min(d.startY, p.y);
-      const wPx = Math.abs(p.x - d.startX);
-      const hPx = Math.abs(p.y - d.startY);
-      setPreview(pxToPercent({ xPx, yPx, wPx, hPx }, size.width, size.height));
+      const wPct = (Math.abs(p.x - d.startX) / size.width) * 100;
+      setPreview(makeZone((xPx / size.width) * 100, (yPx / size.height) * 100, wPct, size));
     } else {
       const dxPct = ((p.x - d.startX) / size.width) * 100;
       const dyPct = ((p.y - d.startY) / size.height) * 100;
-      props.onUpdate(d.id, d.mode === 'move' ? moveZone(d.orig, dxPct, dyPct) : resizeZone(d.orig, dxPct, dyPct));
+      props.onUpdate(d.id, d.mode === 'move' ? moveZone(d.orig, dxPct, dyPct) : resizeZone(d.orig, dxPct, dyPct, size));
     }
   };
 
