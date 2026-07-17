@@ -225,6 +225,19 @@ internal static class Catalogo
             }),
 
         new(
+            UniqueName: "sanic_sigil_capi_GetMasterSignatureHistory",
+            DisplayName: "Sigil | CAPI | GetMasterSignatureHistory",
+            Description: "Historial de versiones de la Firma Maestra del llamante (versionado inmutable, doc 03 §4.5). Out: HistoryJson.",
+            BindingType: Binding.Global,
+            BoundEntityLogicalName: null,
+            PluginTypeName: "Sigil.Plugins.Apis.GetMasterSignatureHistoryPlugin",
+            RequestParams: Array.Empty<RequestParam>(),
+            ResponseProps: new[]
+            {
+                new ResponseProp("HistoryJson", ParamType.String),
+            }),
+
+        new(
             UniqueName: "sanic_sigil_capi_VerifyDocument",
             DisplayName: "Sigil | CAPI | VerifyDocument",
             Description: "Verificación (RF-20/21, ADR-007): constancia + veredicto contra finalhash + verificación cruzada del historial.",

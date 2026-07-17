@@ -42,6 +42,7 @@ const CAPI = {
   getDoc: 'sanic_sigil_capi_GetDocumentContent',
   validateFm: 'sanic_sigil_capi_ValidateMasterSignature',
   getFm: 'sanic_sigil_capi_GetMasterSignature',
+  getFmHistory: 'sanic_sigil_capi_GetMasterSignatureHistory',
   verify: 'sanic_sigil_capi_VerifyDocument',
 } as const;
 
@@ -65,8 +66,8 @@ export class PowerAppsSigilApi implements SigilApi {
     return this.execute(CAPI.getFm, {});
   }
   async getMasterSignatureHistory(): Promise<MasterSignatureVersion[]> {
-    // TODO(backend): needs a `sanic_sigil_capi_GetMasterSignatureHistory` Custom API — the versions
-    // exist in Dataverse (doc 03 §4.5) but no read-all API is deployed yet.
+    // Wire to sanic_sigil_capi_GetMasterSignatureHistory once its client is generated:
+    //   return JSON.parse((await this.execute<{ HistoryJson: string }>(CAPI.getFmHistory, {})).HistoryJson);
     throw new Error(PENDING_GENERATED);
   }
   async createTransaction(input: CreateTransactionInput): Promise<string> {

@@ -85,8 +85,8 @@ export interface SigilApi {
   // Master Signature
   validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput>;
   getMasterSignature(): Promise<GetMasterSignatureOutput>;
-  // Immutable version history (doc 03 §4.5 — each upload is a new version). Needs a backend
-  // GetMasterSignatureHistory Custom API (not yet built); mock serves it today.
+  // Immutable version history (doc 03 §4.5 — each upload is a new version). Backed by the
+  // sanic_sigil_capi_GetMasterSignatureHistory Custom API (returns HistoryJson); mock serves it now.
   getMasterSignatureHistory(): Promise<MasterSignatureVersion[]>;
 
   // Lifecycle (Custom APIs)

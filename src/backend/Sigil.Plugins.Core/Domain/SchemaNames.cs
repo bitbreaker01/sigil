@@ -130,6 +130,7 @@ public static class SchemaNames
         public const string CancelTransaction = "sanic_sigil_capi_CancelTransaction";
         public const string ValidateMasterSignature = "sanic_sigil_capi_ValidateMasterSignature";
         public const string GetMasterSignature = "sanic_sigil_capi_GetMasterSignature";
+        public const string GetMasterSignatureHistory = "sanic_sigil_capi_GetMasterSignatureHistory";
         public const string RetrySealing = "sanic_sigil_capi_RetrySealing";
         public const string VerifyDocument = "sanic_sigil_capi_VerifyDocument";
         public const string ExpireTransactions = "sanic_sigil_capi_ExpireTransactions";

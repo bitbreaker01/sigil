@@ -50,6 +50,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_CancelTransaction", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
         { "sanic_sigil_capi_ValidateMasterSignature", 0, null, PrivilegioDeUsuario },
         { "sanic_sigil_capi_GetMasterSignature", 0, null, PrivilegioDeUsuario },
+        { "sanic_sigil_capi_GetMasterSignatureHistory", 0, null, PrivilegioDeUsuario },
         { "sanic_sigil_capi_RetrySealing", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
         { "sanic_sigil_capi_VerifyDocument", 0, null, PrivilegioDeUsuario },
         // Jobs: privilegio de SERVICIO — un usuario común no puede invocarlos (doc 04 §3.2)
@@ -138,6 +139,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_ValidateMasterSignature", "NormalizedImageBase64", 10 },
         { "sanic_sigil_capi_GetMasterSignature", "ImageBase64", 10 },
         { "sanic_sigil_capi_GetMasterSignature", "ValidatedOn", 1 },
+        { "sanic_sigil_capi_GetMasterSignatureHistory", "HistoryJson", 10 },
         // F2.4
         { "sanic_sigil_capi_VerifyDocument", "Found", 0 },
         { "sanic_sigil_capi_VerifyDocument", "IsIntact", 0 },

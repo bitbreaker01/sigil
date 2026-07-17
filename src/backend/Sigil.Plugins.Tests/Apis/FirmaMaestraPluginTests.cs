@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Text.Json;
 using Microsoft.Xrm.Sdk;
 using Sigil.Plugins.Apis;
 using Sigil.Plugins.Core.Domain;
@@ -35,6 +36,14 @@ public class FirmaMaestraPluginTests
         _arnes.Contexto.OutputParameters.Clear();
         _arnes.Contexto.InputParameters.Clear();
         _arnes.Ejecutar(new GetMasterSignaturePlugin(), SchemaNames.Apis.GetMasterSignature, llamante);
+    }
+
+    private JsonElement Historial(Guid llamante)
+    {
+        _arnes.Contexto.OutputParameters.Clear();
+        _arnes.Contexto.InputParameters.Clear();
+        _arnes.Ejecutar(new GetMasterSignatureHistoryPlugin(), SchemaNames.Apis.GetMasterSignatureHistory, llamante);
+        return JsonDocument.Parse((string)_arnes.Contexto.OutputParameters["HistoryJson"]).RootElement.Clone();
     }
 
     [Fact]
@@ -164,5 +173,42 @@ public class FirmaMaestraPluginTests
         Obtener(otra);
 
         Assert.False(_arnes.Contexto.OutputParameters.Contains("ImageBase64"));
+    }
+
+    [Fact] // sin firmas: historial vacío, no es un error
+    public void History_SinFirmas_DevuelveArrayVacio()
+    {
+        var arr = Historial(_usuario);
+        Assert.Equal(JsonValueKind.Array, arr.ValueKind);
+        Assert.Equal(0, arr.GetArrayLength());
+    }
+
+    [Fact] // doc 03 §4.5: todas las versiones, más nueva primero, con la vigente marcada y su imagen
+    public void History_TrasDosCargas_DevuelveAmbasVersiones_MasNuevaPrimero_ConVigenteMarcada()
+    {
+        var png = Convert.ToBase64String(ArnesDeApi.PngDeFirmaQueValida());
+        Validar(png, _usuario);
+        Validar(png, _usuario);
+
+        var arr = Historial(_usuario);
+
+        Assert.Equal(2, arr.GetArrayLength());
+        Assert.Equal(2, arr[0].GetProperty("version").GetInt32()); // más nueva primero
+        Assert.True(arr[0].GetProperty("isActive").GetBoolean());
+        Assert.Equal(1, arr[1].GetProperty("version").GetInt32());
+        Assert.False(arr[1].GetProperty("isActive").GetBoolean()); // la anterior quedó desactivada
+        Assert.False(string.IsNullOrEmpty(arr[0].GetProperty("imageBase64").GetString())); // trae el PNG
+        Assert.NotEqual("0001-01-01T00:00:00.0000000", arr[0].GetProperty("validatedOn").GetString());
+    }
+
+    [Fact] // doc 04 §3.3: el historial es SOLO el propio
+    public void History_SoloDelLlamante_NoDeOtro()
+    {
+        Validar(Convert.ToBase64String(ArnesDeApi.PngDeFirmaQueValida()), _usuario);
+        var otra = _arnes.SembrarUsuario("Otra Persona", "otra@bac.test");
+
+        var arr = Historial(otra);
+
+        Assert.Equal(0, arr.GetArrayLength());
     }
 }

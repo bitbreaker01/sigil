@@ -113,6 +113,19 @@ public static class Consultas
         return servicio.RetrieveMultiple(query).Entities.ToList();
     }
 
+    /// <summary>Historial completo del usuario para mostrar (incluye la fecha), más nuevo primero.</summary>
+    public static IReadOnlyList<Entity> HistorialDeFirmaDe(IOrganizationService servicio, Guid userId)
+    {
+        var query = new QueryExpression(SchemaNames.FirmaMaestra.Entidad)
+        {
+            ColumnSet = new ColumnSet(
+                SchemaNames.FirmaMaestra.Version, SchemaNames.FirmaMaestra.IsActive, SchemaNames.FirmaMaestra.ValidatedOn),
+        };
+        query.Criteria.AddCondition(SchemaNames.FirmaMaestra.UserId, ConditionOperator.Equal, userId);
+        query.AddOrder(SchemaNames.FirmaMaestra.Version, OrderType.Descending);
+        return servicio.RetrieveMultiple(query).Entities.ToList();
+    }
+
     /// <summary>
     /// GrantAccess de LECTURA (doc 03 §2): la cascada de Share solo cubre hijos existentes
     /// al momento del share — los eventos posteriores se comparten explícitamente acá.
