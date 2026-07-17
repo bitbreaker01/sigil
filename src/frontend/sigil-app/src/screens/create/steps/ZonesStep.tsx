@@ -2,7 +2,7 @@
 // PDF (no default position). Provides, besides drag/resize, numeric x/y/w/h inputs (accessibility
 // + precision) and a per-signer checklist that blocks the step until every signer has a zone.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   makeStyles, tokens, Text, Button, Spinner, Field, Input, MessageBar, MessageBarBody,
 } from '@fluentui/react-components';
@@ -21,8 +21,10 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM },
   layout: { display: 'flex', gap: tokens.spacingHorizontalL, flexWrap: 'wrap' },
-  viewer: { flexGrow: 1, minWidth: '320px' },
-  side: { width: '260px', display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM },
+  // minWidth:0 lets these flex children shrink below their content on phones (no horizontal overflow);
+  // flexBasis keeps the desktop two-column feel, wrapping to stacked full-width columns on mobile.
+  viewer: { flexGrow: 3, flexBasis: '320px', minWidth: 0 },
+  side: { flexGrow: 1, flexBasis: '240px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM },
   banner: {
     display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS,
     padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
@@ -53,14 +55,14 @@ export function ZonesStep({ wizard }: { wizard: CreateWizard }): JSX.Element {
   const [size, setSize] = useState<RenderedSize | undefined>(undefined);
   const [armed, setArmed] = useState<string | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const [width, setWidth] = useState(680);
+  const [width, setWidth] = useState(0); // measured before paint (useLayoutEffect) — see below
   const viewerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = viewerRef.current;
     if (!el) return;
     // Match the canvas to the actual container width (never wider than it), so the pointer↔canvas
-    // mapping stays 1:1 even on very narrow screens (no hard floor above the container).
+    // mapping stays 1:1 even on very narrow screens (no hard floor above the container, no flash).
     const measure = () => setWidth(Math.max(1, Math.min(el.clientWidth, 900)));
     measure();
     const ro = new ResizeObserver(measure);
@@ -107,22 +109,24 @@ export function ZonesStep({ wizard }: { wizard: CreateWizard }): JSX.Element {
                 <Text>{t('create.pageOf', { n: page, total: pdf.pageCount })}</Text>
                 <Button appearance="subtle" icon={<ChevronRightRegular />} aria-label={t('create.nextPage')} disabled={page >= pdf.pageCount} onClick={() => setPage((p) => Math.min(pdf.pageCount, p + 1))} />
               </div>
-              <PdfPage doc={pdf.doc} pageNumber={page} width={width} onRendered={onRendered}>
-                {size && (
-                  <ZoneOverlay
-                    page={page}
-                    zones={wizard.draft.zones}
-                    size={size}
-                    styles={styleMap}
-                    armedSignerId={armed}
-                    selectedZoneId={selectedId}
-                    onSelect={setSelectedId}
-                    onAdd={(z) => { const id = wizard.addZone(z); setSelectedId(id); }}
-                    onUpdate={(id, r) => wizard.updateZone(id, r)}
-                    onRemove={(id) => { wizard.removeZone(id); setSelectedId(undefined); }}
-                  />
-                )}
-              </PdfPage>
+              {width > 0 && (
+                <PdfPage doc={pdf.doc} pageNumber={page} width={width} onRendered={onRendered}>
+                  {size && (
+                    <ZoneOverlay
+                      page={page}
+                      zones={wizard.draft.zones}
+                      size={size}
+                      styles={styleMap}
+                      armedSignerId={armed}
+                      selectedZoneId={selectedId}
+                      onSelect={setSelectedId}
+                      onAdd={(z) => { const id = wizard.addZone(z); setSelectedId(id); }}
+                      onUpdate={(id, r) => wizard.updateZone(id, r)}
+                      onRemove={(id) => { wizard.removeZone(id); setSelectedId(undefined); }}
+                    />
+                  )}
+                </PdfPage>
+              )}
             </>
           )}
         </div>

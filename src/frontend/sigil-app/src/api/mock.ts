@@ -33,10 +33,6 @@ const FAKE_USERS: UserSummary[] = [
   { id: 'mock-user-0000-0000-000000000006', name: 'Elena Finance', email: 'elena@sigil.local' },
 ];
 
-// A transparent 1x1 PNG in base64 (for the mock normalized preview).
-const PNG_1X1 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-
 // A minimal single-page PDF (Letter) so the Sign viewer can render a real document in dev.
 const SAMPLE_PDF =
   'JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI+Pj4+L0NvbnRlbnRzIDQgMCBSPj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDU4Pj4Kc3RyZWFtCkJUIC9GMSAyNCBUZiA3MiA3MDAgVGQgKFNpZ2lsIC0gZG9jdW1lbnRvIGRlIHBydWViYSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYT4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1NCAwMDAwMCBuIAowMDAwMDAwMTA1IDAwMDAwIG4gCjAwMDAwMDAyMTcgMDAwMDAgbiAKMDAwMDAwMDMyMyAwMDAwMCBuIAp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjM4NgolJUVPRg==';
@@ -85,11 +81,13 @@ export class MockSigilApi implements SigilApi {
         MetricsJson: '{"alphaRatio":0.9,"rmsContrast":0.1,"laplacianVariance":10}',
       };
     }
-    this.masterSignature = PNG_1X1;
+    // Echo the uploaded image back as the "normalized" preview (the real backend normalizes to
+    // 600×200; the mock just shows what you uploaded so the preview isn't a stretched placeholder).
+    this.masterSignature = imageBase64;
     return {
       IsValid: true,
       MetricsJson: '{"alphaRatio":0.4,"rmsContrast":0.9,"laplacianVariance":2000}',
-      NormalizedImageBase64: PNG_1X1,
+      NormalizedImageBase64: imageBase64,
     };
   }
 

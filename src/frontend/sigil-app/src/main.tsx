@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import './index.css';
 import { FluentProvider, webLightTheme, Toaster } from '@fluentui/react-components';
 import { TOASTER_ID } from './app/toast';
 import { QueryClientProvider } from '@tanstack/react-query';

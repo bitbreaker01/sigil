@@ -3,7 +3,7 @@
 // hard gate to onboarding when there's no Master Signature. On success a differentiated toast
 // (by IsLastSigner) is shown and the user is routed to the detail screen.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import {
   makeStyles, tokens, Card, Text, Button, Spinner, Textarea,
   MessageBar, MessageBarBody, MessageBarActions,
@@ -37,12 +37,12 @@ export default function SignScreen(props: { txId: string; onSigned: (txId: strin
   const pdf = usePdfDocument(sign.documentBase64);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState<RenderedSize | undefined>(undefined);
-  const [width, setWidth] = useState(680);
+  const [width, setWidth] = useState(0); // measured before paint (useLayoutEffect) — no flash at a too-wide default
   const [rejectOpen, setRejectOpen] = useState(false);
   const [reason, setReason] = useState('');
   const viewerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = viewerRef.current;
     if (!el) return;
     const measure = () => setWidth(Math.max(1, Math.min(el.clientWidth, 800)));
@@ -128,9 +128,11 @@ export default function SignScreen(props: { txId: string; onSigned: (txId: strin
                   <Text>{t('create.pageOf', { n: page, total: pageCount })}</Text>
                   <Button appearance="subtle" icon={<ChevronRightRegular />} aria-label={t('create.nextPage')} disabled={page >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))} />
                 </div>
-                <PdfPage doc={pdf.doc} pageNumber={page} width={width} onRendered={onRendered}>
-                  {size && <SignZoneOverlay page={page} myZones={sign.myZones} otherZones={sign.otherZones} size={size} myLabel={t('sign.yourZones')} />}
-                </PdfPage>
+                {width > 0 && (
+                  <PdfPage doc={pdf.doc} pageNumber={page} width={width} onRendered={onRendered}>
+                    {size && <SignZoneOverlay page={page} myZones={sign.myZones} otherZones={sign.otherZones} size={size} myLabel={t('sign.yourZones')} />}
+                  </PdfPage>
+                )}
               </>
             )}
         </div>

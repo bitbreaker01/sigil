@@ -1,0 +1,28 @@
+/* Global reset (doc 05 §8 mobile): border-box sizing, no body margin, and a horizontal-overflow
+   guard so nothing produces a sideways scrollbar on phones. Media elements never exceed their box. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+img,
+canvas,
+svg,
+video {
+  max-width: 100%;
+}
