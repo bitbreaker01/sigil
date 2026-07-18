@@ -75,9 +75,15 @@ export interface GetMasterSignatureOutput {
   ValidatedOn?: string; // ISO UTC
 }
 
+// Two verification modes (doc 04 §3.1):
+//  - by TransactionId (arrived via QR / Detail): compare the file hash to THAT sealed record;
+//    without Sha256Hash ⇒ certificate only.
+//  - by Sha256Hash alone (drop any sealed PDF): ledger lookup by hash — the backend finds the
+//    sealed record whose finalhash matches (like Adobe/DocuSign). Found ⇒ authentic & intact.
+// At least one field must be present.
 export interface VerifyDocumentInput {
-  TransactionId: string;
-  Sha256Hash?: string; // 64 hex; without it = certificate only
+  TransactionId?: string;
+  Sha256Hash?: string; // 64 hex
 }
 export interface VerifyDocumentOutput {
   Found: boolean;

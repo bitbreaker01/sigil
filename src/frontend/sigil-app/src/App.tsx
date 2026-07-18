@@ -76,7 +76,7 @@ function renderScreen(route: Route, navigate: (p: Screen, txId?: string) => void
       return <Dashboard onNavigate={navigate} />;
     case 'detail':
       return route.txId
-        ? <Detail txId={route.txId} onBack={() => navigate('dashboard')} />
+        ? <Detail txId={route.txId} onBack={() => navigate('dashboard')} onVerify={(txId) => navigate('verify', txId)} />
         : <Placeholder screen={route.screen} onGoToOnboarding={() => navigate('onboarding')} onGoToVerify={() => navigate('verify')} />;
     case 'sign':
       return route.txId

@@ -5,12 +5,12 @@
 
 import { useState } from 'react';
 import {
-  makeStyles, tokens, Card, Text, Button, Spinner, Badge, Divider, Textarea,
+  makeStyles, tokens, Card, Text, Button, Spinner, Badge, Divider, Textarea, TabList, Tab,
   MessageBar, MessageBarBody, MessageBarActions,
   Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions, DialogTrigger,
-  type BadgeProps,
+  type BadgeProps, type SelectTabData,
 } from '@fluentui/react-components';
-import { ArrowLeftRegular, ArrowDownloadRegular, ArrowClockwiseRegular, DismissCircleRegular, DocumentRegular } from '@fluentui/react-icons';
+import { ArrowLeftRegular, ArrowDownloadRegular, ArrowClockwiseRegular, DismissCircleRegular, DocumentRegular, ShieldCheckmarkRegular } from '@fluentui/react-icons';
 import { useT } from '../../i18n/useT';
 import { transactionStateOf, type TransactionState } from '../../domain/states';
 import { isSealing, isCompleted } from '../dashboard/dashboardModel';
@@ -35,13 +35,14 @@ const useStyles = makeStyles({
   sectionTitle: { marginTop: tokens.spacingVerticalS },
 });
 
-export default function DetailScreen(props: { txId: string; onBack: () => void }): JSX.Element {
+export default function DetailScreen(props: { txId: string; onBack: () => void; onVerify: (txId: string) => void }): JSX.Element {
   const s = useStyles();
   const { t } = useT();
   const d = useDetail(props.txId);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [showDoc, setShowDoc] = useState(false);
+  const [docVersion, setDocVersion] = useState<'final' | 'content'>('final'); // which version the viewer shows
 
   if (d.loading) return <Spinner label={t('common.loading')} />;
   if (d.notFound || !d.tx) {
@@ -91,7 +92,13 @@ export default function DetailScreen(props: { txId: string; onBack: () => void }
               {showDoc ? t('detail.hideDocument') : t('detail.viewDocument')}
             </Button>
             {canDownloadFinal(tx.state) && (
-              <Button icon={<ArrowDownloadRegular />} onClick={() => void d.downloadFinal()}>{t('common.download')}</Button>
+              <>
+                <Button icon={<ArrowDownloadRegular />} onClick={() => void d.download('final', t('detail.versionSigned'))}>{t('detail.downloadSigned')}</Button>
+                <Button appearance="subtle" icon={<ArrowDownloadRegular />} onClick={() => void d.download('content', t('detail.versionOriginal'))}>{t('detail.downloadOriginal')}</Button>
+              </>
+            )}
+            {isCompleted(tx.state) && (
+              <Button icon={<ShieldCheckmarkRegular />} onClick={() => props.onVerify(tx.id)}>{t('detail.verifyDocument')}</Button>
             )}
             {canRetry(d.isCreator, tx.state) && (
               <Button appearance="primary" icon={<ArrowClockwiseRegular />} onClick={() => void d.retrySealing()}>{t('dashboard.retrySealing')}</Button>
@@ -115,7 +122,16 @@ export default function DetailScreen(props: { txId: string; onBack: () => void }
 
       {showDoc && (
         <Card className={s.card}>
-          <DocumentView txId={tx.id} documentType={isCompleted(tx.state) ? 'final' : 'content'} />
+          {isCompleted(tx.state) && (
+            <TabList
+              selectedValue={docVersion}
+              onTabSelect={(_e, data: SelectTabData) => setDocVersion(data.value as 'final' | 'content')}
+            >
+              <Tab value="final">{t('detail.versionSigned')}</Tab>
+              <Tab value="content">{t('detail.versionOriginal')}</Tab>
+            </TabList>
+          )}
+          <DocumentView txId={tx.id} documentType={isCompleted(tx.state) ? docVersion : 'content'} />
         </Card>
       )}
 

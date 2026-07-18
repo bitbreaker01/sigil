@@ -65,11 +65,12 @@ export function useDetail(txId: string) {
     }
   }, [txId, invalidate]);
 
-  const downloadFinal = useCallback(async () => {
+  // `versionLabel` is the localized version name for the file name (RNF-06: no hardcoded strings).
+  const download = useCallback(async (documentType: 'content' | 'final', versionLabel: string) => {
     setActionError(false);
     try {
-      const base64 = await sigilApi.getDocumentContent({ Target: txId, DocumentType: 'final' });
-      await downloadBase64(base64, `${tx.data?.name || 'document'}.pdf`, 'application/pdf');
+      const base64 = await sigilApi.getDocumentContent({ Target: txId, DocumentType: documentType });
+      await downloadBase64(base64, `${tx.data?.name || 'document'} (${versionLabel}).pdf`, 'application/pdf');
     } catch {
       setActionError(true);
     }
@@ -97,7 +98,7 @@ export function useDetail(txId: string) {
     actionError,
     cancel,
     retrySealing,
-    downloadFinal,
+    download,
     refresh,
     dismissActionError: useCallback(() => setActionError(false), []),
   };

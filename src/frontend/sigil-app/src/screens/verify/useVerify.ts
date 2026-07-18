@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { sigilApi } from '../../api';
 import { sha256Hex, readFile } from '../../api/binaries';
-import type { VerifyMetadata, SignerSummary } from '../../api/contracts';
+import type { VerifyDocumentInput, VerifyMetadata, SignerSummary } from '../../api/contracts';
 
 export interface Certificate {
   found: boolean;
@@ -71,17 +71,14 @@ export function useVerify(initialTxId?: string) {
   }, []);
 
   const verifyFile = useCallback(async (file: File, txId?: string) => {
-    // If there's no txId (drag&drop without deep link), per-file verification requires the
-    // document's txId — which in Sigil arrives via the QR. Without txId there's nothing to
-    // compare against, so we fail fast BEFORE hashing (no wasted compute).
-    if (!txId) {
-      setState({ phase: 'error', message: 'verify.missingTxId' });
-      return;
-    }
+    // The file is hashed locally (it never leaves the browser) and only the 64-hex hash travels.
+    // With a txId (QR / detail) we verify against THAT record; without it we let the backend find
+    // the sealed record by its hash (ledger lookup) — drop any sealed PDF and get a verdict.
     setState({ phase: 'computing' });
     try {
-      const hash = await sha256Hex(await readFile(file)); // the file doesn't leave the browser
-      const r = await sigilApi.verifyDocument({ TransactionId: txId, Sha256Hash: hash });
+      const hash = await sha256Hex(await readFile(file));
+      const input: VerifyDocumentInput = txId ? { TransactionId: txId, Sha256Hash: hash } : { Sha256Hash: hash };
+      const r = await sigilApi.verifyDocument(input);
       setState({ phase: 'result', certificate: buildCertificate(r.MetadataJson, r.Found, r.IsIntact, r.TsaTokenBase64) });
     } catch {
       setState({ phase: 'error', message: 'common.genericError' });

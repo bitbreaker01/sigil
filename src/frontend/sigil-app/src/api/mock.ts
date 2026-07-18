@@ -24,6 +24,7 @@ import type {
   UserSummary,
   MasterSignatureVersion,
 } from './SigilApi';
+import { base64ToBytes, sha256Hex } from './binaries';
 
 // A small fake directory for the people picker in dev (real impl searches Dataverse systemuser).
 const FAKE_USERS: UserSummary[] = [
@@ -35,8 +36,16 @@ const FAKE_USERS: UserSummary[] = [
 ];
 
 // A minimal single-page PDF (Letter) so the Sign viewer can render a real document in dev.
+// This is the ORIGINAL (content) — the document before signatures.
 const SAMPLE_PDF =
   'JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI+Pj4+L0NvbnRlbnRzIDQgMCBSPj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDU4Pj4Kc3RyZWFtCkJUIC9GMSAyNCBUZiA3MiA3MDAgVGQgKFNpZ2lsIC0gZG9jdW1lbnRvIGRlIHBydWViYSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYT4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1NCAwMDAwMCBuIAowMDAwMDAwMTA1IDAwMDAwIG4gCjAwMDAwMDAyMTcgMDAwMDAgbiAKMDAwMDAwMDMyMyAwMDAwMCBuIAp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjM4NgolJUVPRg==';
+
+// The FINAL (sealed) version — visibly different text so the "signed" vs "original" toggle shows a
+// real difference in dev. The real backend COMPOSES the signatures onto the content and seals it;
+// the mock can't render signatures, so it serves this distinct placeholder. Verify targets THIS
+// (the sealed document you download and check), so its SHA-256 is the mock's "finalhash".
+const SAMPLE_FINAL_PDF =
+  'JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNSAwIFI+Pj4+L0NvbnRlbnRzIDQgMCBSPj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDIwMD4+CnN0cmVhbQpCVCAvRjEgMjAgVGYgNzIgNzIwIFRkIChTaWdpbCAtIERPQ1VNRU5UTyBGSVJNQURPKSBUaiAwIC0yOCBUZCAoRmlybWFkbyBwb3I6IFRlc3QgVXNlciAodGVzdEBzaWdpbC5sb2NhbCkpIFRqIDAgLTI4IFRkIChTZWxsYWRvOiBTSUdJTC0yMDI2LTAwMDA0MikgVGogMCAtMjggVGQgKE1hcmNhIGRlIHRpZW1wbzogc2VsbGFkbyBjb24gVFNBKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwNDY2IDAwMDAwIG4gCnRyYWlsZXIKPDwvU2l6ZSA2L1Jvb3QgMSAwIFI+PgpzdGFydHhyZWYKNTI5CiUlRU9G';
 
 interface Seed {
   userId: string;
@@ -207,32 +216,65 @@ export class MockSigilApi implements SigilApi {
 
   async getDocumentContent(input: GetDocumentContentInput): Promise<string> {
     await this.delay();
+    // 'final' → the signed/sealed version; 'content' → the original uploaded document.
+    if (input.DocumentType === 'final') return SAMPLE_FINAL_PDF;
     return this.docs.get(input.Target) ?? SAMPLE_PDF;
   }
 
   async verifyDocument(input: VerifyDocumentInput): Promise<VerifyDocumentOutput> {
     await this.delay();
+
+    // Mode A — ledger lookup by hash (no txId): the user dropped a sealed PDF and we find the
+    // matching sealed record by its SHA-256, like Adobe/DocuSign (no QR needed). The real backend
+    // queries sanic_sigil_finalhash. Found by exact hash ⇒ authentic & intact; else not found.
+    if (!input.TransactionId) {
+      const target = input.Sha256Hash?.toUpperCase();
+      const hit = target ? await this.findSealedByHash(target) : undefined;
+      if (!hit) return { Found: false, MetadataJson: JSON.stringify({ found: false } satisfies VerifyMetadata) };
+      return this.verifyOutput(hit.hash, true, true);
+    }
+
+    // Mode B — transaction-scoped verify (QR / detail): compare the uploaded file's hash to THIS
+    // tx's sealed hash — the SHA-256 of the FINAL (sealed) document (re-uploading it ⇒ GREEN, any
+    // other file ⇒ RED). Without a hash ⇒ certificate only (no verdict).
+    const realHash = await this.sealedHash();
+    const intact = input.Sha256Hash ? input.Sha256Hash.toUpperCase() === realHash : null;
+    return this.verifyOutput(realHash, intact, input.Sha256Hash !== undefined);
+  }
+
+  /** SHA-256 (64-hex uppercase) of the FINAL/sealed document — the one you download and verify. */
+  private async sealedHash(): Promise<string> {
+    return sha256Hex((await base64ToBytes(SAMPLE_FINAL_PDF)).buffer);
+  }
+
+  /** Ledger lookup: a COMPLETED tx whose sealed document hashes to `target`. */
+  private async findSealedByHash(target: string): Promise<{ txId: string; hash: string } | undefined> {
+    const hash = await this.sealedHash(); // in the mock every sealed tx shares the same final
+    if (hash !== target) return undefined;
+    for (const [id, tx] of this.txs) if (tx.state === 159460004) return { txId: id, hash };
+    return undefined;
+  }
+
+  /** Builds the VerifyDocument response. `includeVerdict` adds IsIntact (a file was compared). */
+  private verifyOutput(finalHash: string, intact: boolean | null, includeVerdict: boolean): VerifyDocumentOutput {
+    const now = new Date().toISOString();
     const meta: VerifyMetadata = {
       found: true,
       ledgerNumber: 'SIGIL-2026-000042',
-      sealedOnUtc: new Date().toISOString(),
-      finalHashHex: '0'.repeat(64),
+      sealedOnUtc: now,
+      finalHashHex: finalHash,
       tsaStatus: 'sealed',
       historyIntact: true,
-      isIntact: input.Sha256Hash ? input.Sha256Hash === '0'.repeat(64) : null,
+      isIntact: intact,
       signerSummary: JSON.stringify({
-        signers: [{ name: 'Test User', email: 'test@sigil.local', signedOnUtc: new Date().toISOString() }],
+        signers: [{ name: 'Test User', email: 'test@sigil.local', signedOnUtc: now }],
         routing: 'parallel',
-        completedOnUtc: new Date().toISOString(),
-        tsa: { status: 'sealed', tokenGenTimeUtc: new Date().toISOString() },
+        completedOnUtc: now,
+        tsa: { status: 'sealed', tokenGenTimeUtc: now },
       }),
     };
-    const output: VerifyDocumentOutput = {
-      Found: true,
-      MetadataJson: JSON.stringify(meta),
-      TsaTokenBase64: 'dG9rZW4=',
-    };
-    if (input.Sha256Hash !== undefined) output.IsIntact = input.Sha256Hash === '0'.repeat(64);
+    const output: VerifyDocumentOutput = { Found: true, MetadataJson: JSON.stringify(meta), TsaTokenBase64: 'dG9rZW4=' };
+    if (includeVerdict) output.IsIntact = intact === true;
     return output;
   }
 
