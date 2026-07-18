@@ -34,6 +34,26 @@
           "entitySetName": "sanic_sigil_tbl_transactions",
           "logicalName": "sanic_sigil_tbl_transaction",
           "isHidden": false
+        },
+        "sanic_sigil_tbl_participants": {
+          "entitySetName": "sanic_sigil_tbl_participants",
+          "logicalName": "sanic_sigil_tbl_participant",
+          "isHidden": false
+        },
+        "sanic_sigil_tbl_signaturezones": {
+          "entitySetName": "sanic_sigil_tbl_signaturezones",
+          "logicalName": "sanic_sigil_tbl_signaturezone",
+          "isHidden": false
+        },
+        "sanic_sigil_tbl_events": {
+          "entitySetName": "sanic_sigil_tbl_events",
+          "logicalName": "sanic_sigil_tbl_event",
+          "isHidden": false
+        },
+        "systemusers": {
+          "entitySetName": "systemusers",
+          "logicalName": "systemuser",
+          "isHidden": false
         }
       },
       "environmentVariableName": ""

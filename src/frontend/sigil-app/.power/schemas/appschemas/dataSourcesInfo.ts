@@ -3968,5 +3968,40 @@ export const dataSourcesInfo = {
         }
       }
     }
+  },
+  "sanic_sigil_tbl_transactions": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
+  },
+  "sanic_sigil_tbl_participants": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
+  },
+  "sanic_sigil_tbl_signaturezones": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
+  },
+  "sanic_sigil_tbl_events": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
+  },
+  "systemusers": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
   }
 };

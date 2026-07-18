@@ -52,13 +52,16 @@ import {
 // The Dataverse data client (retrieveMultipleRecordsAsync/retrieveRecordAsync). NOT the low-level
 // connector ListRecords — that path returns "Invalid organization URL 'null'" in local mode.
 const dv = getClient(dataSourcesInfo);
-// Table LOGICAL names (the data API queries by logical name; sets are logical+"s").
+// Table ENTITY-SET names (plural). The SDK's dataverse executor puts this string DIRECTLY into the
+// OData path (`api/data/v9.0/<name>`) AND uses it as the data-source lookup key in both
+// dataSourcesInfo.ts and the runtime databaseReferences — so it MUST be the entity set, not the
+// singular logical name. Column/attribute names elsewhere stay logical.
 const T = {
-  tx: 'sanic_sigil_tbl_transaction',
-  participant: 'sanic_sigil_tbl_participant',
-  zone: 'sanic_sigil_tbl_signaturezone',
-  event: 'sanic_sigil_tbl_event',
-  user: 'systemuser',
+  tx: 'sanic_sigil_tbl_transactions',
+  participant: 'sanic_sigil_tbl_participants',
+  zone: 'sanic_sigil_tbl_signaturezones',
+  event: 'sanic_sigil_tbl_events',
+  user: 'systemusers',
 } as const;
 
 /** Unwraps a generated IOperationResult: returns the response body, or throws on failure. */
