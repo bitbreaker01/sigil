@@ -30,6 +30,9 @@ import type {
   UserSummary,
   MasterSignatureVersion,
 } from './SigilApi';
+import { getClient } from '@microsoft/power-apps/data';
+import { getContext } from '@microsoft/power-apps/app';
+import { dataSourcesInfo } from '../../.power/schemas/appschemas/dataSourcesInfo';
 import {
   Sanic_sigil_capi_CreateTransactionService,
   Sanic_sigil_capi_UpdateDraftService,
@@ -44,8 +47,19 @@ import {
   Sanic_sigil_capi_GetMasterSignatureService,
   Sanic_sigil_capi_GetMasterSignatureHistoryService,
   Sanic_sigil_capi_VerifyDocumentService,
-  MicrosoftDataverseService,
 } from '../generated';
+
+// The Dataverse data client (retrieveMultipleRecordsAsync/retrieveRecordAsync). NOT the low-level
+// connector ListRecords — that path returns "Invalid organization URL 'null'" in local mode.
+const dv = getClient(dataSourcesInfo);
+// Table LOGICAL names (the data API queries by logical name; sets are logical+"s").
+const T = {
+  tx: 'sanic_sigil_tbl_transaction',
+  participant: 'sanic_sigil_tbl_participant',
+  zone: 'sanic_sigil_tbl_signaturezone',
+  event: 'sanic_sigil_tbl_event',
+  user: 'systemuser',
+} as const;
 
 /** Unwraps a generated IOperationResult: returns the response body, or throws on failure. */
 function ok(result: { success: boolean; data: unknown; error?: unknown }): unknown {
@@ -55,15 +69,7 @@ function ok(result: { success: boolean; data: unknown; error?: unknown }): unkno
   return result.data;
 }
 
-// ── Schema (doc 12). Entity SET names = logical name + "s"; primary keys = logical name + "id". ──
-const SET = {
-  tx: 'sanic_sigil_tbl_transactions',
-  participant: 'sanic_sigil_tbl_participants',
-  zone: 'sanic_sigil_tbl_signaturezones',
-  event: 'sanic_sigil_tbl_events',
-  user: 'systemusers',
-} as const;
-const LN = { participant: 'sanic_sigil_tbl_participant', zone: 'sanic_sigil_tbl_signaturezone' } as const;
+// ── Schema (doc 12). Primary keys = logical name + "id"; lookups read as `_<attr>_value`. ──
 const COL = {
   txId: 'sanic_sigil_tbl_transactionid',
   partId: 'sanic_sigil_tbl_participantid',
@@ -232,69 +238,57 @@ export class PowerAppsSigilApi implements SigilApi {
     ) as VerifyDocumentOutput;
   }
 
-  // ── Table reads (Dataverse connector) ──
-  /** ListRecords → the rows array. `include-annotations` brings FormattedValue for lookups/choices. */
-  private async rows(
-    entitySet: string,
-    opts: { select?: string; filter?: string; orderby?: string; fetchXml?: string },
-  ): Promise<Row[]> {
-    const out = ok(
-      await MicrosoftDataverseService.ListRecords(
-        entitySet,
-        'odata.include-annotations="OData.Community.Display.V1.FormattedValue"',
-        undefined, undefined,
-        opts.select, opts.filter, opts.orderby, undefined, opts.fetchXml,
-      ),
-    ) as { value?: Row[] };
-    return out.value ?? [];
+  // ── Table reads (Dataverse data client — retrieveMultipleRecordsAsync, NOT the connector) ──
+  // The connection runs as the Service Principal (no per-user security trimming), so reads filter
+  // EXPLICITLY by the caller's systemuserid — resolved once from getContext() (Entra objectId) and cached.
+  private meId: string | undefined;
+  private async me(): Promise<string> {
+    if (this.meId !== undefined) return this.meId;
+    const ctx = await getContext();
+    const oid = ctx.user?.objectId;
+    const upn = ctx.user?.userPrincipalName;
+    const filter = oid
+      ? `azureactivedirectoryobjectid eq ${oid}`
+      : `internalemailaddress eq '${esc(upn ?? '')}'`;
+    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.user, { filter, select: ['systemuserid'], top: 1 })) as Row[];
+    this.meId = s(rows[0] ?? {}, 'systemuserid') ?? '';
+    return this.meId;
   }
 
   async searchUsers(query: string): Promise<UserSummary[]> {
     const q = query.trim();
-    const base = `isdisabled eq false`;
+    const base = 'isdisabled eq false';
     const filter = q
       ? `(contains(fullname,'${esc(q)}') or contains(internalemailaddress,'${esc(q)}')) and ${base}`
       : base;
-    const rows = await this.rows(SET.user, {
-      select: 'systemuserid,fullname,internalemailaddress',
-      filter,
-      orderby: 'fullname asc',
-    });
-    return rows.slice(0, 20).map(userView);
+    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.user, {
+      select: ['systemuserid', 'fullname', 'internalemailaddress'], filter, orderBy: ['fullname asc'], top: 20,
+    })) as Row[];
+    return rows.map(userView);
   }
 
   async myRequests(): Promise<TransactionView[]> {
-    // Transactions I created (owner == current user).
-    const rows = await this.rows(SET.tx, {
-      fetchXml:
-        `<fetch><entity name="sanic_sigil_tbl_transaction"><all-attributes/>` +
-        `<filter><condition attribute="ownerid" operator="eq-userid"/></filter>` +
-        `<order attribute="createdon" descending="true"/></entity></fetch>`,
-    });
+    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, {
+      filter: `${COL.owner} eq ${await this.me()}`, orderBy: ['createdon desc'],
+    })) as Row[];
     return rows.map(txView);
   }
 
   async myParticipations(): Promise<TransactionView[]> {
-    // Transactions where I'm a participant (link participant → transaction, participant.user == me).
-    const rows = await this.rows(SET.tx, {
-      fetchXml:
-        `<fetch><entity name="sanic_sigil_tbl_transaction"><all-attributes/>` +
-        `<link-entity name="${LN.participant}" from="${COL.pTransactionId}" to="${COL.txId}" intersect="true">` +
-        `<filter><condition attribute="${COL.pUserId}" operator="eq-userid"/></filter></link-entity>` +
-        `<order attribute="createdon" descending="true"/></entity></fetch>`,
-    });
+    const parts = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.participant, {
+      filter: `_${COL.pUserId}_value eq ${await this.me()}`, select: [`_${COL.pTransactionId}_value`],
+    })) as Row[];
+    const txIds = [...new Set(parts.map((p) => lookup(p, COL.pTransactionId)).filter(Boolean) as string[])];
+    if (!txIds.length) return [];
+    const filter = txIds.map((id) => `${COL.txId} eq ${id}`).join(' or ');
+    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, { filter, orderBy: ['createdon desc'] })) as Row[];
     return rows.map(txView);
   }
 
   async myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]> {
-    // My participant rows on my active turn; keep those whose tx is pending / partially signed.
-    const parts = await this.rows(SET.participant, {
-      fetchXml:
-        `<fetch><entity name="${LN.participant}"><all-attributes/><filter>` +
-        `<condition attribute="${COL.pUserId}" operator="eq-userid"/>` +
-        `<condition attribute="${COL.status}" operator="eq" value="${PARTICIPANT_ACTIVE_TURN}"/>` +
-        `</filter></entity></fetch>`,
-    });
+    const parts = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.participant, {
+      filter: `_${COL.pUserId}_value eq ${await this.me()} and ${COL.status} eq ${PARTICIPANT_ACTIVE_TURN}`,
+    })) as Row[];
     const out: { tx: TransactionView; participant: ParticipantView }[] = [];
     for (const pr of parts) {
       const txId = lookup(pr, COL.pTransactionId);
@@ -308,35 +302,30 @@ export class PowerAppsSigilApi implements SigilApi {
   }
 
   async getTransaction(txId: string): Promise<TransactionView | undefined> {
-    const rows = await this.rows(SET.tx, { filter: `${COL.txId} eq ${txId}` });
+    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, { filter: `${COL.txId} eq ${txId}` })) as Row[];
     return rows[0] ? txView(rows[0]) : undefined;
   }
 
   async participantsOf(txId: string): Promise<ParticipantView[]> {
-    const rows = await this.rows(SET.participant, {
-      filter: `_${COL.pTransactionId}_value eq ${txId}`,
-      orderby: `${COL.pOrder} asc`,
-    });
+    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.participant, {
+      filter: `_${COL.pTransactionId}_value eq ${txId}`, orderBy: [`${COL.pOrder} asc`],
+    })) as Row[];
     return rows.map(partView);
   }
 
   async zonesOf(txId: string): Promise<ZoneView[]> {
-    // Zones link to a participant, which links to the transaction — join through participant.
-    const rows = await this.rows(SET.zone, {
-      fetchXml:
-        `<fetch><entity name="${LN.zone}"><all-attributes/>` +
-        `<link-entity name="${LN.participant}" from="${COL.partId}" to="${COL.zParticipantId}">` +
-        `<filter><condition attribute="${COL.pTransactionId}" operator="eq" value="${txId}"/></filter>` +
-        `</link-entity></entity></fetch>`,
-    });
+    // Zones link to a participant, which links to the transaction — resolve via the participants.
+    const parts = await this.participantsOf(txId);
+    if (!parts.length) return [];
+    const filter = parts.map((p) => `_${COL.zParticipantId}_value eq ${p.id}`).join(' or ');
+    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.zone, { filter })) as Row[];
     return rows.map(zoneView);
   }
 
   async eventsOf(txId: string): Promise<EventView[]> {
-    const rows = await this.rows(SET.event, {
-      filter: `_${COL.pTransactionId}_value eq ${txId}`,
-      orderby: `${COL.eOccurredOn} asc`,
-    });
+    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.event, {
+      filter: `_${COL.pTransactionId}_value eq ${txId}`, orderBy: [`${COL.eOccurredOn} asc`],
+    })) as Row[];
     return rows.map(eventView);
   }
 }
