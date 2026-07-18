@@ -67,7 +67,15 @@ const T = {
 /** Unwraps a generated IOperationResult: returns the response body, or throws on failure. */
 function ok(result: { success: boolean; data: unknown; error?: unknown }): unknown {
   if (!result.success) {
-    throw result.error instanceof Error ? result.error : new Error('Dataverse operation failed.');
+    if (result.error instanceof Error) throw result.error;
+    // Dataverse returns the fault as a plain object ({ message, code, ... }). Surface its real
+    // message instead of a generic string, so plugin/validation faults are actually diagnosable.
+    const e = result.error as { message?: unknown; code?: unknown } | undefined | null;
+    const detail =
+      e && typeof e === 'object' && e.message != null
+        ? String(e.message)
+        : JSON.stringify(result.error ?? null);
+    throw new Error(`Dataverse operation failed: ${detail}`);
   }
   return result.data;
 }
