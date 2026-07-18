@@ -1,22 +1,22 @@
-// SigilApi implementation selector. In DEV/local (without the Power Apps runtime or the
-// generated clients) it uses the mock; in the real app, PowerAppsSigilApi. The decision is
-// made ONCE here — screens import `sigilApi` and don't know which one it is.
+// SigilApi implementation selector. In DEV/local (without the Power Apps runtime) it uses the mock;
+// in the real app, PowerAppsSigilApi. The decision is made ONCE here — screens import `sigilApi`
+// and don't know which one it is.
 //
-// Rule: if the Power Apps context is available (getContext doesn't throw) AND the generated
-// clients exist, use the real one. Until generated/ exists, we force the mock even if the
-// runtime is present (allows `power-apps run` with the real UI before generating the clients).
+// Flip USE_REAL_BACKEND to true to run against the real Dataverse backend (needs the Power Apps
+// runtime + the generated clients — use `power-apps run` or the deployed Code App). The real client
+// is loaded via a DYNAMIC import gated on the flag, so `npm run dev`/Vitest never pull in
+// @microsoft/power-apps (its ESM entry doesn't resolve under Node) when the mock is active.
 
 import { MockSigilApi } from './mock';
 import type { SigilApi } from './SigilApi';
 
-// Compile-time flag: set to true once generated/ exists and powerApps.ts is wired.
 const USE_REAL_BACKEND = false;
 
-function create(): SigilApi {
+async function create(): Promise<SigilApi> {
   if (!USE_REAL_BACKEND) return new MockSigilApi();
-  // Deferred import to avoid breaking the bundle if @microsoft/power-apps isn't initialized.
-  throw new Error('PowerAppsSigilApi is enabled once the typed clients are generated (api/powerApps.ts).');
+  const { PowerAppsSigilApi } = await import('./powerApps');
+  return new PowerAppsSigilApi();
 }
 
-export const sigilApi: SigilApi = create();
+export const sigilApi: SigilApi = await create();
 export type { SigilApi } from './SigilApi';
