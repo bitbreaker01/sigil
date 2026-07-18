@@ -246,7 +246,9 @@ internal static class Catalogo
             PluginTypeName: "Sigil.Plugins.Apis.VerifyDocumentPlugin",
             RequestParams: new[]
             {
-                new RequestParam("TransactionId", ParamType.Guid, Optional: false),
+                // Ambos opcionales, pero al menos uno es obligatorio (lo valida el plugin): TransactionId
+                // (QR / Detail) o Sha256Hash solo (búsqueda por hash en el ledger — RF-20/21).
+                new RequestParam("TransactionId", ParamType.Guid, Optional: true),
                 new RequestParam("Sha256Hash", ParamType.String, Optional: true),
             },
             ResponseProps: new[]

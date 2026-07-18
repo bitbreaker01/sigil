@@ -1,5 +1,7 @@
 // sanic_sigil_capi_VerifyDocument (RF-20/21, ADR-007, doc 04 §3.1) — Unbound.
-// Solo TransactionId → CONSTANCIA; con Sha256Hash → además VEREDICTO contra finalhash.
+// Dos modos: (a) por TransactionId (llega del QR / Detail) → constancia + veredicto contra ESE
+// finalhash; sin Sha256Hash, solo constancia. (b) por Sha256Hash SOLO → búsqueda en el ledger por
+// finalhash (soltás cualquier PDF sellado, como Adobe/DocuSign; hallado ⇒ auténtico e íntegro).
 // Verificación cruzada extendida (doc 03 §4.6): todos los documenthash de eventos de
 // firma iguales entre sí e iguales al contenthash del ledger, y columnas de sistema de
 // esos eventos sin modificación posterior (modifiedon==createdon, modifiedby==createdby)
@@ -23,25 +25,35 @@ public class VerifyDocumentPlugin : SigilApiPlugin
 {
     protected override void Ejecutar(EntornoDeApi e)
     {
-        var txId = e.Contexto.InputParameters.TryGetValue("TransactionId", out var v) && v is Guid g
+        var txIdOpt = e.Contexto.InputParameters.TryGetValue("TransactionId", out var v) && v is Guid g && g != Guid.Empty
             ? g
-            : throw new InvalidPluginExecutionException("TransactionId es obligatorio.");
+            : (Guid?)null;
         var hashAVerificar = e.Input<string>("Sha256Hash");
+        var hashNormalizado = hashAVerificar?.Trim();
 
         // Un hash mal formado es un error de CONTRATO (typo del verificador), no un veredicto
         // "adulterado" — se rechaza claro en vez de devolver IsIntact=false engañoso (S4).
-        if (!string.IsNullOrWhiteSpace(hashAVerificar) &&
-            !System.Text.RegularExpressions.Regex.IsMatch(hashAVerificar!.Trim(), "^[0-9A-Fa-f]{64}$"))
+        if (!string.IsNullOrWhiteSpace(hashNormalizado) &&
+            !System.Text.RegularExpressions.Regex.IsMatch(hashNormalizado!, "^[0-9A-Fa-f]{64}$"))
             throw new InvalidPluginExecutionException(
                 "Sha256Hash debe ser un SHA-256 en hexadecimal (64 caracteres 0-9/A-F).");
 
+        if (txIdOpt is null && string.IsNullOrWhiteSpace(hashNormalizado))
+            throw new InvalidPluginExecutionException("Debe indicar TransactionId o Sha256Hash para verificar.");
+
         var q = new QueryExpression(SchemaNames.Ledger.Entidad)
         {
-            ColumnSet = new ColumnSet(SchemaNames.Ledger.ContentHash, SchemaNames.Ledger.FinalHash,
-                SchemaNames.Ledger.TsaStatus, SchemaNames.Ledger.TsaToken,
+            ColumnSet = new ColumnSet(SchemaNames.Ledger.TransactionId, SchemaNames.Ledger.ContentHash,
+                SchemaNames.Ledger.FinalHash, SchemaNames.Ledger.TsaStatus, SchemaNames.Ledger.TsaToken,
                 SchemaNames.Ledger.SealedOn, SchemaNames.Ledger.SignerSummary, SchemaNames.Ledger.Name),
         };
-        q.Criteria.AddCondition(SchemaNames.Ledger.TransactionId, ConditionOperator.Equal, txId);
+        // Modo por-txId: filtra por la transacción. Modo por-hash: filtra por finalhash (igualdad
+        // insensible a mayúsculas en Dataverse). Quien busca por hash posee el archivo (sus bytes):
+        // mismo umbral de posesión que el txId del QR — no amplía la divulgación (doc 04 §3.3).
+        if (txIdOpt is Guid txIdVal)
+            q.Criteria.AddCondition(SchemaNames.Ledger.TransactionId, ConditionOperator.Equal, txIdVal);
+        else
+            q.Criteria.AddCondition(SchemaNames.Ledger.FinalHash, ConditionOperator.Equal, hashNormalizado!);
         var ledger = e.Servicio.RetrieveMultiple(q).Entities.FirstOrDefault();
 
         if (ledger is null)
@@ -49,22 +61,28 @@ public class VerifyDocumentPlugin : SigilApiPlugin
             e.Output("Found", false);
             e.Output("MetadataJson", "{\"found\":false}");
 
-            // Si la TRANSACCIÓN existe, la verificación se registra igual (el evento ancla a la
-            // transacción, no al ledger — doc 03 §4.6; RNF-04 quiere capturar toda verificación,
-            // incluida una sobre una tx aún no sellada). Solo un txId inexistente no deja rastro
-            // (no hay ancla). Corrección del antagonista A3, 2026-07-16.
-            if (TransaccionExiste(e, txId, out var creadorSinLedger))
+            // Si veníamos por txId y la TRANSACCIÓN existe, la verificación se registra igual (el
+            // evento ancla a la transacción, no al ledger — doc 03 §4.6; RNF-04 captura toda
+            // verificación, incluida una sobre una tx aún sin sellar). Un txId inexistente —o una
+            // búsqueda por hash sin coincidencia— no deja rastro (no hay ancla). Antagonista A3.
+            if (txIdOpt is Guid txSinLedger && TransaccionExiste(e, txSinLedger, out var creadorSinLedger))
             {
                 var actorSinLedger = Consultas.SnapshotDeActor(e.Servicio, e.Llamante);
-                var lectoresSinLedger = LectoresDe(e, txId, creadorSinLedger);
-                Consultas.CrearEvento(e.Servicio, new EntityReference(SchemaNames.Tx.Entidad, txId),
+                var lectoresSinLedger = LectoresDe(e, txSinLedger, creadorSinLedger);
+                Consultas.CrearEvento(e.Servicio, new EntityReference(SchemaNames.Tx.Entidad, txSinLedger),
                     EventType.VerificacionRealizada, actorSinLedger,
                     "Verificación realizada sobre una transacción sin sellar (sin constancia).",
                     creadorSinLedger, lectores: lectoresSinLedger);
             }
-            e.Trace.Trace("VerifyDocument: {0} sin ledger — Found=false.", txId);
+            e.Trace.Trace("VerifyDocument: sin ledger (txId={0}, hash={1}) — Found=false.",
+                txIdOpt, string.IsNullOrWhiteSpace(hashNormalizado) ? "—" : "provisto");
             return;
         }
+
+        // Con ledger a la vista, el ancla del evento es el txId: en el modo por-txId lo tenemos; en
+        // el modo por-hash lo tomamos del propio ledger (su lookup a la transacción).
+        var txId = txIdOpt ?? ledger.GetAttributeValue<EntityReference>(SchemaNames.Ledger.TransactionId)?.Id
+            ?? throw new InvalidPluginExecutionException("El ledger no referencia una transacción (registro corrupto).");
 
         var finalHash = ledger.GetAttributeValue<string>(SchemaNames.Ledger.FinalHash) ?? string.Empty;
         var contentHash = ledger.GetAttributeValue<string>(SchemaNames.Ledger.ContentHash) ?? string.Empty;

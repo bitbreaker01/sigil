@@ -104,7 +104,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_RejectTransaction", "Reason", 10, false },
         { "sanic_sigil_capi_CancelTransaction", "Reason", 10, true },
         { "sanic_sigil_capi_ValidateMasterSignature", "ImageBase64", 10, false },
-        { "sanic_sigil_capi_VerifyDocument", "TransactionId", 12, false },
+        { "sanic_sigil_capi_VerifyDocument", "TransactionId", 12, true }, // opcional: verify por hash no lo lleva
         { "sanic_sigil_capi_VerifyDocument", "Sha256Hash", 10, true },
     };
 
@@ -526,12 +526,29 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             Assert.True((bool)rojo["Found"]);
             Assert.False((bool)rojo["IsIntact"]);
 
+            // VERDE por HASH (RF-20/21): sin TransactionId, el ledger se encuentra por finalhash —
+            // soltás cualquier PDF sellado y se verifica (como Adobe/DocuSign). Ancla su evento 11.
+            var porHash = client.Execute(new OrganizationRequest("sanic_sigil_capi_VerifyDocument")
+            {
+                ["Sha256Hash"] = hashReal, // NO se pasa TransactionId
+            }).Results;
+            Assert.True((bool)porHash["Found"]);
+            Assert.True((bool)porHash["IsIntact"]);
+            Assert.Contains(hashReal, (string)porHash["MetadataJson"]);
+
+            // NO ENCONTRADO por hash: un hash desconocido no está en el ledger (no deja rastro).
+            var desconocido = client.Execute(new OrganizationRequest("sanic_sigil_capi_VerifyDocument")
+            {
+                ["Sha256Hash"] = "A".PadLeft(64, 'A'),
+            }).Results;
+            Assert.False((bool)desconocido["Found"]);
+
             // la verificación quedó registrada (evento 11, RNF-04)
             var evQ = new QueryExpression("sanic_sigil_tbl_event") { ColumnSet = new ColumnSet("sanic_sigil_type") };
             evQ.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
             var verificaciones = client.RetrieveMultiple(evQ).Entities.Count(ev =>
                 ev.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_type").Value == 159460010);
-            Assert.Equal(2, verificaciones); // una por cada verificación realizada
+            Assert.Equal(3, verificaciones); // verde por txId + rojo por txId + verde por hash (el no-encontrado no ancla)
         }
         finally
         {
