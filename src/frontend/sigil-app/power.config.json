@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "appId": null,
+  "appDisplayName": "Sigil",
+  "region": "prod",
+  "appType": "CodeApp",
+  "environmentId": "9c8994b8-b1bc-ee23-9184-2f6346502613",
+  "description": " ",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {
+    "2936f974-bb38-4bba-858e-93069eeea5c9": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+      "displayName": "Microsoft Dataverse",
+      "dataSources": [
+        "commondataserviceforapps"
+      ],
+      "authenticationType": "ServicePrincipalOauth",
+      "sharedConnectionId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps/connections/abcac2d06c374755be64f6b6bbad86c2",
+      "dataSets": {}
+    }
+  },
+  "databaseReferences": {
+    "default.cds": {
+      "dataSources": {
+        "environment_39a902ba": {
+          "entitySetName": "Environment",
+          "logicalName": "environment_39a902ba",
+          "isHidden": false
+        },
+        "sigil_tbl_transacci_ndefirma": {
+          "entitySetName": "sanic_sigil_tbl_transactions",
+          "logicalName": "sanic_sigil_tbl_transaction",
+          "isHidden": false
+        }
+      },
+      "environmentVariableName": ""
+    }
+  }
+}

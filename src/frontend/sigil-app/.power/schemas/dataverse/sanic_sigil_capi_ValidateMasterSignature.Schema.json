@@ -1,0 +1,43 @@
+{
+  "name": "sanic_sigil_capi_ValidateMasterSignature",
+  "title": "sanic_sigil_capi_ValidateMasterSignature",
+  "type": "Microsoft.PowerApps/dataverseOperation",
+  "properties": {
+    "displayName": "sanic_sigil_capi_ValidateMasterSignature",
+    "swagger": {
+      "swagger": "2.0",
+      "info": {
+        "title": "sanic_sigil_capi_ValidateMasterSignature",
+        "version": "1.0"
+      },
+      "basePath": "/api/data/v9.2",
+      "paths": {
+        "/sanic_sigil_capi_ValidateMasterSignature": {
+          "post": {
+            "operationId": "sanic_sigil_capi_ValidateMasterSignature",
+            "parameters": [
+              {
+                "name": "ImageBase64",
+                "in": "body",
+                "required": true,
+                "type": "string",
+                "x-ms-dataverse-type": "StringType",
+                "x-ms-csdl-type": "Edm.String"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "schema": {
+                  "type": "object",
+                  "x-ms-dataverse-type": "LookupType",
+                  "x-ms-csdl-type": "mscrm.sanic_sigil_capi_ValidateMasterSignatureResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

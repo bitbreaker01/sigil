@@ -1,0 +1,48 @@
+{
+  "name": "sanic_sigil_capi_RejectTransaction",
+  "title": "sanic_sigil_capi_RejectTransaction",
+  "type": "Microsoft.PowerApps/dataverseOperation",
+  "properties": {
+    "displayName": "sanic_sigil_capi_RejectTransaction",
+    "swagger": {
+      "swagger": "2.0",
+      "info": {
+        "title": "sanic_sigil_capi_RejectTransaction",
+        "version": "1.0"
+      },
+      "basePath": "/api/data/v9.2",
+      "paths": {
+        "/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_RejectTransaction": {
+          "post": {
+            "operationId": "sanic_sigil_capi_RejectTransaction",
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "type": "string",
+                "format": "guid",
+                "x-ms-dataverse-type": "UniqueidentifierType",
+                "x-ms-csdl-type": "Edm.Guid"
+              },
+              {
+                "name": "Reason",
+                "in": "body",
+                "required": true,
+                "type": "string",
+                "x-ms-dataverse-type": "StringType",
+                "x-ms-csdl-type": "Edm.String"
+              }
+            ],
+            "responses": {
+              "204": {
+                "description": "No Content"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "entitySetName": "sanic_sigil_tbl_transactions"
+}

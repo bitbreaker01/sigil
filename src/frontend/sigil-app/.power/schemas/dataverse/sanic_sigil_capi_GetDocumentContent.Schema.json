@@ -1,0 +1,53 @@
+{
+  "name": "sanic_sigil_capi_GetDocumentContent",
+  "title": "sanic_sigil_capi_GetDocumentContent",
+  "type": "Microsoft.PowerApps/dataverseOperation",
+  "properties": {
+    "displayName": "sanic_sigil_capi_GetDocumentContent",
+    "swagger": {
+      "swagger": "2.0",
+      "info": {
+        "title": "sanic_sigil_capi_GetDocumentContent",
+        "version": "1.0"
+      },
+      "basePath": "/api/data/v9.2",
+      "paths": {
+        "/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_GetDocumentContent": {
+          "post": {
+            "operationId": "sanic_sigil_capi_GetDocumentContent",
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "type": "string",
+                "format": "guid",
+                "x-ms-dataverse-type": "UniqueidentifierType",
+                "x-ms-csdl-type": "Edm.Guid"
+              },
+              {
+                "name": "DocumentType",
+                "in": "body",
+                "required": true,
+                "type": "string",
+                "x-ms-dataverse-type": "StringType",
+                "x-ms-csdl-type": "Edm.String"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "schema": {
+                  "type": "object",
+                  "x-ms-dataverse-type": "LookupType",
+                  "x-ms-csdl-type": "mscrm.sanic_sigil_capi_GetDocumentContentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "entitySetName": "sanic_sigil_tbl_transactions"
+}

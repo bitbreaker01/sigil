@@ -1,0 +1,45 @@
+{
+  "name": "sanic_sigil_capi_SubmitSignature",
+  "title": "sanic_sigil_capi_SubmitSignature",
+  "type": "Microsoft.PowerApps/dataverseOperation",
+  "properties": {
+    "displayName": "sanic_sigil_capi_SubmitSignature",
+    "swagger": {
+      "swagger": "2.0",
+      "info": {
+        "title": "sanic_sigil_capi_SubmitSignature",
+        "version": "1.0"
+      },
+      "basePath": "/api/data/v9.2",
+      "paths": {
+        "/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_SubmitSignature": {
+          "post": {
+            "operationId": "sanic_sigil_capi_SubmitSignature",
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "type": "string",
+                "format": "guid",
+                "x-ms-dataverse-type": "UniqueidentifierType",
+                "x-ms-csdl-type": "Edm.Guid"
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "schema": {
+                  "type": "object",
+                  "x-ms-dataverse-type": "LookupType",
+                  "x-ms-csdl-type": "mscrm.sanic_sigil_capi_SubmitSignatureResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "entitySetName": "sanic_sigil_tbl_transactions"
+}

@@ -1,0 +1,40 @@
+{
+  "name": "sanic_sigil_capi_SendTransaction",
+  "title": "sanic_sigil_capi_SendTransaction",
+  "type": "Microsoft.PowerApps/dataverseOperation",
+  "properties": {
+    "displayName": "sanic_sigil_capi_SendTransaction",
+    "swagger": {
+      "swagger": "2.0",
+      "info": {
+        "title": "sanic_sigil_capi_SendTransaction",
+        "version": "1.0"
+      },
+      "basePath": "/api/data/v9.2",
+      "paths": {
+        "/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_SendTransaction": {
+          "post": {
+            "operationId": "sanic_sigil_capi_SendTransaction",
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "type": "string",
+                "format": "guid",
+                "x-ms-dataverse-type": "UniqueidentifierType",
+                "x-ms-csdl-type": "Edm.Guid"
+              }
+            ],
+            "responses": {
+              "204": {
+                "description": "No Content"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "entitySetName": "sanic_sigil_tbl_transactions"
+}
