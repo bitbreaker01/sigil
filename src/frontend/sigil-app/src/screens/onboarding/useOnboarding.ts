@@ -73,7 +73,9 @@ export function useOnboarding(): UseOnboarding {
           const reasons = (r.FailureReasons ?? '').split('\n').map((m) => m.trim()).filter(Boolean);
           setState({ phase: 'rejected', reasons: reasons.length ? reasons : ['common.genericError'] });
         }
-      } catch {
+      } catch (e) {
+        // Don't swallow: surface the real cause so upload failures are diagnosable.
+        console.error('[master-signature] upload/validate failed:', e);
         setState({ phase: 'error', message: 'common.genericError' });
       }
     })();
