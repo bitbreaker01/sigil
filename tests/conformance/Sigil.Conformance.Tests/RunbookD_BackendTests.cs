@@ -78,8 +78,10 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         Assert.Equal(entidadEsperada, api.GetAttributeValue<string>("boundentitylogicalname"));
         Assert.False(api.GetAttributeValue<bool>("isfunction"),
             $"{uniqueName} debe ser POST (IsFunction=false): tiene efectos o transporta binarios.");
-        Assert.True(api.GetAttributeValue<bool>("isprivate"),
-            $"{uniqueName} debe tener IsPrivate=true (higiene de metadata — doc 04 §3).");
+        Assert.False(api.GetAttributeValue<bool>("isprivate"),
+            $"{uniqueName} debe tener IsPrivate=false: el frontend genera clientes tipados y los cloud " +
+            "flows resuelven la acción desde el $metadata, que IsPrivate ocultaría (reconciliación doc 04↔05; " +
+            "IsPrivate no es seguridad — el control real son Execute Privileges + autorización en el plugin).");
         Assert.Equal(privilegioEsperado, api.GetAttributeValue<string>("executeprivilegename"));
     }
 

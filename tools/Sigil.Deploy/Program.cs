@@ -206,7 +206,11 @@ static Guid UpsertCustomApi(ServiceClient client, CustomApiSpec api, Guid plugin
         client.Update(new Entity("customapi", id)
         {
             ["description"] = api.Description,
-            ["isprivate"] = true,
+            // false: los clientes tipados del frontend (doc 05 — power-apps add-dataverse-api) y el
+            // picker de "unbound action" de los cloud flows LEEN del $metadata, que IsPrivate=true
+            // oculta. Reconcilia doc 04 §3 (donde era true como "higiene de metadata"): IsPrivate NO
+            // es control de acceso — la seguridad real son Execute Privileges + autorización en el plugin.
+            ["isprivate"] = false,
             ["executeprivilegename"] = api.PrivilegioEfectivo,
             ["allowedcustomprocessingsteptype"] = new OptionSetValue(0), // None
             ["plugintypeid"] = new EntityReference("plugintype", pluginTypeId),
@@ -223,7 +227,7 @@ static Guid UpsertCustomApi(ServiceClient client, CustomApiSpec api, Guid plugin
         ["description"] = api.Description,
         ["bindingtype"] = new OptionSetValue(api.BindingType),
         ["isfunction"] = false,
-        ["isprivate"] = true,
+        ["isprivate"] = false, // ver nota en el update de arriba (reconciliación doc 04↔05: el frontend/flows leen del $metadata)
         ["executeprivilegename"] = api.PrivilegioEfectivo,
         ["allowedcustomprocessingsteptype"] = new OptionSetValue(0), // None
         ["plugintypeid"] = new EntityReference("plugintype", pluginTypeId),
