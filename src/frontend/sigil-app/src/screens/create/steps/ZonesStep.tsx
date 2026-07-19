@@ -25,7 +25,12 @@ const useStyles = makeStyles({
   // minWidth:0 lets these flex children shrink below their content on phones (no horizontal overflow);
   // flexBasis keeps the desktop two-column feel, wrapping to stacked full-width columns on mobile.
   viewer: { flexGrow: 3, flexBasis: '320px', minWidth: 0 },
-  side: { flexGrow: 1, flexBasis: '240px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM },
+  // Cap the control panel only once the columns sit side by side (≥700px) so the document gets the
+  // rest of the width; below that the layout stacks and the panel stays full-width.
+  side: {
+    flexGrow: 1, flexBasis: '240px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM,
+    '@media (min-width: 700px)': { maxWidth: '360px' },
+  },
   banner: {
     display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS,
     padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,

@@ -19,9 +19,16 @@ const Placeholder = lazy(() => import('./screens/Placeholder'));
 
 const useStyles = makeStyles({
   layout: { minHeight: '100vh', backgroundColor: tokens.colorNeutralBackground2 },
-  main: { maxWidth: '960px', margin: '0 auto', padding: tokens.spacingVerticalL },
+  // Content is width-capped and centered; on phones it's full-width (padding only) since the cap is
+  // above any phone width. PDF-heavy screens (create/sign/detail) get a wider cap so the document
+  // uses the available space instead of being squeezed into a narrow column.
+  main: { maxWidth: '960px', margin: '0 auto', padding: tokens.spacingVerticalL, width: '100%', boxSizing: 'border-box' },
+  mainWide: { maxWidth: '1400px' },
   center: { display: 'flex', justifyContent: 'center', paddingTop: tokens.spacingVerticalXXXL },
 });
+
+// Screens whose main content is a PDF viewer — they benefit from the full width of large displays.
+const WIDE_SCREENS: ReadonlySet<Screen> = new Set(['create', 'sign', 'detail']);
 
 export function App(): JSX.Element {
   const s = useStyles();
@@ -54,7 +61,7 @@ export function App(): JSX.Element {
         onNavigate={(p) => navigate(p)}
         onToggleLang={changeLang}
       />
-      <main className={s.main}>
+      <main className={`${s.main} ${WIDE_SCREENS.has(route.screen) ? s.mainWide : ''}`}>
         <Suspense fallback={<div className={s.center}><Spinner label={t('common.loading')} /></div>}>
           {renderScreen(route, navigate, { openOnboarding, leaveOnboarding })}
         </Suspense>

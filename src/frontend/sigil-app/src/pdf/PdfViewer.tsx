@@ -18,7 +18,9 @@ import { PdfPage, type RenderedSize } from './PdfPage';
 import type { PdfDoc } from './pdfjs';
 
 const ZOOM_STEPS = [1, 1.5, 2, 3];
-const MAX_BASE_PX = 900;
+// Upper bound for the page's base (100%) render width. Raised so wide displays actually use the
+// available space (the measured container width still drives it, so phones render small). Zoom on top.
+const MAX_BASE_PX = 1100;
 
 const useStyles = makeStyles({
   // width:100% so the viewer fills its container (even under a flex `align-items:center` parent),
