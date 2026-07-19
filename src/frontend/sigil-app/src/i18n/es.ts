@@ -181,6 +181,7 @@ export const es = {
     historyTitle: 'Historial de firmas',
     version: 'Versión {{n}}',
     activeVersion: 'Vigente',
+    downloadVersion: 'Descargar versión {{n}}',
   },
   verify: {
     title: 'Verificar un documento',

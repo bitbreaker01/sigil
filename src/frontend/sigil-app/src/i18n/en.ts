@@ -182,6 +182,7 @@ export const en = {
     historyTitle: 'Signature history',
     version: 'Version {{n}}',
     activeVersion: 'Active',
+    downloadVersion: 'Download version {{n}}',
   },
   verify: {
     title: 'Verify a document',

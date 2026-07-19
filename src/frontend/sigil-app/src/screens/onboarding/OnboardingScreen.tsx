@@ -14,8 +14,9 @@ import {
   Image,
   Badge,
 } from '@fluentui/react-components';
-import { ArrowUpload24Regular, CheckmarkCircle24Filled, ArrowLeft20Regular } from '@fluentui/react-icons';
+import { ArrowUpload24Regular, CheckmarkCircle24Filled, ArrowLeft20Regular, ArrowDownload20Regular } from '@fluentui/react-icons';
 import { useT } from '../../i18n/useT';
+import { downloadBase64 } from '../../api/binaries';
 import { useOnboarding } from './useOnboarding';
 import { SignatureMockup } from './SignatureMockup';
 
@@ -41,6 +42,7 @@ const useStyles = makeStyles({
   currentBlock: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
   history: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, marginTop: tokens.spacingVerticalM },
   historyRow: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM },
+  historyInfo: { flexGrow: 1, minWidth: 0 },
   historyThumb: { width: '96px', aspectRatio: '3 / 1', flexShrink: 0, border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusSmall, backgroundColor: tokens.colorNeutralBackground3, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px' },
   thumbImg: { maxWidth: '100%', maxHeight: '100%' },
   meta: { color: tokens.colorNeutralForeground3 },
@@ -121,12 +123,21 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
           {history.map((v) => (
             <div key={v.version} className={s.historyRow}>
               <div className={s.historyThumb}><Image className={s.thumbImg} src={png(v.imageBase64)} alt={t('onboarding.version', { n: v.version })} fit="contain" /></div>
-              <div>
+              <div className={s.historyInfo}>
                 <Text weight="semibold">{t('onboarding.version', { n: v.version })}</Text>
                 {v.isActive && <> <Badge appearance="tint" color="success" size="small">{t('onboarding.activeVersion')}</Badge></>}
                 <br />
                 <Text size={200} className={s.meta}>{new Date(v.validatedOn).toLocaleString()}</Text>
               </div>
+              <Button
+                appearance="subtle"
+                size="small"
+                icon={<ArrowDownload20Regular />}
+                aria-label={t('onboarding.downloadVersion', { n: v.version })}
+                title={t('onboarding.downloadVersion', { n: v.version })}
+                onClick={() => void downloadBase64(v.imageBase64, `firma-v${v.version}.png`, 'image/png')
+                  .catch((err: unknown) => console.error('[signature-download]', err))}
+              />
             </div>
           ))}
         </div>
