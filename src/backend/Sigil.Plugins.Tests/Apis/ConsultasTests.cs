@@ -3,16 +3,18 @@
 // sobre las columnas ausentes devolvía 0 → cada firma se estampaba en (0,0) con tamaño 0×0
 // (invisible en el documento; solo la hoja de cierre, con caja fija, mostraba la firma).
 // El stub HONRA el ColumnSet (proyección real), así que este test falla con el bug y pasa con el fix.
+//
+// NB: namespace .Apis (no .Data) a propósito — un namespace Sigil.Plugins.Tests.Data
+// ensombrecería a Sigil.Plugins.Data (ISelladorTsa) en los demás tests.
 
 using System;
-using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Sigil.Plugins.Core.Domain;
 using Sigil.Plugins.Data;
 using Sigil.Plugins.Tests.Stub;
 using Xunit;
 
-namespace Sigil.Plugins.Tests.Data;
+namespace Sigil.Plugins.Tests.Apis;
 
 public class ConsultasTests
 {
