@@ -26,7 +26,7 @@ const useStyles = makeStyles({
 export function App(): JSX.Element {
   const s = useStyles();
   const { queryParams, user } = useAppContext();
-  const { t, changeLang } = useT();
+  const { t, lang, changeLang } = useT();
 
   const initialRoute = useMemo(() => parseRoute(queryParams), [queryParams]);
   const [route, setRoute] = useState<Route>(initialRoute);
@@ -48,6 +48,7 @@ export function App(): JSX.Element {
         userName={user.fullName ?? '—'}
         navLabels={{ dashboard: t('nav.dashboard'), create: t('nav.create'), verify: t('nav.verify'), signature: t('nav.signature') }}
         toggleLangLabel={t('app.languageToggle')}
+        langCode={lang.toUpperCase()}
         menuLabel={t('nav.menu')}
         currentScreen={route.screen}
         onNavigate={(p) => navigate(p)}

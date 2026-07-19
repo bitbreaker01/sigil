@@ -6,7 +6,7 @@ import {
   makeStyles, tokens, Text, Button, Avatar, Toolbar, ToolbarButton,
   Menu, MenuTrigger, MenuPopover, MenuList, MenuItem,
 } from '@fluentui/react-components';
-import { Translate24Regular, ShieldCheckmark24Filled, Navigation24Regular } from '@fluentui/react-icons';
+import { ShieldCheckmark24Filled, Navigation24Regular } from '@fluentui/react-icons';
 import type { Screen } from '../lib/navigation';
 
 const MOBILE = '@media (max-width: 640px)';
@@ -36,6 +36,8 @@ export interface HeaderProps {
   userName: string;
   navLabels: { dashboard: string; create: string; verify: string; signature: string };
   toggleLangLabel: string;
+  /** Current language shown on the toggle as visible text ("ES" / "EN"). */
+  langCode: string;
   menuLabel: string;
   currentScreen: Screen;
   onNavigate: (p: Screen) => void;
@@ -74,7 +76,7 @@ export function Header(props: HeaderProps): JSX.Element {
       </Toolbar>
 
       <div className={s.right}>
-        <Button appearance="subtle" icon={<Translate24Regular />} aria-label={props.toggleLangLabel} onClick={props.onToggleLang} />
+        <Button appearance="subtle" aria-label={props.toggleLangLabel} onClick={props.onToggleLang}>{props.langCode}</Button>
         <Avatar name={props.userName} size={32} color="brand" />
         <div className={s.navMenu}>
           <Menu>
