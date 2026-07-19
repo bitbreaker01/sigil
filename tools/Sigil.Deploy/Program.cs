@@ -94,6 +94,13 @@ RegistrarStepDelWorker(client, typePorNombre[Catalogo.WorkerPluginType]);
 foreach (var (schema, valor) in Catalogo.EnvValues)
     UpsertEnvValue(client, schema, valor);
 
+// ── 6. Publicar: refresca el modelo OData del Web API. Sin esto, un parámetro de Custom API
+// recién agregado se acepta por el path SDK pero el Web API lo rechaza ("... is not a valid
+// parameter for the operation ...") hasta que la metadata se re-cachea (2026-07-19).
+Console.WriteLine("[6] Publicando customizations (refresca la metadata OData del Web API) ...");
+client.Execute(new Microsoft.Crm.Sdk.Messages.PublishAllXmlRequest());
+Console.WriteLine("[6]   PublishAllXml OK.");
+
 Console.WriteLine();
 Console.WriteLine($"[OK] Despliegue completo. package={packageId}. Ejecutá las pruebas CF-D para verificar.");
 return 0;
