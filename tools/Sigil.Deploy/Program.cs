@@ -44,7 +44,12 @@ string nupkgPath = ResolverNupkg(nupkgArg);
 if (!File.Exists(nupkgPath))
 {
     Console.Error.WriteLine($"[FATAL] nupkg no encontrado: {nupkgPath}");
-    Console.Error.WriteLine("        Generalo con: dotnet pack src/backend/Sigil.Plugins -c Release");
+    // OJO: usar `dotnet build` (NO `dotnet pack`). El SDK Microsoft.PowerApps.MSBuild.Plugin
+    // arma el plugin package DURANTE el build; `dotnet pack` produjo un nupkg VACÍO (sin el DLL)
+    // en clean, y uno con el DLL STALE (versión vieja → Dataverse NO recarga) en incremental —
+    // el sellado siguió corriendo código viejo (2026-07-19). Verificable: el DLL adentro del
+    // nupkg debe tener el AssemblyVersion bumpeado, y pluginassembly.version debe subir tras deploy.
+    Console.Error.WriteLine("        Generalo con: dotnet build src/backend/Sigil.Plugins -c Release");
     return 1;
 }
 byte[] nupkgBytes = File.ReadAllBytes(nupkgPath);
