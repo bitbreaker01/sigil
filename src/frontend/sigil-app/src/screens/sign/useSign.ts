@@ -4,7 +4,7 @@
 // the Query cache (§5.2). "Approve" is gated on a successful render (RF-03, `rendered`).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sigilApi } from '../../api';
 import type { ZoneView } from '../../api/SigilApi';
 import { PARTICIPANT_STATE } from '../../domain/states';
@@ -12,6 +12,7 @@ import { PARTICIPANT_STATE } from '../../domain/states';
 type DocState = { phase: 'loading' } | { phase: 'ready'; base64: string } | { phase: 'error' };
 
 export function useSign(txId: string) {
+  const qc = useQueryClient();
   const base = useMemo(() => ['sign', txId] as const, [txId]);
   const tx = useQuery({ queryKey: [...base, 'tx'], queryFn: () => sigilApi.getTransaction(txId) });
   const participants = useQuery({ queryKey: [...base, 'participants'], queryFn: () => sigilApi.participantsOf(txId) });
@@ -49,22 +50,34 @@ export function useSign(txId: string) {
     return { myZones: mine, otherZones: allZones.filter((z: ZoneView) => !mineSet.has(z)) };
   }, [allZones, myParticipant]);
 
+  // After acting, the dashboard lists are stale (this tx left my Pending, moved in Requests/
+  // Participations) and the detail view changed — invalidate so they refetch on the way back
+  // instead of showing the just-signed request in "pending" until staleTime expires (the delay
+  // the user hit). This is independent of the async sealing.
+  const invalidateAfterAction = useCallback(() => {
+    void qc.invalidateQueries({ queryKey: ['dashboard'] });
+    void qc.invalidateQueries({ queryKey: ['detail', txId] });
+  }, [qc, txId]);
+
   const approve = useCallback(async (): Promise<boolean | null> => {
     setSubmitting(true); setActionError(false);
     try {
-      return await sigilApi.submitSignature(txId); // → IsLastSigner
+      const isLast = await sigilApi.submitSignature(txId); // → IsLastSigner
+      invalidateAfterAction();
+      return isLast;
     } catch {
       setActionError(true);
       return null;
     } finally {
       setSubmitting(false);
     }
-  }, [txId]);
+  }, [txId, invalidateAfterAction]);
 
   const reject = useCallback(async (reason: string): Promise<boolean> => {
     setSubmitting(true); setActionError(false);
     try {
       await sigilApi.rejectTransaction({ Target: txId, Reason: reason });
+      invalidateAfterAction();
       return true;
     } catch {
       setActionError(true);
@@ -72,7 +85,7 @@ export function useSign(txId: string) {
     } finally {
       setSubmitting(false);
     }
-  }, [txId]);
+  }, [txId, invalidateAfterAction]);
 
   return {
     tx: tx.data,

@@ -67,6 +67,16 @@ describe('useSign', () => {
     expect(typeof isLast).toBe('boolean');
   });
 
+  it('invalidates the dashboard queries after approving (drops it from Pending promptly)', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const spy = vi.spyOn(client, 'invalidateQueries');
+    const w = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useSign(ndaId), { wrapper: w });
+    await waitFor(() => expect(result.current.tx).toBeDefined());
+    await act(async () => { await result.current.approve(); });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['dashboard'] });
+  });
+
   it('reject succeeds with a reason', async () => {
     const { result } = renderHook(() => useSign(servicesId), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.tx).toBeDefined());
