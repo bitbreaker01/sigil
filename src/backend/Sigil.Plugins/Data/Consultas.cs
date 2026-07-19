@@ -150,7 +150,13 @@ public static class Consultas
 
         var query = new QueryExpression(SchemaNames.Zona.Entidad)
         {
-            ColumnSet = new ColumnSet(SchemaNames.Zona.Page, SchemaNames.Zona.Name, SchemaNames.Zona.ParticipantId),
+            // MUST include the geometry (PosX/PosY/Width/Height): the sealing worker reads them to
+            // place each signature. Omitting them made GetAttributeValue<decimal> return 0, so every
+            // signature was stamped at (0,0) with size 0×0 — invisible in the document (only the
+            // closing sheet, which uses a fixed box, showed the signature).
+            ColumnSet = new ColumnSet(
+                SchemaNames.Zona.Page, SchemaNames.Zona.Name, SchemaNames.Zona.ParticipantId,
+                SchemaNames.Zona.PosX, SchemaNames.Zona.PosY, SchemaNames.Zona.Width, SchemaNames.Zona.Height),
         };
         query.Criteria.AddCondition(SchemaNames.Zona.ParticipantId, ConditionOperator.In,
             participantIds.Cast<object>().ToArray());
