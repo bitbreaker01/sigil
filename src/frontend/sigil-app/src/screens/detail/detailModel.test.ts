@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { eventLabelKey, participantLabelKey, terminationReason, canCancel, canRetry, canDownloadFinal } from './detailModel';
+import { eventLabelKey, participantLabelKey, terminationReason, canCancel, canRetry, canDownloadFinal, isVerificationEvent } from './detailModel';
 import type { EventView } from '../../api/SigilApi';
 
 // Choice values (doc 12 Apéndice A) referenced only in this test.
@@ -17,6 +17,12 @@ describe('label keys', () => {
   it('returns undefined for unknown values', () => {
     expect(eventLabelKey(999)).toBeUndefined();
     expect(participantLabelKey(999)).toBeUndefined();
+  });
+  it('flags verification events as a distinct (non-lifecycle) lane', () => {
+    expect(isVerificationEvent(159460010)).toBe(true); // verificationPerformed
+    expect(isVerificationEvent(DRAFT)).toBe(false); // transactionCreated (lifecycle)
+    expect(isVerificationEvent(159460006)).toBe(false); // sealingCompleted (lifecycle)
+    expect(isVerificationEvent(999)).toBe(false); // unknown
   });
 });
 

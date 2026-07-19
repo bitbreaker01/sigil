@@ -29,6 +29,12 @@ export function eventLabelKey(type: number): string | undefined {
   return name ? `event.${name}` : undefined;
 }
 
+/** Verification events (RF-13) are user audit reads, not steps of the document's lifecycle — the
+ *  timeline renders them as a muted, distinct lane so they don't blend with the process events. */
+export function isVerificationEvent(type: number): boolean {
+  return EVENT_TYPE[type] === 'verificationPerformed';
+}
+
 export function participantLabelKey(state: number): string | undefined {
   const name = PARTICIPANT_STATE[state];
   return name ? `participantState.${name}` : undefined;
