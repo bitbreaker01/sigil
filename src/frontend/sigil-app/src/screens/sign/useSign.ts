@@ -35,10 +35,12 @@ export function useSign(txId: string) {
     return () => { alive.current = false; };
   }, [txId]);
 
-  const me = sigilApi.currentUser().id;
+  // Identity is async in real mode (Entra objectId → systemuserid); currentUser() is empty there.
+  const meId = useQuery({ queryKey: ['currentUserId'], queryFn: () => sigilApi.getCurrentUserId() });
+  const me = meId.data;
   const parts = useMemo(() => participants.data ?? [], [participants.data]);
   const allZones = useMemo(() => zones.data ?? [], [zones.data]);
-  const myParticipant = parts.find((p) => p.userId === me);
+  const myParticipant = me ? parts.find((p) => p.userId === me) : undefined;
   // Only the active-turn participant can sign/reject (doc 04 §3.3). UI hint — backend enforces (§9).
   const canAct = !!myParticipant && PARTICIPANT_STATE[myParticipant.state] === 'activeTurn';
   const { myZones, otherZones } = useMemo(() => {
@@ -81,7 +83,7 @@ export function useSign(txId: string) {
     otherZones,
     masterSignature: masterSignature.data?.ImageBase64,
     needsMasterSignature: masterSignature.isSuccess && !masterSignature.data?.ImageBase64,
-    loading: tx.isLoading || participants.isLoading || zones.isLoading || masterSignature.isLoading,
+    loading: tx.isLoading || participants.isLoading || zones.isLoading || masterSignature.isLoading || meId.isLoading,
     notFound: tx.isSuccess && !tx.data,
     rendered,
     markRendered: useCallback(() => setRendered(true), []),

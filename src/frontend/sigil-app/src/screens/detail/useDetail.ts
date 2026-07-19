@@ -82,7 +82,9 @@ export function useDetail(txId: string) {
     void invalidate();
   }, [invalidate]);
 
-  const me = sigilApi.currentUser().id;
+  // Identity is async in real mode (Entra objectId → systemuserid); currentUser() is empty there.
+  const meId = useQuery({ queryKey: ['currentUserId'], queryFn: () => sigilApi.getCurrentUserId() });
+  const me = meId.data;
 
   return {
     tx: tx.data,
@@ -91,7 +93,7 @@ export function useDetail(txId: string) {
     // reason extraction (scans from the end) depend on it (adversarial review W2).
     events: (events.data ?? []).slice().sort((a, b) => a.occurredOn.localeCompare(b.occurredOn)),
     isCreator: !!tx.data && !!me && tx.data.creatorId === me,
-    loading: tx.isLoading || participants.isLoading || events.isLoading,
+    loading: tx.isLoading || participants.isLoading || events.isLoading || meId.isLoading,
     notFound: tx.isSuccess && !tx.data,
     error: tx.isError || participants.isError || events.isError,
     sealingCapped,

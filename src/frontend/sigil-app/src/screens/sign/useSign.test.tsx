@@ -34,8 +34,17 @@ describe('useSign', () => {
     expect(result.current.needsMasterSignature).toBe(true); // none seeded
   });
 
+  it('recognizes the caller as the active-turn participant (canAct)', async () => {
+    // Regression: identity is resolved asynchronously (getCurrentUserId). If it isn't wired, the
+    // caller is never matched to their participant and canAct stays false → "not your turn".
+    const { result } = renderHook(() => useSign(ndaId), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.canAct).toBe(true);
+  });
+
   it('gates approve on a successful render (RF-03)', async () => {
     const { result } = renderHook(() => useSign(ndaId), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.loading).toBe(false));
     await waitFor(() => expect(result.current.documentBase64).toBeDefined());
     expect(result.current.canApprove).toBe(false); // not rendered yet
     act(() => result.current.markRendered());
@@ -44,8 +53,8 @@ describe('useSign', () => {
 
   it('blocks acting when it is not my active turn (I already signed)', async () => {
     const { result } = renderHook(() => useSign(completedId), { wrapper: wrapper() });
-    await waitFor(() => expect(result.current.tx).toBeDefined());
-    expect(result.current.canAct).toBe(false);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.canAct).toBe(false); // matched, but my state is 'signed'
     act(() => result.current.markRendered());
     expect(result.current.canApprove).toBe(false); // rendered but not my turn
   });

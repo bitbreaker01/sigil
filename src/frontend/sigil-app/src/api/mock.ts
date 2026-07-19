@@ -75,6 +75,10 @@ export class MockSigilApi implements SigilApi {
     return { id: this.seed.userId, name: this.seed.userName, upn: this.seed.userUpn };
   }
 
+  async getCurrentUserId(): Promise<string> {
+    return this.seed.userId;
+  }
+
   async searchUsers(query: string): Promise<UserSummary[]> {
     await this.delay();
     const q = query.trim().toLowerCase();

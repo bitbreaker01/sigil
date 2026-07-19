@@ -78,6 +78,10 @@ export interface MasterSignatureVersion {
 export interface SigilApi {
   // Identity (getContext) — never authoritative (doc 05 §9).
   currentUser(): { id?: string; name?: string; upn?: string };
+  // The caller's Dataverse systemuserid, resolved asynchronously (real mode maps the Entra objectId
+  // from getContext() → systemuser). currentUser() is sync and can't carry it in real mode, so use
+  // this to match the caller against participant.userId. UI hint only — the backend enforces (§9).
+  getCurrentUserId(): Promise<string | undefined>;
 
   // People picker (create wizard): search selectable signers.
   searchUsers(query: string): Promise<UserSummary[]>;

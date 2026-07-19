@@ -177,6 +177,11 @@ export class PowerAppsSigilApi implements SigilApi {
   currentUser() {
     return {};
   }
+  // Resolves the caller's Dataverse systemuserid (from the Entra objectId in getContext()), cached.
+  // Screens use this to match the caller against participant.userId — currentUser() can't in real mode.
+  async getCurrentUserId(): Promise<string> {
+    return this.me();
+  }
 
   // ── Custom API actions ──
   async validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput> {

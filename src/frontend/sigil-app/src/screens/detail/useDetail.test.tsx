@@ -35,11 +35,11 @@ describe('useDetail', () => {
 
   it('gates creator actions by identity', async () => {
     const mine = renderHook(() => useDetail(mineId), { wrapper: wrapper() });
-    await waitFor(() => expect(mine.result.current.tx).toBeDefined());
-    expect(mine.result.current.isCreator).toBe(true); // I created it
+    // isCreator depends on the async identity (getCurrentUserId) resolving — wait for it.
+    await waitFor(() => expect(mine.result.current.isCreator).toBe(true)); // I created it
 
     const ana = renderHook(() => useDetail(anaId), { wrapper: wrapper() });
-    await waitFor(() => expect(ana.result.current.tx).toBeDefined());
+    await waitFor(() => expect(ana.result.current.loading).toBe(false));
     expect(ana.result.current.isCreator).toBe(false); // Ana created it
   });
 
