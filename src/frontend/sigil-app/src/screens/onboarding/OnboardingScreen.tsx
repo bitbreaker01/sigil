@@ -104,7 +104,11 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
       )}
 
       {state.phase === 'error' && (
-        <MessageBar intent="error"><MessageBarBody>{t(state.message)}</MessageBarBody></MessageBar>
+        <MessageBar intent="error"><MessageBarBody>
+          {state.message.startsWith('common.') || state.message.startsWith('onboarding.')
+            ? t(state.message)
+            : state.message}
+        </MessageBarBody></MessageBar>
       )}
 
       {formatError && (

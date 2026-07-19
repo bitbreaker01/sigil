@@ -1,9 +1,10 @@
 // Test of the Onboarding logic against the mock: initial load, format rejection,
 // successful validation with normalized preview, and failure reasons (small image).
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useOnboarding } from './useOnboarding';
+import { sigilApi } from '../../api';
 
 function pngFile(bytes: number, name = 'signature.png'): File {
   return new File([new Uint8Array(bytes)], name, { type: 'image/png' });
@@ -42,5 +43,28 @@ describe('useOnboarding (hook)', () => {
     await waitFor(() => expect(result.current.state.phase).toBe('rejected'));
     if (result.current.state.phase !== 'rejected') throw new Error('unexpected phase');
     expect(result.current.state.reasons.length).toBeGreaterThan(0);
+  });
+
+  it('surfaces the backend fault message when validate throws (e.g. image too big)', async () => {
+    const faultMsg = 'La imagen supera el tamaño máximo de carga de 1500 KB.';
+    const spy = vi.spyOn(sigilApi, 'validateMasterSignature').mockRejectedValue(new Error(faultMsg));
+    const { result } = renderHook(() => useOnboarding());
+    await waitFor(() => expect(result.current.state.phase).toBe('ready'));
+    act(() => result.current.upload(pngFile(300)));
+    await waitFor(() => expect(result.current.state.phase).toBe('error'));
+    if (result.current.state.phase !== 'error') throw new Error('unexpected phase');
+    expect(result.current.state.message).toBe(faultMsg);
+    spy.mockRestore();
+  });
+
+  it('falls back to the generic error when the fault has no readable message', async () => {
+    const spy = vi.spyOn(sigilApi, 'validateMasterSignature').mockRejectedValue(new Error(''));
+    const { result } = renderHook(() => useOnboarding());
+    await waitFor(() => expect(result.current.state.phase).toBe('ready'));
+    act(() => result.current.upload(pngFile(300)));
+    await waitFor(() => expect(result.current.state.phase).toBe('error'));
+    if (result.current.state.phase !== 'error') throw new Error('unexpected phase');
+    expect(result.current.state.message).toBe('common.genericError');
+    spy.mockRestore();
   });
 });

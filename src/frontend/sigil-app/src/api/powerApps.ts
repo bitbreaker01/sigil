@@ -33,6 +33,7 @@ import type {
 import { getClient } from '@microsoft/power-apps/data';
 import { getContext } from '@microsoft/power-apps/app';
 import { dataSourcesInfo } from '../../.power/schemas/appschemas/dataSourcesInfo';
+import { dataverseFaultMessage } from './faults';
 import {
   Sanic_sigil_capi_CreateTransactionService,
   Sanic_sigil_capi_UpdateDraftService,
@@ -68,14 +69,9 @@ const T = {
 function ok(result: { success: boolean; data: unknown; error?: unknown }): unknown {
   if (!result.success) {
     if (result.error instanceof Error) throw result.error;
-    // Dataverse returns the fault as a plain object ({ message, code, ... }). Surface its real
-    // message instead of a generic string, so plugin/validation faults are actually diagnosable.
-    const e = result.error as { message?: unknown; code?: unknown } | undefined | null;
-    const detail =
-      e && typeof e === 'object' && e.message != null
-        ? String(e.message)
-        : JSON.stringify(result.error ?? null);
-    throw new Error(`Dataverse operation failed: ${detail}`);
+    // Dataverse returns the fault as a plain object; surface its real message (e.g. a plugin's
+    // validation fault) instead of a generic string, so callers can show/log the actual cause.
+    throw new Error(dataverseFaultMessage(result.error));
   }
   return result.data;
 }

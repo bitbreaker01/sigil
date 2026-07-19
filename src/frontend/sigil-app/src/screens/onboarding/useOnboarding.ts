@@ -76,7 +76,10 @@ export function useOnboarding(): UseOnboarding {
       } catch (e) {
         // Don't swallow: surface the real cause so upload failures are diagnosable.
         console.error('[master-signature] upload/validate failed:', e);
-        setState({ phase: 'error', message: 'common.genericError' });
+        // A contract fault (size, bad base64, ...) carries a readable backend message — show it
+        // instead of the opaque generic error. Fall back to the generic key when there's none.
+        const message = e instanceof Error && e.message.trim() ? e.message.trim() : 'common.genericError';
+        setState({ phase: 'error', message });
       }
     })();
   }, [loadHistory]);
