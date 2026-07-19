@@ -68,9 +68,9 @@ const T = {
 /** Unwraps a generated IOperationResult: returns the response body, or throws on failure. */
 function ok(result: { success: boolean; data: unknown; error?: unknown }): unknown {
   if (!result.success) {
-    if (result.error instanceof Error) throw result.error;
-    // Dataverse returns the fault as a plain object; surface its real message (e.g. a plugin's
-    // validation fault) instead of a generic string, so callers can show/log the actual cause.
+    // The fault arrives in varied shapes (plain object, Error, or a JSON string inside .message).
+    // Extract the innermost readable message so callers can show/log the actual cause instead of
+    // a raw JSON blob or a generic string.
     throw new Error(dataverseFaultMessage(result.error));
   }
   return result.data;
