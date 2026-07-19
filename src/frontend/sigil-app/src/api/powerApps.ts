@@ -184,9 +184,16 @@ export class PowerAppsSigilApi implements SigilApi {
   }
 
   // ── Custom API actions ──
+  // Persist=false → validate only (preview). The UI confirms before replacing the active signature.
   async validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput> {
     return ok(
-      await Sanic_sigil_capi_ValidateMasterSignatureService.sanic_sigil_capi_ValidateMasterSignature(imageBase64),
+      await Sanic_sigil_capi_ValidateMasterSignatureService.sanic_sigil_capi_ValidateMasterSignature(imageBase64, false),
+    ) as ValidateMasterSignatureOutput;
+  }
+  // Persist=true → validate again server-side AND commit the new active version (irreversible).
+  async saveMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput> {
+    return ok(
+      await Sanic_sigil_capi_ValidateMasterSignatureService.sanic_sigil_capi_ValidateMasterSignature(imageBase64, true),
     ) as ValidateMasterSignatureOutput;
   }
   async getMasterSignature(): Promise<GetMasterSignatureOutput> {
@@ -198,7 +205,9 @@ export class PowerAppsSigilApi implements SigilApi {
     const d = ok(
       await Sanic_sigil_capi_GetMasterSignatureHistoryService.sanic_sigil_capi_GetMasterSignatureHistory(),
     ) as { HistoryJson: string };
-    return JSON.parse(d.HistoryJson) as MasterSignatureVersion[];
+    const raw = JSON.parse(d.HistoryJson) as Array<Partial<MasterSignatureVersion>>;
+    // Tolerate older backends that don't send `documents` yet (default to []).
+    return raw.map((v) => ({ ...v, documents: v.documents ?? [] })) as MasterSignatureVersion[];
   }
   async createTransaction(input: CreateTransactionInput): Promise<string> {
     const d = ok(

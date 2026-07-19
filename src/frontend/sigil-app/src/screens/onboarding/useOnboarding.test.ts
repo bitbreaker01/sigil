@@ -27,13 +27,39 @@ describe('useOnboarding (hook)', () => {
     expect(result.current.state.phase).toBe('ready');
   });
 
-  it('validates a sufficiently large PNG → success with normalized preview', async () => {
+  // NB: the mock (sigilApi) is a module singleton shared across tests, so assert history by DELTA.
+  it('validates a large PNG → PREVIEW (nothing saved yet), then save → success', async () => {
     const { result } = renderHook(() => useOnboarding());
     await waitFor(() => expect(result.current.state.phase).toBe('ready'));
+    const before = result.current.history.length;
+
+    // Upload → preview (no version created yet).
     act(() => result.current.upload(pngFile(300)));
+    await waitFor(() => expect(result.current.state.phase).toBe('preview'));
+    const preview = result.current.state;
+    if (preview.phase !== 'preview') throw new Error('unexpected phase');
+    expect(preview.normalized.length).toBeGreaterThan(0);
+    expect(result.current.history).toHaveLength(before); // NOT persisted on validate
+
+    // Confirm + save → success + a new version appears in history.
+    act(() => result.current.save());
     await waitFor(() => expect(result.current.state.phase).toBe('success'));
-    if (result.current.state.phase !== 'success') throw new Error('unexpected phase');
-    expect(result.current.state.normalized.length).toBeGreaterThan(0);
+    const success = result.current.state;
+    if (success.phase !== 'success') throw new Error('unexpected phase');
+    expect(success.normalized.length).toBeGreaterThan(0);
+    await waitFor(() => expect(result.current.history).toHaveLength(before + 1));
+    expect(result.current.history[0]!.isActive).toBe(true); // newest first
+  });
+
+  it('cancelPreview discards the preview without saving', async () => {
+    const { result } = renderHook(() => useOnboarding());
+    await waitFor(() => expect(result.current.state.phase).toBe('ready'));
+    const before = result.current.history.length;
+    act(() => result.current.upload(pngFile(300)));
+    await waitFor(() => expect(result.current.state.phase).toBe('preview'));
+    act(() => result.current.cancelPreview());
+    await waitFor(() => expect(result.current.state.phase).toBe('ready'));
+    expect(result.current.history).toHaveLength(before); // nothing was saved
   });
 
   it('returns failure reasons when the image is too small', async () => {

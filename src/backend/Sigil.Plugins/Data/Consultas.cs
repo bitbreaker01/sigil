@@ -126,6 +126,39 @@ public static class Consultas
         return servicio.RetrieveMultiple(query).Entities.ToList();
     }
 
+    /// <summary>Participaciones FIRMADAS que usaron alguna de estas versiones de Firma Maestra
+    /// (para mostrar "qué documentos firmé con cada versión" — doc 03 §4.5). Devuelve la fila del
+    /// participante con su masterSignatureId y transactionId.</summary>
+    public static IReadOnlyList<Entity> FirmasPorVersionDeFirma(
+        IOrganizationService servicio, IReadOnlyCollection<Guid> versionIds)
+    {
+        if (versionIds.Count == 0)
+            return Array.Empty<Entity>();
+        var query = new QueryExpression(SchemaNames.Participante.Entidad)
+        {
+            ColumnSet = new ColumnSet(SchemaNames.Participante.MasterSignatureId, SchemaNames.Participante.TransactionId),
+        };
+        query.Criteria.AddCondition(SchemaNames.Participante.MasterSignatureId, ConditionOperator.In,
+            versionIds.Cast<object>().ToArray());
+        query.Criteria.AddCondition(SchemaNames.Participante.Status, ConditionOperator.Equal,
+            (int)ParticipantStatus.Firmado);
+        return servicio.RetrieveMultiple(query).Entities.ToList();
+    }
+
+    /// <summary>Nombre + estado de las transacciones dadas (batch), como mapa por id.</summary>
+    public static IReadOnlyDictionary<Guid, Entity> TransaccionesPorId(
+        IOrganizationService servicio, IReadOnlyCollection<Guid> txIds)
+    {
+        if (txIds.Count == 0)
+            return new Dictionary<Guid, Entity>();
+        var query = new QueryExpression(SchemaNames.Tx.Entidad)
+        {
+            ColumnSet = new ColumnSet(SchemaNames.Tx.Name, SchemaNames.Tx.Status),
+        };
+        query.Criteria.AddCondition(SchemaNames.Tx.Entidad + "id", ConditionOperator.In, txIds.Cast<object>().ToArray());
+        return servicio.RetrieveMultiple(query).Entities.ToDictionary(e => e.Id);
+    }
+
     /// <summary>
     /// GrantAccess de LECTURA (doc 03 §2): la cascada de Share solo cubre hijos existentes
     /// al momento del share — los eventos posteriores se comparten explícitamente acá.

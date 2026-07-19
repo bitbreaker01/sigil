@@ -183,6 +183,13 @@ export const en = {
     version: 'Version {{n}}',
     activeVersion: 'Active',
     downloadVersion: 'Download version {{n}}',
+    previewNotice: 'This is a preview — nothing is saved yet. Review it and choose "Save new signature" to make it your active one.',
+    saveNew: 'Save new signature',
+    confirmTitle: 'Replace your active signature?',
+    confirmBody: 'Once saved, this becomes a new version and your active signature. This can\'t be undone — you won\'t be able to go back to the previous one.',
+    confirmSave: 'Yes, save it',
+    signedWith: 'Documents signed with this version: {{count}}',
+    untitledDoc: 'Untitled',
   },
   verify: {
     title: 'Verify a document',

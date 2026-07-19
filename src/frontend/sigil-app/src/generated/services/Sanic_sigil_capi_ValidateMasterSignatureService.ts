@@ -14,10 +14,12 @@ export class Sanic_sigil_capi_ValidateMasterSignatureService {
 
   /**
    * @param ImageBase64 type: `String`
+   * @param Persist type: `Boolean` (optional) — true creates the new active version; omitted/false only validates (preview)
    */
-  public static async sanic_sigil_capi_ValidateMasterSignature(ImageBase64: string): Promise<IOperationResult<Record<string, unknown>>> {
-    const params: { ImageBase64: string } = { ImageBase64 };
-    const result = await Sanic_sigil_capi_ValidateMasterSignatureService.client.executeAsync<{ ImageBase64: string }, Record<string, unknown>>(
+  public static async sanic_sigil_capi_ValidateMasterSignature(ImageBase64: string, Persist?: boolean): Promise<IOperationResult<Record<string, unknown>>> {
+    const params: { ImageBase64: string; Persist?: boolean } = { ImageBase64 };
+    if (Persist !== undefined) params.Persist = Persist;
+    const result = await Sanic_sigil_capi_ValidateMasterSignatureService.client.executeAsync<{ ImageBase64: string; Persist?: boolean }, Record<string, unknown>>(
       {
         dataverseRequest: {
           action: 'customapi',

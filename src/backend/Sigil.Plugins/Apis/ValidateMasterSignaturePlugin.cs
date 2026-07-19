@@ -1,9 +1,11 @@
 // sanic_sigil_capi_ValidateMasterSignature (ADR-009, RF-01/02, doc 04 §3.1) — Unbound.
-// Valida (cómputo local) y normaliza la Firma Maestra; crea una NUEVA versión vigente y
-// desactiva la anterior EN LA MISMA operación (versionado — doc 03 §4.5, el historial
-// jamás se pisa). SOLO opera sobre la firma del propio llamante (doc 04 §3.3: jamás
-// acepta un userId como parámetro).
-// In: ImageBase64. Out: IsValid, FailureReasons?, MetricsJson, NormalizedImageBase64?.
+// Valida (cómputo local) y normaliza la Firma Maestra. Con Persist=true crea una NUEVA versión
+// vigente y desactiva la anterior EN LA MISMA operación (versionado — doc 03 §4.5, el historial
+// jamás se pisa). SOLO opera sobre la firma del propio llamante (doc 04 §3.3: jamás acepta un
+// userId como parámetro).
+// In: ImageBase64, Persist? (default false → SOLO valida/preview; el frontend muestra el preview
+//     y CONFIRMA antes de reemplazar la firma vigente — el reemplazo es irreversible). Out: IsValid,
+//     FailureReasons?, MetricsJson, NormalizedImageBase64? (siempre que sea válida, para el preview).
 // Una imagen que NO pasa los umbrales es un VEREDICTO (IsValid=false + motivos), no una
 // excepción; los errores de contrato (base64 roto, tamaño) sí son excepciones.
 
@@ -62,6 +64,17 @@ public class ValidateMasterSignaturePlugin : SigilApiPlugin
             return; // veredicto, no excepción — el frontend muestra los motivos (RF-02)
         }
 
+        // Válida: SIEMPRE devolver el normalizado para el preview, persista o no.
+        e.Output("NormalizedImageBase64", Convert.ToBase64String(resultado.PngNormalizado!));
+
+        // Sin Persist → solo preview (default): el frontend confirma antes de reemplazar (RF-02).
+        var persist = e.Contexto.InputParameters.TryGetValue("Persist", out var pv) && pv is bool pb && pb;
+        if (!persist)
+        {
+            e.Trace.Trace("ValidateMasterSignature: válida — preview (Persist=false), no se versiona.");
+            return;
+        }
+
         // 3. Versionado (doc 03 §4.5): desactivar la vigente y crear la nueva EN LA MISMA operación.
         var versiones = Consultas.VersionesDeFirmaDe(e.Servicio, e.Llamante);
         var versionNueva = versiones.Count == 0
@@ -96,7 +109,6 @@ public class ValidateMasterSignaturePlugin : SigilApiPlugin
             SchemaNames.FirmaMaestra.SignatureFile, "master-signature.png",
             resultado.PngNormalizado!, "image/png");
 
-        e.Output("NormalizedImageBase64", Convert.ToBase64String(resultado.PngNormalizado!));
         e.Trace.Trace("ValidateMasterSignature: v{0} creada para {1} ({2} bytes normalizados).",
             versionNueva, e.Llamante, resultado.PngNormalizado!.Length);
     }

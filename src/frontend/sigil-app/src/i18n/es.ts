@@ -182,6 +182,13 @@ export const es = {
     version: 'Versión {{n}}',
     activeVersion: 'Vigente',
     downloadVersion: 'Descargar versión {{n}}',
+    previewNotice: 'Esto es un preview — todavía no se guardó nada. Revisala y elegí "Guardar nueva firma" para que sea la vigente.',
+    saveNew: 'Guardar nueva firma',
+    confirmTitle: '¿Reemplazar tu firma vigente?',
+    confirmBody: 'Una vez guardada, se crea una versión nueva y pasa a ser tu firma vigente. Esto no se puede deshacer — no vas a poder volver a la anterior.',
+    confirmSave: 'Sí, guardar',
+    signedWith: 'Documentos firmados con esta versión: {{count}}',
+    untitledDoc: 'Sin título',
   },
   verify: {
     title: 'Verificar un documento',

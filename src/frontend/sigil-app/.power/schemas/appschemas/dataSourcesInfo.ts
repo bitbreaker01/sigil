@@ -3927,6 +3927,12 @@ export const dataSourcesInfo = {
             "in": "body",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "Persist",
+            "in": "body",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "responseInfo": {

@@ -187,11 +187,15 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_ValidateMasterSignature",
             DisplayName: "Sigil | CAPI | ValidateMasterSignature",
-            Description: "Valida (ADR-009: alfa/contraste/nitidez, cómputo local) y normaliza la Firma Maestra; crea la nueva versión vigente.",
+            Description: "Valida (ADR-009: alfa/contraste/nitidez, cómputo local) y normaliza la Firma Maestra. Con Persist=true crea la nueva versión vigente; sin él solo valida (preview antes de confirmar).",
             BindingType: Binding.Global,
             BoundEntityLogicalName: null,
             PluginTypeName: "Sigil.Plugins.Apis.ValidateMasterSignaturePlugin",
-            RequestParams: new[] { new RequestParam("ImageBase64", ParamType.String, Optional: false) },
+            RequestParams: new[]
+            {
+                new RequestParam("ImageBase64", ParamType.String, Optional: false),
+                new RequestParam("Persist", ParamType.Boolean, Optional: true),
+            },
             ResponseProps: new[]
             {
                 new ResponseProp("IsValid", ParamType.Boolean),

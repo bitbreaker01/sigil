@@ -86,9 +86,32 @@ export class MockSigilApi implements SigilApi {
     return FAKE_USERS.filter((u) => u.name.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q));
   }
 
+  // Preview only (RF-02): validate WITHOUT persisting — the UI confirms before replacing.
   async validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput> {
     await this.delay();
-    // the mock accepts any "large" PNG; rejects very small ones as "low quality"
+    return this.validateSignature(imageBase64);
+  }
+
+  // Commit: validate again and, if valid, create the new immutable active version (doc 03 §4.5).
+  async saveMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput> {
+    await this.delay();
+    const r = this.validateSignature(imageBase64);
+    if (!r.IsValid) return r; // invalid → never persist
+    this.signatureVersions.forEach((v) => (v.isActive = false));
+    this.signatureVersions.push({
+      version: this.signatureVersions.length + 1,
+      imageBase64,
+      validatedOn: new Date().toISOString(),
+      isActive: true,
+      documents: [], // the real backend fills this from participant.masterSignatureId
+    });
+    this.masterSignature = imageBase64;
+    return r;
+  }
+
+  // the mock accepts any "large" PNG; rejects very small ones as "low quality". Echoes the image
+  // back as the "normalized" preview (the real backend normalizes to 600×200).
+  private validateSignature(imageBase64: string): ValidateMasterSignatureOutput {
     if (imageBase64.length < 200) {
       return {
         IsValid: false,
@@ -96,12 +119,6 @@ export class MockSigilApi implements SigilApi {
         MetricsJson: '{"alphaRatio":0.9,"rmsContrast":0.1,"laplacianVariance":10}',
       };
     }
-    // Echo the uploaded image back as the "normalized" preview (the real backend normalizes to
-    // 600×200; the mock just shows what you uploaded so the preview isn't a stretched placeholder).
-    // Each upload is a new immutable version; the previous ones are deactivated (doc 03 §4.5).
-    this.signatureVersions.forEach((v) => (v.isActive = false));
-    this.signatureVersions.push({ version: this.signatureVersions.length + 1, imageBase64, validatedOn: new Date().toISOString(), isActive: true });
-    this.masterSignature = imageBase64;
     return {
       IsValid: true,
       MetricsJson: '{"alphaRatio":0.4,"rmsContrast":0.9,"laplacianVariance":2000}',

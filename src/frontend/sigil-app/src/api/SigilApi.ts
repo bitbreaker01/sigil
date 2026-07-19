@@ -67,12 +67,20 @@ export interface UserSummary {
   email?: string;
 }
 
+// A document signed with a given Master Signature version (doc 03 §4.5).
+export interface SignedDocumentRef {
+  id: string;
+  name: string;
+  status: number; // transaction state (choice value)
+}
+
 // One version of the user's Master Signature (immutable history, doc 03 §4.5).
 export interface MasterSignatureVersion {
   version: number;
   imageBase64: string;
   validatedOn: string; // ISO UTC
   isActive: boolean;
+  documents: SignedDocumentRef[]; // documents signed with THIS version
 }
 
 export interface SigilApi {
@@ -86,8 +94,10 @@ export interface SigilApi {
   // People picker (create wizard): search selectable signers.
   searchUsers(query: string): Promise<UserSummary[]>;
 
-  // Master Signature
+  // Master Signature — validate is a PREVIEW (no persist); save COMMITS a new active version.
+  // Splitting them lets the UI confirm before the irreversible replacement (RF-02).
   validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput>;
+  saveMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput>;
   getMasterSignature(): Promise<GetMasterSignatureOutput>;
   // Immutable version history (doc 03 §4.5 — each upload is a new version). Backed by the
   // sanic_sigil_capi_GetMasterSignatureHistory Custom API (returns HistoryJson); mock serves it now.

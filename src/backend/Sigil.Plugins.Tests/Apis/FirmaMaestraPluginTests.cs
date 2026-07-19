@@ -24,10 +24,13 @@ public class FirmaMaestraPluginTests
         _usuario = _arnes.SembrarUsuario("Beto Firmante", "beto@bac.test");
     }
 
-    private void Validar(string imageBase64, Guid llamante)
+    // persist:true por default reproduce el comportamiento histórico (validar + versionar). El flujo
+    // real del frontend valida primero con persist:false (preview) y recién guarda con persist:true.
+    private void Validar(string imageBase64, Guid llamante, bool persist = true)
     {
         _arnes.Contexto.OutputParameters.Clear();
         _arnes.Contexto.InputParameters["ImageBase64"] = imageBase64;
+        _arnes.Contexto.InputParameters["Persist"] = persist;
         _arnes.Ejecutar(new ValidateMasterSignaturePlugin(), SchemaNames.Apis.ValidateMasterSignature, llamante);
     }
 
@@ -210,5 +213,36 @@ public class FirmaMaestraPluginTests
         var arr = Historial(otra);
 
         Assert.Equal(0, arr.GetArrayLength());
+    }
+
+    [Fact] // #1: sin Persist SOLO valida y devuelve el preview — NO versiona (el frontend confirma antes)
+    public void Validate_SinPersist_DevuelvePreview_SinCrearVersion()
+    {
+        Validar(Convert.ToBase64String(ArnesDeApi.PngDeFirmaQueValida()), _usuario, persist: false);
+
+        Assert.Equal(true, _arnes.Contexto.OutputParameters["IsValid"]);
+        Assert.False(string.IsNullOrEmpty((string)_arnes.Contexto.OutputParameters["NormalizedImageBase64"]));
+        Assert.Empty(_arnes.Servicio.FilasDe(SchemaNames.FirmaMaestra.Entidad)); // no persistió nada
+        Assert.Empty(_arnes.Archivos.Subidas);
+    }
+
+    [Fact] // #2: el historial trae los documentos firmados con cada versión (doc 03 §4.5)
+    public void History_TraeLosDocumentosFirmadosConCadaVersion()
+    {
+        var v1 = _arnes.SembrarFirmaMaestra(_usuario, ArnesDeApi.PngDeFirmaQueValida(), version: 1, vigente: true);
+        var tx = _arnes.SembrarTransaccion(_usuario, TransactionStatus.Completado, nombre: "Contrato ACME");
+        var p = new Entity(SchemaNames.Participante.Entidad);
+        p[SchemaNames.Participante.TransactionId] = new EntityReference(SchemaNames.Tx.Entidad, tx);
+        p[SchemaNames.Participante.UserId] = new EntityReference(SchemaNames.Usuario.Entidad, _usuario);
+        p[SchemaNames.Participante.Status] = new OptionSetValue((int)ParticipantStatus.Firmado);
+        p[SchemaNames.Participante.MasterSignatureId] = new EntityReference(SchemaNames.FirmaMaestra.Entidad, v1);
+        _arnes.Servicio.Sembrar(p);
+
+        var arr = Historial(_usuario);
+
+        var docs = Assert.Single(arr.EnumerateArray()).GetProperty("documents");
+        Assert.Equal(1, docs.GetArrayLength());
+        Assert.Equal("Contrato ACME", docs[0].GetProperty("name").GetString());
+        Assert.Equal(tx.ToString(), docs[0].GetProperty("id").GetString());
     }
 }
