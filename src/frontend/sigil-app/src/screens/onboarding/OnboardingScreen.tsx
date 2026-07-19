@@ -20,7 +20,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@fluentui/react-components';
-import { ArrowUpload24Regular, CheckmarkCircle24Filled, ArrowLeft20Regular, ArrowDownload20Regular, SaveRegular, WarningRegular, Document16Regular } from '@fluentui/react-icons';
+import { ArrowUpload24Regular, CheckmarkCircle24Filled, ArrowLeft20Regular, ArrowDownload20Regular, SaveRegular, WarningRegular, Document16Regular, ChevronRight16Regular, ChevronDown16Regular } from '@fluentui/react-icons';
 import { useT } from '../../i18n/useT';
 import { downloadBase64 } from '../../api/binaries';
 import { useOnboarding } from './useOnboarding';
@@ -61,9 +61,15 @@ const useStyles = makeStyles({
     ':hover:active': { backgroundColor: tokens.colorPaletteGreenForeground1, color: tokens.colorNeutralForegroundOnBrand },
   },
   historyItem: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS },
-  docList: { display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '108px' }, // aligns under the info, past the 96px thumb + gap
+  docList: { display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '124px' }, // under the toggle label
   docRow: { display: 'flex', alignItems: 'center', gap: '4px', color: tokens.colorNeutralForeground2 },
-  docsLabel: { paddingLeft: '108px', color: tokens.colorNeutralForeground3 },
+  // Collapsible header: a bare button (no chrome) aligned under the info, past the 96px thumb + gap.
+  docsToggle: {
+    display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '108px',
+    background: 'none', border: 'none', padding: '2px 0', cursor: 'pointer',
+    color: tokens.colorNeutralForeground3, textAlign: 'left',
+    ':hover': { color: tokens.colorNeutralForeground1 },
+  },
 });
 
 export default function OnboardingScreen(props: { onBack: () => void }): JSX.Element {
@@ -72,6 +78,12 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
   const { state, history, upload, save, cancelPreview, formatError } = useOnboarding();
   const inputRef = useRef<HTMLInputElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [expandedDocs, setExpandedDocs] = useState<Set<number>>(new Set());
+  const toggleDocs = (version: number) => setExpandedDocs((prev) => {
+    const next = new Set(prev);
+    next.has(version) ? next.delete(version) : next.add(version);
+    return next;
+  });
 
   const png = (b64: string) => `data:image/png;base64,${b64}`;
 
@@ -193,15 +205,25 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
               </div>
               {v.documents.length > 0 && (
                 <>
-                  <Text size={200} className={s.docsLabel}>{t('onboarding.signedWith', { count: v.documents.length })}</Text>
-                  <div className={s.docList}>
-                    {v.documents.map((d) => (
-                      <div key={d.id} className={s.docRow}>
-                        <Document16Regular />
-                        <Text size={200}>{d.name || t('onboarding.untitledDoc')}</Text>
-                      </div>
-                    ))}
-                  </div>
+                  <button
+                    type="button"
+                    className={s.docsToggle}
+                    aria-expanded={expandedDocs.has(v.version)}
+                    onClick={() => toggleDocs(v.version)}
+                  >
+                    {expandedDocs.has(v.version) ? <ChevronDown16Regular /> : <ChevronRight16Regular />}
+                    <Text size={200}>{t('onboarding.signedWith', { count: v.documents.length })}</Text>
+                  </button>
+                  {expandedDocs.has(v.version) && (
+                    <div className={s.docList}>
+                      {v.documents.map((d) => (
+                        <div key={d.id} className={s.docRow}>
+                          <Document16Regular />
+                          <Text size={200}>{d.name || t('onboarding.untitledDoc')}</Text>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </div>
