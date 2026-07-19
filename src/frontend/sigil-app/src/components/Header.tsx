@@ -34,7 +34,7 @@ const useStyles = makeStyles({
 export interface HeaderProps {
   appName: string;
   userName: string;
-  navLabels: { dashboard: string; create: string; verify: string; signature: string };
+  navLabels: { dashboard: string; documents: string; create: string; verify: string; signature: string };
   toggleLangLabel: string;
   /** Current language shown on the toggle as visible text ("ES" / "EN"). */
   langCode: string;
@@ -49,6 +49,7 @@ export function Header(props: HeaderProps): JSX.Element {
   const { navLabels, currentScreen } = props;
   const items: { key: Screen; label: string }[] = [
     { key: 'dashboard', label: navLabels.dashboard },
+    { key: 'documents', label: navLabels.documents },
     { key: 'create', label: navLabels.create },
     { key: 'verify', label: navLabels.verify },
     { key: 'onboarding', label: navLabels.signature },

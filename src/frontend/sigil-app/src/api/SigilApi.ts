@@ -31,6 +31,22 @@ export interface TransactionView {
   completedOn?: string;
 }
 
+// A signer on a document (Documents screen filter "other participants"). Just enough to filter by.
+export interface DocumentParticipantRef {
+  userId: string;
+  name: string;
+}
+
+// A transaction enriched for the Documents screen (Phase 2): the base view PLUS the extra data the
+// dedicated screen filters on — real creation timestamp, every signer, and which version of the
+// caller's own Master Signature was used to sign it. The dashboard uses the plain TransactionView
+// and never pays for these extra reads.
+export interface DocumentRow extends TransactionView {
+  createdOn?: string; // Dataverse system `createdon` (distinct from sentOn)
+  participants: DocumentParticipantRef[]; // every signer on the doc
+  mySignatureVersion?: number; // version of MY Master Signature used to sign this doc, if I signed it
+}
+
 export interface ParticipantView {
   id: string;
   userId: string;
@@ -123,6 +139,9 @@ export interface SigilApi {
   myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]>;
   myRequests(): Promise<TransactionView[]>;
   myParticipations(): Promise<TransactionView[]>;
+  // Documents screen (Phase 2): every doc I'm involved in (created + participated), deduped and
+  // enriched with participants, my signature version, and the real creation date. One call.
+  myDocuments(): Promise<DocumentRow[]>;
   getTransaction(txId: string): Promise<TransactionView | undefined>;
   participantsOf(txId: string): Promise<ParticipantView[]>;
   zonesOf(txId: string): Promise<ZoneView[]>;

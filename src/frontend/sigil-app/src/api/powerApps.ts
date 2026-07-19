@@ -29,6 +29,7 @@ import type {
   ZoneView,
   UserSummary,
   MasterSignatureVersion,
+  DocumentRow,
 } from './SigilApi';
 import { getClient } from '@microsoft/power-apps/data';
 import { getContext } from '@microsoft/power-apps/app';
@@ -304,6 +305,71 @@ export class PowerAppsSigilApi implements SigilApi {
     const filter = txIds.map((id) => `${COL.txId} eq ${id}`).join(' or ');
     const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, { filter, orderBy: ['createdon desc'] })) as Row[];
     return rows.map(txView);
+  }
+
+  // Documents screen (Phase 2): everything I'm involved in, enriched. Reuses read patterns already
+  // present above (owner filter, participant→tx lookup, `id eq … or …` batch) plus the existing
+  // GetMasterSignatureHistory Custom API — NO new table datasource, NO backend change.
+  async myDocuments(): Promise<DocumentRow[]> {
+    const me = await this.me();
+
+    // 1) Docs I created + docs I participate in → one deduped set of transaction rows.
+    const mine = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, {
+      filter: `${COL.owner} eq ${me}`, orderBy: ['createdon desc'],
+    })) as Row[];
+    const myPartLinks = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.participant, {
+      filter: `_${COL.pUserId}_value eq ${me}`, select: [`_${COL.pTransactionId}_value`],
+    })) as Row[];
+    const partTxIds = [...new Set(myPartLinks.map((p) => lookup(p, COL.pTransactionId)).filter(Boolean) as string[])];
+    const partRows = partTxIds.length
+      ? ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, {
+        filter: partTxIds.map((id) => `${COL.txId} eq ${id}`).join(' or '),
+      })) as Row[]
+      : [];
+
+    const txById = new Map<string, Row>();
+    for (const r of [...mine, ...partRows]) {
+      const id = s(r, COL.txId);
+      if (id && !txById.has(id)) txById.set(id, r);
+    }
+    const allTxIds = [...txById.keys()];
+    if (!allTxIds.length) return [];
+
+    // 2) Every signer on every one of those docs, in ONE query (grouped by transaction).
+    const allParts = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.participant, {
+      filter: allTxIds.map((id) => `_${COL.pTransactionId}_value eq ${id}`).join(' or '),
+      orderBy: [`${COL.pOrder} asc`],
+    })) as Row[];
+    const partsByTx = new Map<string, Row[]>();
+    for (const p of allParts) {
+      const tx = lookup(p, COL.pTransactionId);
+      if (!tx) continue;
+      const list = partsByTx.get(tx);
+      if (list) list.push(p); else partsByTx.set(tx, [p]);
+    }
+
+    // 3) Which doc was signed with which of MY signature versions — the history already computes this
+    // linkage server-side (participant.MasterSignatureId grouping), so derive it instead of reading
+    // the (unregistered) master-signature table directly.
+    const history = await this.getMasterSignatureHistory();
+    const versionByDocId = new Map<string, number>();
+    for (const v of history) for (const d of v.documents) versionByDocId.set(d.id.toLowerCase(), v.version);
+
+    // 4) Assemble.
+    return allTxIds.map((id) => {
+      const r = txById.get(id)!;
+      const parts = partsByTx.get(id) ?? [];
+      const participants = parts.map((p) => ({
+        userId: lookup(p, COL.pUserId) ?? '',
+        name: s(p, COL.pSignerName) ?? fmt(p, COL.pUserId) ?? '',
+      }));
+      const row: DocumentRow = { ...txView(r), participants };
+      const created = s(r, 'createdon');
+      if (created) row.createdOn = created;
+      const version = versionByDocId.get(id.toLowerCase());
+      if (version != null) row.mySignatureVersion = version;
+      return row;
+    });
   }
 
   async myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]> {

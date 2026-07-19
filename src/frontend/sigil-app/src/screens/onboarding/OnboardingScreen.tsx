@@ -13,6 +13,7 @@ import {
   MessageBarBody,
   Image,
   Badge,
+  Link,
   Dialog,
   DialogSurface,
   DialogBody,
@@ -72,7 +73,10 @@ const useStyles = makeStyles({
   },
 });
 
-export default function OnboardingScreen(props: { onBack: () => void }): JSX.Element {
+export default function OnboardingScreen(props: {
+  onBack: () => void;
+  onOpenDocuments?: (docIds: string[]) => void;
+}): JSX.Element {
   const s = useStyles();
   const { t } = useT();
   const { state, history, upload, save, cancelPreview, formatError } = useOnboarding();
@@ -219,9 +223,16 @@ export default function OnboardingScreen(props: { onBack: () => void }): JSX.Ele
                       {v.documents.map((d) => (
                         <div key={d.id} className={s.docRow}>
                           <Document16Regular />
-                          <Text size={200}>{d.name || t('onboarding.untitledDoc')}</Text>
+                          {props.onOpenDocuments
+                            ? <Link appearance="subtle" onClick={() => props.onOpenDocuments?.([d.id])}>{d.name || t('onboarding.untitledDoc')}</Link>
+                            : <Text size={200}>{d.name || t('onboarding.untitledDoc')}</Text>}
                         </div>
                       ))}
+                      {props.onOpenDocuments && (
+                        <Link appearance="subtle" onClick={() => props.onOpenDocuments?.(v.documents.map((d) => d.id))} style={{ marginTop: 4 }}>
+                          {t('onboarding.openInDocuments')}
+                        </Link>
+                      )}
                     </div>
                   )}
                 </>

@@ -325,6 +325,25 @@ export class MockSigilApi implements SigilApi {
       .map((tx) => ({ ...tx }));
   }
 
+  async myDocuments() {
+    await this.delay();
+    const me = this.seed.userId;
+    return [...this.txs.values()]
+      .filter((tx) => tx.creatorId === me || (this.participants.get(tx.id) ?? []).some((p) => p.userId === me))
+      .map((tx) => {
+        const parts = this.participants.get(tx.id) ?? [];
+        const mine = parts.find((p) => p.userId === me);
+        return {
+          ...tx,
+          // No dedicated createdOn in the mock store — fall back to sentOn so the created sort/filter demos.
+          createdOn: tx.sentOn,
+          participants: parts.map((p) => ({ userId: p.userId, name: p.name ?? p.userId })),
+          // The mock has no participant.masterSignatureId; approximate: if I signed, it was v1.
+          ...(mine && mine.state === 159460002 && this.signatureVersions.length ? { mySignatureVersion: 1 } : {}),
+        };
+      });
+  }
+
   async getTransaction(txId: string) {
     await this.delay();
     const tx = this.txs.get(txId);
