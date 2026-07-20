@@ -27,6 +27,7 @@ export * from './services/Sanic_sigil_capi_DeleteDraftService';
 export * from './services/Sanic_sigil_capi_GetDocumentContentService';
 export * from './services/Sanic_sigil_capi_GetMasterSignatureHistoryService';
 export * from './services/Sanic_sigil_capi_GetMasterSignatureService';
+export * from './services/Sanic_sigil_capi_SearchDocumentsService';
 export * from './services/Sanic_sigil_capi_RejectTransactionService';
 export * from './services/Sanic_sigil_capi_RetrySealingService';
 export * from './services/Sanic_sigil_capi_SendTransactionService';

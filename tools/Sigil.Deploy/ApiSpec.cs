@@ -242,6 +242,31 @@ internal static class Catalogo
             }),
 
         new(
+            UniqueName: "sanic_sigil_capi_SearchDocuments",
+            DisplayName: "Sigil | CAPI | SearchDocuments",
+            Description: "Búsqueda paginada de documentos del llamante (creados ∪ participados) con filtros (texto, creador, estado, participante, versión de firma), orden y paginación server-side. Out: ResultsJson, Total, NextPagingCookie.",
+            BindingType: Binding.Global,
+            BoundEntityLogicalName: null,
+            PluginTypeName: "Sigil.Plugins.Apis.SearchDocumentsPlugin",
+            RequestParams: new[]
+            {
+                new RequestParam("Text", ParamType.String, Optional: true),
+                new RequestParam("CreatorId", ParamType.Guid, Optional: true),
+                new RequestParam("Status", ParamType.Integer, Optional: true),
+                new RequestParam("ParticipantIds", ParamType.String, Optional: true), // CSV de GUIDs (AND)
+                new RequestParam("SignatureVersion", ParamType.Integer, Optional: true),
+                new RequestParam("Sort", ParamType.String, Optional: true),
+                new RequestParam("PageSize", ParamType.Integer, Optional: true),
+                new RequestParam("PagingCookie", ParamType.String, Optional: true),
+            },
+            ResponseProps: new[]
+            {
+                new ResponseProp("ResultsJson", ParamType.String),
+                new ResponseProp("Total", ParamType.Integer),
+                new ResponseProp("NextPagingCookie", ParamType.String),
+            }),
+
+        new(
             UniqueName: "sanic_sigil_capi_VerifyDocument",
             DisplayName: "Sigil | CAPI | VerifyDocument",
             Description: "Verificación (RF-20/21, ADR-007): constancia + veredicto contra finalhash + verificación cruzada del historial.",

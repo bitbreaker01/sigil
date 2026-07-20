@@ -31,6 +31,41 @@ export interface TransactionView {
   completedOn?: string;
 }
 
+// A signer on a document (Documents screen filter "other participants"). Just enough to filter by.
+export interface DocumentParticipantRef {
+  userId: string;
+  name: string;
+}
+
+// A transaction enriched for the Documents screen (Phase 2): the base view PLUS the extra data the
+// dedicated screen filters on — real creation timestamp, every signer, and which version of the
+// caller's own Master Signature was used to sign it. The dashboard uses the plain TransactionView
+// and never pays for these extra reads.
+export interface DocumentRow extends TransactionView {
+  createdOn?: string; // Dataverse system `createdon` (distinct from sentOn)
+  participants: DocumentParticipantRef[]; // every signer on the doc
+  mySignatureVersion?: number; // version of MY Master Signature used to sign this doc, if I signed it
+}
+
+// Server-side search query (Phase 3): the filters/sort/page the SearchDocuments Custom API applies
+// so the client never loads the whole set. `sort` is a DocumentSort string (see documentsModel).
+export interface DocumentQuery {
+  text?: string;
+  creatorId?: string;
+  participantIds?: string[]; // AND — the doc must include ALL of these signers
+  status?: number;
+  signatureVersion?: number;
+  sort?: string;
+  pageSize?: number;
+}
+
+// One page of results. `nextCookie` is an opaque continuation ('' = last page).
+export interface DocumentPage {
+  rows: DocumentRow[];
+  total: number; // full filtered count (server-side)
+  nextCookie: string;
+}
+
 export interface ParticipantView {
   id: string;
   userId: string;
@@ -123,6 +158,9 @@ export interface SigilApi {
   myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]>;
   myRequests(): Promise<TransactionView[]>;
   myParticipations(): Promise<TransactionView[]>;
+  // Documents screen (Phase 3): server-side paged search — the backend filters/sorts/pages so the
+  // client loads one page at a time. `cookie` chains pages (undefined = first page).
+  searchDocuments(query: DocumentQuery, cookie?: string): Promise<DocumentPage>;
   getTransaction(txId: string): Promise<TransactionView | undefined>;
   participantsOf(txId: string): Promise<ParticipantView[]>;
   zonesOf(txId: string): Promise<ZoneView[]>;

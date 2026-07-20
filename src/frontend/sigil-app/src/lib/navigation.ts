@@ -3,15 +3,18 @@
 // from then on navigation is internal React state (history is untouched — the app runs
 // embedded in the host's iframe, doc 05 §3).
 
-export type Screen = 'dashboard' | 'sign' | 'verify' | 'detail' | 'create' | 'onboarding';
+export type Screen = 'dashboard' | 'sign' | 'verify' | 'detail' | 'create' | 'onboarding' | 'documents';
 
 const SCREENS: ReadonlySet<string> = new Set([
-  'dashboard', 'sign', 'verify', 'detail', 'create', 'onboarding',
+  'dashboard', 'sign', 'verify', 'detail', 'create', 'onboarding', 'documents',
 ]);
 
 export interface Route {
   screen: Screen;
   txId?: string;
+  // Documents screen: optional pre-filter by "documents signed with my signature version N"
+  // (opened from the signature history). Internal state only — maps to the version filter.
+  signatureVersion?: number;
 }
 
 export function parseRoute(params: Record<string, string>): Route {

@@ -15,6 +15,7 @@ const Sign = lazy(() => import('./screens/sign/SignScreen'));
 const Onboarding = lazy(() => import('./screens/onboarding/OnboardingScreen'));
 const Verify = lazy(() => import('./screens/verify/VerifyScreen'));
 const CreateWizard = lazy(() => import('./screens/create/CreateWizardScreen'));
+const Documents = lazy(() => import('./screens/documents/DocumentsScreen'));
 const Placeholder = lazy(() => import('./screens/Placeholder'));
 
 const useStyles = makeStyles({
@@ -28,7 +29,7 @@ const useStyles = makeStyles({
 });
 
 // Screens whose main content is a PDF viewer — they benefit from the full width of large displays.
-const WIDE_SCREENS: ReadonlySet<Screen> = new Set(['create', 'sign', 'detail']);
+const WIDE_SCREENS: ReadonlySet<Screen> = new Set(['create', 'sign', 'detail', 'documents']);
 
 export function App(): JSX.Element {
   const s = useStyles();
@@ -41,9 +42,12 @@ export function App(): JSX.Element {
   // to return so the user lands back on that screen after configuring — doc 05 §4.3 "auto-return".
   const [returnTo, setReturnTo] = useState<Route | undefined>(undefined);
 
-  const navigate = (screen: Screen, txId?: string) => {
+  const navigate = (screen: Screen, txId?: string, signatureVersion?: number) => {
     if (screen !== 'onboarding') setReturnTo(undefined); // drop any stale sign→onboarding return target
-    setRoute(txId ? { screen, txId } : { screen });
+    const next: Route = { screen };
+    if (txId) next.txId = txId;
+    if (signatureVersion != null) next.signatureVersion = signatureVersion;
+    setRoute(next);
   };
   const openOnboarding = (ret?: Route) => { setReturnTo(ret); setRoute({ screen: 'onboarding' }); };
   const leaveOnboarding = () => { const r = returnTo; setReturnTo(undefined); setRoute(r ?? { screen: 'dashboard' }); };
@@ -53,7 +57,7 @@ export function App(): JSX.Element {
       <Header
         appName={t('app.name')}
         userName={user.fullName ?? '—'}
-        navLabels={{ dashboard: t('nav.dashboard'), create: t('nav.create'), verify: t('nav.verify'), signature: t('nav.signature') }}
+        navLabels={{ dashboard: t('nav.dashboard'), documents: t('nav.documents'), create: t('nav.create'), verify: t('nav.verify'), signature: t('nav.signature') }}
         toggleLangLabel={t('app.languageToggle')}
         langCode={lang.toUpperCase()}
         menuLabel={t('nav.menu')}
@@ -72,10 +76,12 @@ export function App(): JSX.Element {
 
 interface Nav { openOnboarding: (ret?: Route) => void; leaveOnboarding: () => void }
 
-function renderScreen(route: Route, navigate: (p: Screen, txId?: string) => void, nav: Nav): JSX.Element {
+function renderScreen(route: Route, navigate: (p: Screen, txId?: string, signatureVersion?: number) => void, nav: Nav): JSX.Element {
   switch (route.screen) {
     case 'onboarding':
-      return <Onboarding onBack={nav.leaveOnboarding} />;
+      return <Onboarding onBack={nav.leaveOnboarding} onOpenDocuments={(version) => navigate('documents', undefined, version)} />;
+    case 'documents':
+      return <Documents onOpen={(txId) => navigate('detail', txId)} initialSignatureVersion={route.signatureVersion} />;
     case 'verify':
       return <Verify initialTxId={route.txId} />;
     case 'create':

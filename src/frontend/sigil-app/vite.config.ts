@@ -9,6 +9,9 @@ export default defineConfig({
   plugins: [react()],
   // base relativa: el host de Power Apps sirve la app embebida (frame-ancestors 'self')
   base: './',
+  // `pac code run` espera la app en localAppUrl (power.config.json → localhost:3000). Fijamos el
+  // puerto acá para que coincida sin flags; strictPort falla si está ocupado en vez de saltar a otro.
+  server: { port: 3000, strictPort: true },
   build: {
     target: 'es2022',
     sourcemap: true,

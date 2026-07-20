@@ -3975,6 +3975,33 @@ export const dataSourcesInfo = {
       }
     }
   },
+  "sanic_sigil_capi_searchdocuments": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_SearchDocuments": {
+        "path": "/api/data/v9.2/sanic_sigil_capi_SearchDocuments",
+        "method": "POST",
+        "parameters": [
+          { "name": "Text", "in": "body", "required": false, "type": "string" },
+          { "name": "CreatorId", "in": "body", "required": false, "type": "string", "format": "guid" },
+          { "name": "Status", "in": "body", "required": false, "type": "number" },
+          { "name": "ParticipantIds", "in": "body", "required": false, "type": "string" },
+          { "name": "SignatureVersion", "in": "body", "required": false, "type": "number" },
+          { "name": "Sort", "in": "body", "required": false, "type": "string" },
+          { "name": "PageSize", "in": "body", "required": false, "type": "number" },
+          { "name": "PagingCookie", "in": "body", "required": false, "type": "string" }
+        ],
+        "responseInfo": {
+          "200": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
   "sanic_sigil_tbl_transactions": {
     "tableId": "",
     "version": "",
