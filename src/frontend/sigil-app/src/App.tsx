@@ -2,7 +2,7 @@
 // the query params (once); from then on, React state. Screens are loaded lazily so the initial
 // bundle doesn't drag in pdf.js (only sign/create/verify load it).
 
-import { Suspense, lazy, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { makeStyles, tokens, Spinner } from '@fluentui/react-components';
 import { useAppContext } from './app/PowerProvider';
 import { useT } from './i18n/useT';
@@ -33,11 +33,21 @@ const WIDE_SCREENS: ReadonlySet<Screen> = new Set(['create', 'sign', 'detail', '
 
 export function App(): JSX.Element {
   const s = useStyles();
-  const { queryParams, user } = useAppContext();
+  const { queryParams, user, ready } = useAppContext();
   const { t, lang, changeLang } = useT();
 
-  const initialRoute = useMemo(() => parseRoute(queryParams), [queryParams]);
-  const [route, setRoute] = useState<Route>(initialRoute);
+  const [route, setRoute] = useState<Route>(() => parseRoute(queryParams));
+  // The hosted Power Apps player provides the deep-link params (screen/txId — e.g. from a verify
+  // QR) via getContext AFTER the first render, so the initial route (from the iframe URL) misses
+  // them. Apply the deep link once the context is ready — only if it points somewhere other than
+  // the default, so we never clobber a user who already navigated.
+  const appliedDeepLink = useRef(false);
+  useEffect(() => {
+    if (!ready || appliedDeepLink.current) return;
+    appliedDeepLink.current = true;
+    const r = parseRoute(queryParams);
+    if (r.screen !== 'dashboard' || r.txId) setRoute(r);
+  }, [ready, queryParams]);
   // When onboarding is opened mid-flow (e.g. from Sign without a Master Signature), remember where
   // to return so the user lands back on that screen after configuring — doc 05 §4.3 "auto-return".
   const [returnTo, setReturnTo] = useState<Route | undefined>(undefined);
