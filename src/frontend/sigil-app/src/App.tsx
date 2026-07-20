@@ -42,11 +42,11 @@ export function App(): JSX.Element {
   // to return so the user lands back on that screen after configuring — doc 05 §4.3 "auto-return".
   const [returnTo, setReturnTo] = useState<Route | undefined>(undefined);
 
-  const navigate = (screen: Screen, txId?: string, docIds?: string[]) => {
+  const navigate = (screen: Screen, txId?: string, signatureVersion?: number) => {
     if (screen !== 'onboarding') setReturnTo(undefined); // drop any stale sign→onboarding return target
     const next: Route = { screen };
     if (txId) next.txId = txId;
-    if (docIds?.length) next.docIds = docIds;
+    if (signatureVersion != null) next.signatureVersion = signatureVersion;
     setRoute(next);
   };
   const openOnboarding = (ret?: Route) => { setReturnTo(ret); setRoute({ screen: 'onboarding' }); };
@@ -76,12 +76,12 @@ export function App(): JSX.Element {
 
 interface Nav { openOnboarding: (ret?: Route) => void; leaveOnboarding: () => void }
 
-function renderScreen(route: Route, navigate: (p: Screen, txId?: string, docIds?: string[]) => void, nav: Nav): JSX.Element {
+function renderScreen(route: Route, navigate: (p: Screen, txId?: string, signatureVersion?: number) => void, nav: Nav): JSX.Element {
   switch (route.screen) {
     case 'onboarding':
-      return <Onboarding onBack={nav.leaveOnboarding} onOpenDocuments={(docIds) => navigate('documents', undefined, docIds)} />;
+      return <Onboarding onBack={nav.leaveOnboarding} onOpenDocuments={(version) => navigate('documents', undefined, version)} />;
     case 'documents':
-      return <Documents onOpen={(txId) => navigate('detail', txId)} initialDocIds={route.docIds} />;
+      return <Documents onOpen={(txId) => navigate('detail', txId)} initialSignatureVersion={route.signatureVersion} />;
     case 'verify':
       return <Verify initialTxId={route.txId} />;
     case 'create':

@@ -158,9 +158,6 @@ export interface SigilApi {
   myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]>;
   myRequests(): Promise<TransactionView[]>;
   myParticipations(): Promise<TransactionView[]>;
-  // Documents screen (Phase 2): every doc I'm involved in (created + participated), deduped and
-  // enriched with participants, my signature version, and the real creation date. One call.
-  myDocuments(): Promise<DocumentRow[]>;
   // Documents screen (Phase 3): server-side paged search — the backend filters/sorts/pages so the
   // client loads one page at a time. `cookie` chains pages (undefined = first page).
   searchDocuments(query: DocumentQuery, cookie?: string): Promise<DocumentPage>;

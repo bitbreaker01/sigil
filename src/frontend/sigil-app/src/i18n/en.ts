@@ -39,6 +39,7 @@ export const en = {
     sort_nameAsc: 'Title — A to Z',
     sort_nameDesc: 'Title — Z to A',
     count: 'Showing {{shown}} of {{total}}',
+    loadMore: 'Load more',
     noneMatch: 'No documents match your filters.',
     fromVersion: 'Showing the documents signed with this signature version.',
     showAll: 'Show all',

@@ -75,7 +75,7 @@ const useStyles = makeStyles({
 
 export default function OnboardingScreen(props: {
   onBack: () => void;
-  onOpenDocuments?: (docIds: string[]) => void;
+  onOpenDocuments?: (signatureVersion: number) => void;
 }): JSX.Element {
   const s = useStyles();
   const { t } = useT();
@@ -223,13 +223,11 @@ export default function OnboardingScreen(props: {
                       {v.documents.map((d) => (
                         <div key={d.id} className={s.docRow}>
                           <Document16Regular />
-                          {props.onOpenDocuments
-                            ? <Link appearance="subtle" onClick={() => props.onOpenDocuments?.([d.id])}>{d.name || t('onboarding.untitledDoc')}</Link>
-                            : <Text size={200}>{d.name || t('onboarding.untitledDoc')}</Text>}
+                          <Text size={200}>{d.name || t('onboarding.untitledDoc')}</Text>
                         </div>
                       ))}
                       {props.onOpenDocuments && (
-                        <Link appearance="subtle" onClick={() => props.onOpenDocuments?.(v.documents.map((d) => d.id))} style={{ marginTop: 4 }}>
+                        <Link appearance="subtle" onClick={() => props.onOpenDocuments?.(v.version)} style={{ marginTop: 4 }}>
                           {t('onboarding.openInDocuments')}
                         </Link>
                       )}

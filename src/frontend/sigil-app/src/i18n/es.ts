@@ -38,6 +38,7 @@ export const es = {
     sort_nameAsc: 'Título — A a Z',
     sort_nameDesc: 'Título — Z a A',
     count: 'Mostrando {{shown}} de {{total}}',
+    loadMore: 'Cargar más',
     noneMatch: 'Ningún documento coincide con los filtros.',
     fromVersion: 'Mostrando los documentos firmados con esta versión de la firma.',
     showAll: 'Mostrar todos',

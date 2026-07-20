@@ -12,9 +12,9 @@ const SCREENS: ReadonlySet<string> = new Set([
 export interface Route {
   screen: Screen;
   txId?: string;
-  // Documents screen: optional pre-filter to a specific set of transaction ids (e.g. "documents
-  // signed with signature version N", opened from the signature history). Internal state only.
-  docIds?: string[];
+  // Documents screen: optional pre-filter by "documents signed with my signature version N"
+  // (opened from the signature history). Internal state only — maps to the version filter.
+  signatureVersion?: number;
 }
 
 export function parseRoute(params: Record<string, string>): Route {
