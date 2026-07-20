@@ -352,7 +352,7 @@ export class PowerAppsSigilApi implements SigilApi {
     return { rows: (res.data as Row[]).map(txView), nextCookie: res.skipToken ?? '' };
   }
 
-  async myParticipationsPage(cookie?: string): Promise<TransactionPage> {
+  async myParticipationsPage(cookie?: string, status?: number): Promise<TransactionPage> {
     const opts: { filter: string; select: string[]; orderBy: string[]; maxPageSize: number; skipToken?: string } = {
       filter: `_${COL.pUserId}_value eq ${await this.me()}`, select: [`_${COL.pTransactionId}_value`],
       orderBy: ['createdon desc'], maxPageSize: DASH_PAGE_SIZE,
@@ -363,9 +363,10 @@ export class PowerAppsSigilApi implements SigilApi {
     const nextCookie = res.skipToken ?? '';
     const txIds = [...new Set((res.data as Row[]).map((p) => lookup(p, COL.pTransactionId)).filter(Boolean) as string[])];
     if (!txIds.length) return { rows: [], nextCookie };
-    const txRows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, {
-      filter: txIds.map((id) => `${COL.txId} eq ${id}`).join(' or '),
-    })) as Row[];
+    // Status filter (e.g. completed-only) is applied server-side on the tx fetch.
+    const idFilter = `(${txIds.map((id) => `${COL.txId} eq ${id}`).join(' or ')})`;
+    const filter = status != null ? `${idFilter} and ${COL.status} eq ${status}` : idFilter;
+    const txRows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, { filter })) as Row[];
     // Preserve the participant order (recent-first) — the tx `or` filter doesn't guarantee order.
     const byId = new Map(txRows.map((r) => [s(r, COL.txId) ?? '', r]));
     const rows = txIds.map((id) => byId.get(id)).filter((r): r is Row => !!r).map(txView);
