@@ -47,10 +47,14 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
     <Button icon={<ArrowDownloadRegular />} onClick={() => void d.downloadFinal(tx)}>{t('common.download')}</Button>
   );
 
-  const emptyState = (message: string) => (
+  // The create CTA only belongs on the "Requests" empty state — Pending/Participations aren't resolved
+  // by creating, and the "New request" button in the toolbar already covers that action.
+  const emptyState = (message: string, showCreate = false) => (
     <Card className={s.empty}>
       <Text>{message}</Text>
-      <Button appearance="primary" icon={<AddRegular />} onClick={() => props.onNavigate('create')}>{t('dashboard.createFirst')}</Button>
+      {showCreate && (
+        <Button appearance="primary" icon={<AddRegular />} onClick={() => props.onNavigate('create')}>{t('dashboard.createFirst')}</Button>
+      )}
     </Card>
   );
 
@@ -107,7 +111,7 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
           </div>
         )
       ) : tab === 'requests' ? (
-        d.requests.length === 0 ? emptyState(t('dashboard.emptyMyRequests')) : (
+        d.requests.length === 0 ? emptyState(t('dashboard.emptyMyRequests'), true) : (
           <div className={s.list}>
             {d.sealingErrors.length > 0 && (
               <div className={s.section}>
