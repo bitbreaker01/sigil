@@ -3,3 +3,5 @@ dist/
 *.local
 .vite/
 coverage/
+# Local-only dev config (e.g. self-signed HTTPS for phone/LAN testing)
+vite.*.config.ts
