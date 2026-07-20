@@ -47,6 +47,25 @@ export interface DocumentRow extends TransactionView {
   mySignatureVersion?: number; // version of MY Master Signature used to sign this doc, if I signed it
 }
 
+// Server-side search query (Phase 3): the filters/sort/page the SearchDocuments Custom API applies
+// so the client never loads the whole set. `sort` is a DocumentSort string (see documentsModel).
+export interface DocumentQuery {
+  text?: string;
+  creatorId?: string;
+  participantId?: string;
+  status?: number;
+  signatureVersion?: number;
+  sort?: string;
+  pageSize?: number;
+}
+
+// One page of results. `nextCookie` is an opaque continuation ('' = last page).
+export interface DocumentPage {
+  rows: DocumentRow[];
+  total: number; // full filtered count (server-side)
+  nextCookie: string;
+}
+
 export interface ParticipantView {
   id: string;
   userId: string;
@@ -142,6 +161,9 @@ export interface SigilApi {
   // Documents screen (Phase 2): every doc I'm involved in (created + participated), deduped and
   // enriched with participants, my signature version, and the real creation date. One call.
   myDocuments(): Promise<DocumentRow[]>;
+  // Documents screen (Phase 3): server-side paged search — the backend filters/sorts/pages so the
+  // client loads one page at a time. `cookie` chains pages (undefined = first page).
+  searchDocuments(query: DocumentQuery, cookie?: string): Promise<DocumentPage>;
   getTransaction(txId: string): Promise<TransactionView | undefined>;
   participantsOf(txId: string): Promise<ParticipantView[]>;
   zonesOf(txId: string): Promise<ZoneView[]>;

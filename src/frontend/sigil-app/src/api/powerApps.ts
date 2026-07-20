@@ -30,6 +30,8 @@ import type {
   UserSummary,
   MasterSignatureVersion,
   DocumentRow,
+  DocumentQuery,
+  DocumentPage,
 } from './SigilApi';
 import { getClient } from '@microsoft/power-apps/data';
 import { getContext } from '@microsoft/power-apps/app';
@@ -49,6 +51,7 @@ import {
   Sanic_sigil_capi_GetMasterSignatureService,
   Sanic_sigil_capi_GetMasterSignatureHistoryService,
   Sanic_sigil_capi_VerifyDocumentService,
+  Sanic_sigil_capi_SearchDocumentsService,
 } from '../generated';
 
 // The Dataverse data client (retrieveMultipleRecordsAsync/retrieveRecordAsync). NOT the low-level
@@ -170,6 +173,34 @@ function zoneView(r: Row): ZoneView {
 }
 function userView(r: Row): UserSummary {
   return { id: s(r, 'systemuserid') ?? '', name: s(r, 'fullname') ?? '', email: s(r, 'internalemailaddress') };
+}
+
+// A row from SearchDocuments.ResultsJson (already enriched server-side). state/routing arrive as the
+// raw choice ints; dates as ISO strings or null.
+interface RawDoc {
+  id: string; name: string; state: number; routing: number;
+  creatorId?: string; creatorName?: string; message?: string | null;
+  sentOn?: string | null; expiresOn?: string | null; completedOn?: string | null; createdOn?: string | null;
+  mySignatureVersion?: number | null;
+  participants?: { userId: string; name: string }[];
+}
+function mapRawDoc(r: RawDoc): DocumentRow {
+  const row: DocumentRow = {
+    id: r.id,
+    name: r.name,
+    state: r.state,
+    routing: r.routing === ROUTING_SEQUENTIAL ? 'sequential' : 'parallel',
+    creatorId: r.creatorId ?? '',
+    participants: r.participants ?? [],
+  };
+  if (r.creatorName) row.creatorName = r.creatorName;
+  if (r.message) row.message = r.message;
+  if (r.sentOn) row.sentOn = r.sentOn;
+  if (r.expiresOn) row.expiresOn = r.expiresOn;
+  if (r.completedOn) row.completedOn = r.completedOn;
+  if (r.createdOn) row.createdOn = r.createdOn;
+  if (r.mySignatureVersion != null) row.mySignatureVersion = r.mySignatureVersion;
+  return row;
 }
 
 export class PowerAppsSigilApi implements SigilApi {
@@ -389,6 +420,22 @@ export class PowerAppsSigilApi implements SigilApi {
       if (version != null) row.mySignatureVersion = version;
       return row;
     });
+  }
+
+  // Phase 3: server-side paged search via the SearchDocuments Custom API. Omitted filters aren't sent.
+  async searchDocuments(query: DocumentQuery, cookie?: string): Promise<DocumentPage> {
+    const d = ok(await Sanic_sigil_capi_SearchDocumentsService.sanic_sigil_capi_SearchDocuments({
+      Text: query.text || undefined,
+      CreatorId: query.creatorId || undefined,
+      Status: query.status,
+      ParticipantId: query.participantId || undefined,
+      SignatureVersion: query.signatureVersion,
+      Sort: query.sort,
+      PageSize: query.pageSize,
+      PagingCookie: cookie,
+    })) as { ResultsJson?: string; Total?: number; NextPagingCookie?: string };
+    const raw = JSON.parse(d.ResultsJson ?? '[]') as RawDoc[];
+    return { rows: raw.map(mapRawDoc), total: d.Total ?? raw.length, nextCookie: d.NextPagingCookie ?? '' };
   }
 
   async myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]> {

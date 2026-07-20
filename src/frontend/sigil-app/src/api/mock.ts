@@ -23,8 +23,31 @@ import type {
   ZoneView,
   UserSummary,
   MasterSignatureVersion,
+  DocumentRow,
+  DocumentQuery,
+  DocumentPage,
 } from './SigilApi';
 import { base64ToBytes, sha256Hex } from './binaries';
+
+// Mirrors the backend SearchDocuments sort (missing dates last) — mock-only, in-memory.
+function sortMockDocs(rows: DocumentRow[], sort: string): DocumentRow[] {
+  const byDate = (pick: (r: DocumentRow) => string | undefined, asc: boolean) => {
+    const withD = rows.filter((r) => pick(r));
+    const without = rows.filter((r) => !pick(r));
+    withD.sort((a, b) => (asc ? 1 : -1) * (pick(a)! < pick(b)! ? -1 : pick(a)! > pick(b)! ? 1 : 0));
+    return [...withD, ...without];
+  };
+  switch (sort) {
+    case 'nameAsc': return [...rows].sort((a, b) => a.name.localeCompare(b.name));
+    case 'nameDesc': return [...rows].sort((a, b) => b.name.localeCompare(a.name));
+    case 'sentAsc': return byDate((r) => r.sentOn, true);
+    case 'sentDesc': return byDate((r) => r.sentOn, false);
+    case 'completedAsc': return byDate((r) => r.completedOn, true);
+    case 'completedDesc': return byDate((r) => r.completedOn, false);
+    case 'createdAsc': return byDate((r) => r.createdOn, true);
+    default: return byDate((r) => r.createdOn, false); // createdDesc
+  }
+}
 
 // A small fake directory for the people picker in dev (real impl searches Dataverse systemuser).
 const FAKE_USERS: UserSummary[] = [
@@ -325,7 +348,7 @@ export class MockSigilApi implements SigilApi {
       .map((tx) => ({ ...tx }));
   }
 
-  async myDocuments() {
+  async myDocuments(): Promise<DocumentRow[]> {
     await this.delay();
     const me = this.seed.userId;
     return [...this.txs.values()]
@@ -333,15 +356,35 @@ export class MockSigilApi implements SigilApi {
       .map((tx) => {
         const parts = this.participants.get(tx.id) ?? [];
         const mine = parts.find((p) => p.userId === me);
-        return {
+        const row: DocumentRow = {
           ...tx,
-          // No dedicated createdOn in the mock store — fall back to sentOn so the created sort/filter demos.
-          createdOn: tx.sentOn,
           participants: parts.map((p) => ({ userId: p.userId, name: p.name ?? p.userId })),
-          // The mock has no participant.masterSignatureId; approximate: if I signed, it was v1.
-          ...(mine && mine.state === 159460002 && this.signatureVersions.length ? { mySignatureVersion: 1 } : {}),
         };
+        // No dedicated createdOn in the mock store — fall back to sentOn so the created sort/filter demos.
+        if (tx.sentOn) row.createdOn = tx.sentOn;
+        // The mock has no participant.masterSignatureId; approximate: if I signed, it was v1.
+        if (mine && mine.state === 159460002 && this.signatureVersions.length) row.mySignatureVersion = 1;
+        return row;
       });
+  }
+
+  async searchDocuments(query: DocumentQuery, cookie?: string): Promise<DocumentPage> {
+    const all = await this.myDocuments(); // full enriched set (dev only, small) — then filter/sort/page
+    let rows = all;
+    const text = query.text?.trim().toLowerCase();
+    if (text) rows = rows.filter((r) => r.name.toLowerCase().includes(text));
+    if (query.creatorId) rows = rows.filter((r) => r.creatorId === query.creatorId);
+    if (query.status != null) rows = rows.filter((r) => r.state === query.status);
+    if (query.participantId) rows = rows.filter((r) => r.participants.some((p) => p.userId === query.participantId));
+    if (query.signatureVersion != null) rows = rows.filter((r) => r.mySignatureVersion === query.signatureVersion);
+    rows = sortMockDocs(rows, query.sort ?? 'createdDesc');
+
+    const total = rows.length;
+    const pageSize = query.pageSize ?? 25;
+    const offset = cookie ? Number.parseInt(cookie, 10) || 0 : 0;
+    const page = rows.slice(offset, offset + pageSize);
+    const nextCookie = offset + pageSize < total ? String(offset + pageSize) : '';
+    return { rows: page, total, nextCookie };
   }
 
   async getTransaction(txId: string) {
