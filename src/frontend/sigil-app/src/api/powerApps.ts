@@ -355,30 +355,33 @@ export class PowerAppsSigilApi implements SigilApi {
     const versionByDocId = new Map<string, number>();
     for (const v of history) for (const d of v.documents) versionByDocId.set(d.id.toLowerCase(), v.version);
 
-    // 3b) Resolve creator display names from systemusers. The owner lookup's FormattedValue isn't
-    // reliably present on these reads (it came back as the raw id), so look the names up explicitly.
-    const creatorIds = [...new Set([...txById.values()].map((r) => s(r, COL.owner)).filter(Boolean) as string[])];
-    const creatorRows = creatorIds.length
+    // 3b) Resolve display names (creators AND every signer) from systemusers in ONE query. The owner
+    // and signer FormattedValues aren't reliably present on these reads (the raw id came back), so we
+    // look the names up explicitly by systemuserid.
+    const userIds = new Set<string>();
+    for (const r of txById.values()) { const o = s(r, COL.owner); if (o) userIds.add(o); }
+    for (const p of allParts) { const u = lookup(p, COL.pUserId); if (u) userIds.add(u); }
+    const userRows = userIds.size
       ? ok(await dv.retrieveMultipleRecordsAsync<Row>(T.user, {
-        filter: creatorIds.map((id) => `systemuserid eq ${id}`).join(' or '), select: ['systemuserid', 'fullname'],
+        filter: [...userIds].map((id) => `systemuserid eq ${id}`).join(' or '), select: ['systemuserid', 'fullname'],
       })) as Row[]
       : [];
-    const creatorNameById = new Map<string, string>();
-    for (const u of creatorRows) {
+    const nameByUserId = new Map<string, string>();
+    for (const u of userRows) {
       const uid = s(u, 'systemuserid'); const name = s(u, 'fullname');
-      if (uid && name) creatorNameById.set(uid.toLowerCase(), name);
+      if (uid && name) nameByUserId.set(uid.toLowerCase(), name);
     }
 
     // 4) Assemble.
     return allTxIds.map((id) => {
       const r = txById.get(id)!;
       const parts = partsByTx.get(id) ?? [];
-      const participants = parts.map((p) => ({
-        userId: lookup(p, COL.pUserId) ?? '',
-        name: s(p, COL.pSignerName) ?? fmt(p, COL.pUserId) ?? '',
-      }));
+      const participants = parts.map((p) => {
+        const uid = lookup(p, COL.pUserId) ?? '';
+        return { userId: uid, name: nameByUserId.get(uid.toLowerCase()) ?? s(p, COL.pSignerName) ?? uid };
+      });
       const row: DocumentRow = { ...txView(r), participants };
-      const cname = creatorNameById.get((s(r, COL.owner) ?? '').toLowerCase());
+      const cname = nameByUserId.get((s(r, COL.owner) ?? '').toLowerCase());
       if (cname) row.creatorName = cname;
       const created = s(r, 'createdon');
       if (created) row.createdOn = created;
