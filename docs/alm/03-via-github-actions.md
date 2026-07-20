@@ -144,7 +144,7 @@ jobs:
 
 ## 7. Limitaciones (honestas)
 
-- **Code App con pack/unpack — no soportado:** las code apps **no** soportan solution packager [28] ni integración de código fuente [29]; su camino es `pac code push` + Pipelines [30]. Por lo tanto, el loop `export → unpack → pack` de esta vía **no aplica al componente code app** de Sigil → **combinar code app con las acciones clásicas de pack/unpack es NO VERIFICADO y probablemente no soportado**.
+- **Code App — el límite es el pack/unpack, NO el export/import:** las code apps no soportan **Solution Packager** [28] ni **git integration** [29]. Eso rompe el loop `export → **unpack** → commit → **pack** → import` (el patrón de control de fuente de §5.1) para el componente code app. **PERO** una GitHub Action que haga **`export-solution` (managed) → `import-solution`** directo — **sin** unpack/pack — mueve el **zip de la solución** igual que un pipeline, que por dentro es export/import de zip [31]. Por ese mismo mecanismo, **la code app viaja en el zip**. Trade-off: perdés el diff git desempaquetado (la ventaja principal de esta vía). En resumen: GitHub Actions sirve para la code app **como despliegue** (export/import directo), **no** como fuente versionada desempaquetada.
 - **Plugin packages:** viajan dentro del zip por export/pack/import, pero **no** encontré guía específica de GitHub Actions para plugin packages → los detalles finos quedan **NO VERIFICADO**; se validan con los gates del Runbook B.
 - **`set-solution-version` — NO VERIFICADO:** no confirmé una acción con ese nombre exacto en el catálogo oficial de GitHub Actions (existe en Azure DevOps Build Tools, otro producto).
 - **`activate-plugins` en `import-solution` — NO VERIFICADO:** el catálogo oficial [10] no lista ese input para `import-solution`. Para activar plugins/workflows con certeza, invocar `pac solution import --activate-plugins` dentro del job (doc 01 §5).
@@ -159,7 +159,7 @@ jobs:
 
 **Desventajas**
 - ❌ Curva de CI/CD + App Registration + manejo de secretos/OIDC.
-- ❌ El loop pack/unpack **no** cubre la **code app** de Sigil (§7) — para Sigil, esta vía sirve para las partes empaquetables, no para mover la solución completa.
+- ❌ El loop **unpack/pack** (source control) **no** cubre la code app (§7). Sí la mueve un `export-solution`→`import-solution` **directo**, pero ahí perdés el diff git desempaquetado que es el motivo de usar esta vía.
 - ❌ Setear valores por ambiente exige invocar `pac` en el job (settings file no confirmado como input nativo — §5).
 
 ---
@@ -198,3 +198,4 @@ Verificadas contra Microsoft Learn el 2026-07-20.
 28. Code apps ALM (no soportan solution packager): https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/alm
 29. Code apps ALM (no soportan integración de código fuente): https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/alm
 30. Code apps ALM (`pac code push` + Pipelines): https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/alm
+31. Pipelines FAQ (el pipeline exporta la solución y despliega el mismo artefacto — export/import de zip; por el mismo mecanismo, `export-solution`→`import-solution` mueve el zip con la code app): https://learn.microsoft.com/en-us/power-platform/alm/pipelines

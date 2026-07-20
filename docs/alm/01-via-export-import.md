@@ -100,10 +100,15 @@ En CLI, `--stage-and-upgrade` importa y aplica el upgrade; `pac solution upgrade
 - Settings por ambiente: `config/settings.test.json`, `config/settings.prod.json` (valores del doc 09 §6; **nunca** el `env_TsaEndpoints` de FreeTSA de Dev viaja a Prod — doc 09 §5).
 - Tras importar: correr los **10 gates** del Runbook B antes de habilitar tráfico.
 
-## 8. Limitación con Code Apps (honesta)
+## 8. Code Apps y esta vía — VERIFICADO
 
-- El componente **code app** de `sigil_core_sigil` **no** soporta pack/unpack [13] ni integración de código fuente [15]; su camino documentado es `pac code push` + Pipelines [16].
-- **NO VERIFICADO:** no encontré página oficial que confirme (ni que niegue) que un **export-as-managed → import manual** de una solución que *contiene* una code app funcione limpio. Para Sigil, la solución **completa** se mueve por Pipelines (doc 09); esta vía manual queda plena para las partes empaquetables y como plan B para todo lo que no sea el binario de la code app.
+Las code apps tienen **exactamente dos** limitaciones de ALM: no soportan **Solution Packager** (pack/unpack) [13] ni **integración de código fuente / git** [15]. **Eso es todo.** No hay limitación sobre el **export/import del zip de la solución**.
+
+Y esto es lo clave: **un pipeline, por dentro, es un export/import de zip.** La doc oficial lo dice — *"Both managed and unmanaged solutions are automatically exported and stored in the pipelines host for every deployment"* y *"the same solution artifact will be deployed"* [17]. Es más: Microsoft documenta, como workaround de rollback, **descargar el artefacto del host del pipeline e importarlo manualmente en el destino** [18].
+
+**Conclusión:** exportar `sigil_core_sigil` como managed (con la code app adentro) e importarla a mano **es una alternativa válida** a Pipelines — es el **mismo mecanismo**. Lo único que NO se puede es el loop **unpack→commit→pack** (Solution Packager) ni el versionado desempaquetado en git (doc 09 §3). El "plan B" del doc 09 §11 queda **confirmado**, no hipotético.
+
+- **NO VERIFICADO menor (operacional, no bloqueante):** si la code app recibe un **appId nuevo** en el destino (doc 09 §11) — se absorbe con el paso post-import de `env_AppPlayUrl` (doc 09 §6). Aplica igual a Pipelines y a esta vía manual (mismo mecanismo).
 
 ## 9. Ventajas y desventajas
 
@@ -139,3 +144,5 @@ Verificadas contra Microsoft Learn el 2026-07-20.
 14. Update solutions (Upgrade / Stage for Upgrade / Update — comportamiento de cada uno): https://learn.microsoft.com/en-us/power-apps/maker/data-platform/update-solutions
 15. Code apps ALM (no soportan integración de código fuente): https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/alm
 16. Code apps ALM (`pac code push` + Pipelines como camino de deploy): https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/alm
+17. Pipelines FAQ (managed y unmanaged se exportan y guardan en el host; "the same solution artifact will be deployed" — el pipeline es export/import de zip): https://learn.microsoft.com/en-us/power-platform/alm/pipelines
+18. Pipelines FAQ (workaround: descargar el artefacto del host e importarlo manualmente en el destino): https://learn.microsoft.com/en-us/power-platform/alm/pipelines
