@@ -1,10 +1,11 @@
 // Dashboard container (doc 05 §4.1 + §5.1): the three lists + the first-run signal via TanStack
-// Query. "My requests" polls every 5 s WHILE something is sealing, capped at 3 min (§5.1), after
-// which auto-poll stops and the user can refresh manually. Binaries (the final PDF) are fetched
-// DIRECTLY through the seam and streamed to a download — never through the Query cache (§5.2).
+// Query. Requests & Participations are infinite-scroll (recent-first, server-side paged) so the
+// dashboard never loads everything (§5.1). "My requests" polls every 5 s WHILE something is sealing,
+// capped at 3 min, after which auto-poll stops and the user can refresh. Binaries (the final PDF)
+// are fetched DIRECTLY through the seam and streamed to a download — never through the cache (§5.2).
 
-import { useCallback, useRef, useState } from 'react';
-import { useQuery, useQueryClient, type Query } from '@tanstack/react-query';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sigilApi } from '../../api';
 import type { TransactionView } from '../../api/SigilApi';
 import { downloadBase64 } from '../../api/binaries';
@@ -13,8 +14,8 @@ import { hasSealing, sealingErrors } from './dashboardModel';
 
 const KEYS = {
   pending: ['dashboard', 'myPending'] as const,
-  requests: ['dashboard', 'myRequests'] as const,
-  participations: ['dashboard', 'myParticipations'] as const,
+  requests: ['dashboard', 'myRequestsPage'] as const,
+  participations: ['dashboard', 'myParticipationsPage'] as const,
   masterSignature: ['dashboard', 'masterSignature'] as const,
 };
 
@@ -25,17 +26,26 @@ export function useDashboard() {
   const [actionError, setActionError] = useState(false); // retry/download failed
 
   const pending = useQuery({ queryKey: KEYS.pending, queryFn: () => sigilApi.myPending() });
-  const participations = useQuery({ queryKey: KEYS.participations, queryFn: () => sigilApi.myParticipations() });
   const masterSignature = useQuery({ queryKey: KEYS.masterSignature, queryFn: () => sigilApi.getMasterSignature() });
 
-  // Poll only while there's a sealing tx, and only until the 3-min cap (§5.1). At the cap we stop
-  // auto-polling and surface a "still processing" message + manual refresh (sealingCapped).
-  const requests = useQuery({
+  const participations = useInfiniteQuery({
+    queryKey: KEYS.participations,
+    queryFn: ({ pageParam }) => sigilApi.myParticipationsPage(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.nextCookie || undefined,
+  });
+
+  // Poll only while a loaded page has a sealing tx, and only until the 3-min cap (§5.1). Sealing
+  // txs are the most recent (just sent to seal) → they land on the first page, so watching the
+  // loaded pages is enough. At the cap we stop auto-polling and surface a manual refresh.
+  const requests = useInfiniteQuery({
     queryKey: KEYS.requests,
-    queryFn: () => sigilApi.myRequests(),
-    refetchInterval: (query: Query<TransactionView[]>) => {
-      const data = query.state.data;
-      if (!data || !hasSealing(data)) {
+    queryFn: ({ pageParam }) => sigilApi.myRequestsPage(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.nextCookie || undefined,
+    refetchInterval: (query) => {
+      const rows = (query.state.data?.pages ?? []).flatMap((p) => p.rows);
+      if (!rows.length || !hasSealing(rows)) {
         sealingSince.current = undefined;
         if (sealingCapped) setSealingCapped(false);
         return false;
@@ -49,6 +59,9 @@ export function useDashboard() {
       return POLLING_SEALING_MS;
     },
   });
+
+  const requestList = useMemo(() => requests.data?.pages.flatMap((p) => p.rows) ?? [], [requests.data]);
+  const participationList = useMemo(() => participations.data?.pages.flatMap((p) => p.rows) ?? [], [participations.data]);
 
   const retrySealing = useCallback(async (txId: string) => {
     setActionError(false);
@@ -81,19 +94,23 @@ export function useDashboard() {
 
   const dismissActionError = useCallback(() => setActionError(false), []);
 
-  const requestList = requests.data ?? [];
-
   return {
     firstRun: masterSignature.isSuccess && !masterSignature.data?.ImageBase64,
     pending: pending.data ?? [],
     requests: requestList,
-    participations: participations.data ?? [],
+    participations: participationList,
     sealingErrors: sealingErrors(requestList),
     isSealingActive: hasSealing(requestList),
     sealingCapped,
     actionError,
     loading: pending.isLoading || requests.isLoading || participations.isLoading,
     error: pending.isError || requests.isError || participations.isError,
+    requestsHasMore: requests.hasNextPage,
+    requestsLoadingMore: requests.isFetchingNextPage,
+    loadMoreRequests: () => void requests.fetchNextPage(),
+    participationsHasMore: participations.hasNextPage,
+    participationsLoadingMore: participations.isFetchingNextPage,
+    loadMoreParticipations: () => void participations.fetchNextPage(),
     retrySealing,
     downloadFinal,
     refreshAll,

@@ -281,6 +281,7 @@ export const en = {
   },
   common: {
     loading: 'Loading...',
+    loadMore: 'Load more',
     retry: 'Retry',
     cancel: 'Cancel',
     continue: 'Continue',

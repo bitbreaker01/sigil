@@ -32,6 +32,7 @@ import type {
   DocumentRow,
   DocumentQuery,
   DocumentPage,
+  TransactionPage,
 } from './SigilApi';
 import { getClient } from '@microsoft/power-apps/data';
 import { getContext } from '@microsoft/power-apps/app';
@@ -113,6 +114,7 @@ const COL = {
   owner: '_ownerid_value',
 } as const;
 
+const DASH_PAGE_SIZE = 25; // dashboard infinite-scroll page size
 const PARTICIPANT_ACTIVE_TURN = 159460001;
 const TX_PENDING = 159460001;
 const TX_PARTIALLY_SIGNED = 159460002;
@@ -336,6 +338,38 @@ export class PowerAppsSigilApi implements SigilApi {
     const filter = txIds.map((id) => `${COL.txId} eq ${id}`).join(' or ');
     const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, { filter, orderBy: ['createdon desc'] })) as Row[];
     return rows.map(txView);
+  }
+
+  // Paged variants (recent-first) for the dashboard's infinite scroll. `ok()` can't be used here
+  // because we also need the result's continuation token (skipToken), so faults are handled inline.
+  async myRequestsPage(cookie?: string): Promise<TransactionPage> {
+    const opts: { filter: string; orderBy: string[]; maxPageSize: number; skipToken?: string } = {
+      filter: `${COL.owner} eq ${await this.me()}`, orderBy: ['createdon desc'], maxPageSize: DASH_PAGE_SIZE,
+    };
+    if (cookie) opts.skipToken = cookie;
+    const res = await dv.retrieveMultipleRecordsAsync<Row>(T.tx, opts);
+    if (!res.success) throw new Error(dataverseFaultMessage(res.error));
+    return { rows: (res.data as Row[]).map(txView), nextCookie: res.skipToken ?? '' };
+  }
+
+  async myParticipationsPage(cookie?: string): Promise<TransactionPage> {
+    const opts: { filter: string; select: string[]; orderBy: string[]; maxPageSize: number; skipToken?: string } = {
+      filter: `_${COL.pUserId}_value eq ${await this.me()}`, select: [`_${COL.pTransactionId}_value`],
+      orderBy: ['createdon desc'], maxPageSize: DASH_PAGE_SIZE,
+    };
+    if (cookie) opts.skipToken = cookie;
+    const res = await dv.retrieveMultipleRecordsAsync<Row>(T.participant, opts);
+    if (!res.success) throw new Error(dataverseFaultMessage(res.error));
+    const nextCookie = res.skipToken ?? '';
+    const txIds = [...new Set((res.data as Row[]).map((p) => lookup(p, COL.pTransactionId)).filter(Boolean) as string[])];
+    if (!txIds.length) return { rows: [], nextCookie };
+    const txRows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, {
+      filter: txIds.map((id) => `${COL.txId} eq ${id}`).join(' or '),
+    })) as Row[];
+    // Preserve the participant order (recent-first) — the tx `or` filter doesn't guarantee order.
+    const byId = new Map(txRows.map((r) => [s(r, COL.txId) ?? '', r]));
+    const rows = txIds.map((id) => byId.get(id)).filter((r): r is Row => !!r).map(txView);
+    return { rows, nextCookie };
   }
 
   // Phase 3: server-side paged search via the SearchDocuments Custom API. Omitted filters aren't sent.

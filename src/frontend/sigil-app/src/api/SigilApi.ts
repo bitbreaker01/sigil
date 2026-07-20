@@ -118,6 +118,13 @@ export interface MasterSignatureVersion {
   documents: SignedDocumentRef[]; // documents signed with THIS version
 }
 
+// One page of dashboard transactions (Requests / Participations). `nextCookie` chains pages
+// ('' = last page). Recent-first, server-side paged so the dashboard never loads everything.
+export interface TransactionPage {
+  rows: TransactionView[];
+  nextCookie: string;
+}
+
 export interface SigilApi {
   // Identity (getContext) — never authoritative (doc 05 §9).
   currentUser(): { id?: string; name?: string; upn?: string };
@@ -158,6 +165,9 @@ export interface SigilApi {
   myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]>;
   myRequests(): Promise<TransactionView[]>;
   myParticipations(): Promise<TransactionView[]>;
+  // Paged (recent-first) variants for the dashboard's infinite-scroll lists (§5.1 — don't load all).
+  myRequestsPage(cookie?: string): Promise<TransactionPage>;
+  myParticipationsPage(cookie?: string): Promise<TransactionPage>;
   // Documents screen (Phase 3): server-side paged search — the backend filters/sorts/pages so the
   // client loads one page at a time. `cookie` chains pages (undefined = first page).
   searchDocuments(query: DocumentQuery, cookie?: string): Promise<DocumentPage>;
