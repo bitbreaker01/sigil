@@ -13,10 +13,16 @@ body {
   /* Guard on BOTH (body alone is unreliable): nothing produces a sideways scrollbar on phones. */
   overflow-x: hidden;
   max-width: 100%;
+  /* Match the app shell's gray (colorNeutralBackground2, light theme). Without this the white body
+     shows through on mobile when 100vh doesn't match the dynamic viewport or during overscroll bounce
+     (the "white gap" that appears after scrolling down and back up). Keep in sync with App.tsx layout. */
+  background-color: #f5f5f5;
 }
 
 #root {
+  /* 100dvh (dynamic viewport) avoids the mobile address-bar 100vh gap; 100vh is the fallback. */
   min-height: 100vh;
+  min-height: 100dvh;
   max-width: 100%;
 }
 
