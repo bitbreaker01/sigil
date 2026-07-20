@@ -76,9 +76,14 @@ internal static class Catalogo
         ("sanic_sigil_env_TsaEnabled", "yes"),
         ("sanic_sigil_env_TsaEndpoints",
             """{ "endpoints": [ { "url": "https://timestamp.sectigo.com", "timeoutSeconds": 10, "minIntervalSeconds": 15 }, { "url": "https://timestamp.digicert.com", "timeoutSeconds": 10, "minIntervalSeconds": 0 } ] }"""),
-        // Placeholder de Dev: la URL real nace con el primer `pac code push` (doc 09 §6) —
-        // ACTUALIZAR entonces. Los QR de documentos sellados en Dev apuntan acá hasta eso.
-        ("sanic_sigil_env_AppPlayUrl", "https://apps.powerapps.com/play/e/dev-pendiente/a/dev-pendiente"),
+        // AppPlayUrl POR AMBIENTE: se toma de SIGIL_APP_PLAY_URL (la URL real que imprime el
+        // `pac code push` de ESTE ambiente — el backend le agrega "?screen=verify&txId=..." para
+        // el link/QR de la hoja de cierre). Si no está seteada, cae al placeholder. Así el deploy
+        // es idempotente y pulcro por ambiente: cada .env provee su URL y re-correrlo NUNCA pisa la
+        // buena con el placeholder. Nota: usar la base SIN "?tenantId=..." (el backend agrega la query).
+        ("sanic_sigil_env_AppPlayUrl",
+            Environment.GetEnvironmentVariable("SIGIL_APP_PLAY_URL")
+            ?? "https://apps.powerapps.com/play/e/dev-pendiente/a/dev-pendiente"),
         // Dev: cadencia CORTA para probar recordatorios rápido (doc 09 §6); Test/Prod = negocio.
         ("sanic_sigil_env_ReminderCadenceDays", "2"),
         ("sanic_sigil_env_DefaultLanguage", "es"),
