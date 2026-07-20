@@ -171,20 +171,25 @@ public class SealingWorkerPluginTests
 
     // ── idempotencia por punto de fallo (M4 — doc 04 §7 "Idempotencia") ─────
 
-    [Fact] // ledger YA existe → salta directo al paso 9: ni recompone ni re-sube
-    public void Reentrada_ConLedgerExistente_SoloCompleta_SinTocarElArchivo()
+    [Fact] // ledger YA existe → VERIFICA el ancla (el final durable debe coincidir con el ledger) y
+           // solo completa (paso 9): ni recompone ni re-sube. La reentrada re-verifica por diseño —
+           // jamás se declara "completo" sin confirmar que la evidencia sigue consistente (tamper-evident).
+    public void Reentrada_ConLedgerExistente_VerificaElAncla_YCompleta_SinReSubir()
     {
         var txId = SembrarSellando();
+        // El final durable de un intento previo + su hash en el ledger: el ancla DEBE coincidir.
+        var finalPrevio = ArnesDeApi.PdfDePrueba(1);
+        _arnes.SembrarArchivo(txId, SchemaNames.Tx.FinalFile, finalPrevio);
         var ledger = new Entity(SchemaNames.Ledger.Entidad);
         ledger[SchemaNames.Ledger.TransactionId] = new EntityReference(SchemaNames.Tx.Entidad, txId);
-        ledger[SchemaNames.Ledger.FinalHash] = "F".PadLeft(64, 'F');
+        ledger[SchemaNames.Ledger.FinalHash] = Sigil.Plugins.Core.Crypto.HashUtil.Sha256Hex(finalPrevio);
         _arnes.Servicio.Sembrar(ledger);
         _arnes.Archivos.Subidas.Clear();
 
         EjecutarWorker(txId);
 
-        Assert.Empty(_arnes.Archivos.Subidas); // no re-subió
-        Assert.Single(_arnes.Servicio.FilasDe(SchemaNames.Ledger.Entidad)); // no duplicó
+        Assert.Empty(_arnes.Archivos.Subidas); // verifica (descarga) el ancla pero NO re-sube
+        Assert.Single(_arnes.Servicio.FilasDe(SchemaNames.Ledger.Entidad)); // no duplicó el ledger
         var tx = _arnes.Servicio.FilasDe(SchemaNames.Tx.Entidad).Single();
         Assert.Equal((int)TransactionStatus.Completado, tx.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.Status).Value);
     }

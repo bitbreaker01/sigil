@@ -123,7 +123,12 @@ public static class Consultas
         };
         query.Criteria.AddCondition(SchemaNames.FirmaMaestra.UserId, ConditionOperator.Equal, userId);
         query.AddOrder(SchemaNames.FirmaMaestra.Version, OrderType.Descending);
-        return servicio.RetrieveMultiple(query).Entities.ToList();
+        // "Más nuevo primero" es parte del contrato (doc 03 §4.5). El AddOrder lo resuelve contra
+        // Dataverse real, pero el orden se garantiza in-memory para no depender de que el backend
+        // ordene (el stub de tests no lo hace — el bug quedaba invisible sin correr net462).
+        return servicio.RetrieveMultiple(query).Entities
+            .OrderByDescending(f => f.GetAttributeValue<int>(SchemaNames.FirmaMaestra.Version))
+            .ToList();
     }
 
     /// <summary>Participaciones FIRMADAS que usaron alguna de estas versiones de Firma Maestra
