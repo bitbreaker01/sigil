@@ -1,5 +1,5 @@
 // Integration test of the detail hook against the mock seam. Uses a real seeded tx id (fetched
-// from myRequests) and checks loading, creator gating, and that cancelling reaches the terminal
+// from myRequestsPage) and checks loading, creator gating, and that cancelling reaches the terminal
 // state + records the reason.
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -18,9 +18,9 @@ function wrapper() {
 let mineId = '';
 let anaId = '';
 beforeAll(async () => {
-  const requests = await sigilApi.myRequests(); // created by me
+  const requests = (await sigilApi.myRequestsPage()).rows; // created by me
   mineId = requests.find((t) => t.name === 'Vendor Contract Q3')!.id;
-  const participations = await sigilApi.myParticipations();
+  const participations = (await sigilApi.myParticipationsPage()).rows;
   anaId = participations.find((t) => t.name === 'Services Agreement 2026')!.id; // created by Ana
 });
 

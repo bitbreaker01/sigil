@@ -20,7 +20,7 @@ async function servedHash(api: MockSigilApi, txId = TX): Promise<string> {
 
 /** The id of the seeded COMPLETED transaction (Employment Offer). */
 async function completedTxId(api: MockSigilApi): Promise<string> {
-  const requests = await api.myRequests();
+  const requests = (await api.myRequestsPage()).rows;
   const completed = requests.find((t) => t.state === 159460004);
   if (!completed) throw new Error('no completed tx seeded');
   return completed.id;

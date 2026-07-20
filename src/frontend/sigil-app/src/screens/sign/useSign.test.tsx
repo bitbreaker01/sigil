@@ -20,7 +20,7 @@ beforeAll(async () => {
   const pending = await sigilApi.myPending();
   servicesId = pending.find((p) => p.tx.name === 'Services Agreement 2026')!.tx.id;
   ndaId = pending.find((p) => p.tx.name === 'NDA — Project Falcon')!.tx.id;
-  const parts = await sigilApi.myParticipations();
+  const parts = (await sigilApi.myParticipationsPage()).rows;
   completedId = parts.find((t) => t.name === 'Employment Offer — R. Diaz')!.id; // I already signed it
 });
 
