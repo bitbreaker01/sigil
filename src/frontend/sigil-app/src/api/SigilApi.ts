@@ -176,8 +176,6 @@ export interface SigilApi {
   myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]>;
   // Paged (recent-first) Pending for the dashboard's infinite scroll.
   myPendingPage(cookie?: string): Promise<PendingPage>;
-  myRequests(): Promise<TransactionView[]>;
-  myParticipations(): Promise<TransactionView[]>;
   // Paged (recent-first) variants for the dashboard's infinite-scroll lists (§5.1 — don't load all).
   myRequestsPage(cookie?: string): Promise<TransactionPage>;
   // `status` (optional) filters server-side (e.g. completed-only). Pages by participation, so a page

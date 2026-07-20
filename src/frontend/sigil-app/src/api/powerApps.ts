@@ -323,24 +323,6 @@ export class PowerAppsSigilApi implements SigilApi {
     return rows.map(userView);
   }
 
-  async myRequests(): Promise<TransactionView[]> {
-    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, {
-      filter: `${COL.owner} eq ${await this.me()}`, orderBy: ['createdon desc'],
-    })) as Row[];
-    return rows.map(txView);
-  }
-
-  async myParticipations(): Promise<TransactionView[]> {
-    const parts = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.participant, {
-      filter: `_${COL.pUserId}_value eq ${await this.me()}`, select: [`_${COL.pTransactionId}_value`],
-    })) as Row[];
-    const txIds = [...new Set(parts.map((p) => lookup(p, COL.pTransactionId)).filter(Boolean) as string[])];
-    if (!txIds.length) return [];
-    const filter = txIds.map((id) => `${COL.txId} eq ${id}`).join(' or ');
-    const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, { filter, orderBy: ['createdon desc'] })) as Row[];
-    return rows.map(txView);
-  }
-
   // Paged variants (recent-first) for the dashboard's infinite scroll. `ok()` can't be used here
   // because we also need the result's continuation token (skipToken), so faults are handled inline.
   async myRequestsPage(cookie?: string): Promise<TransactionPage> {

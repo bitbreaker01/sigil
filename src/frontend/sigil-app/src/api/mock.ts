@@ -338,18 +338,6 @@ export class MockSigilApi implements SigilApi {
       });
   }
 
-  async myRequests() {
-    await this.delay();
-    return [...this.txs.values()].filter((tx) => tx.creatorId === this.seed.userId).map((tx) => ({ ...tx }));
-  }
-
-  async myParticipations() {
-    await this.delay();
-    return [...this.txs.values()]
-      .filter((tx) => (this.participants.get(tx.id) ?? []).some((p) => p.userId === this.seed.userId))
-      .map((tx) => ({ ...tx }));
-  }
-
   async myPendingPage(cookie?: string): Promise<PendingPage> {
     await this.delay();
     const all = [...this.txs.values()]
