@@ -15,6 +15,9 @@ export interface AppContext {
 
 const Ctx = createContext<AppContext | undefined>(undefined);
 
+// The context hook is co-located with its provider (standard pattern). Fast refresh doesn't apply
+// to this app (it runs embedded in the Power Apps host), so the react-refresh rule is moot here.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAppContext(): AppContext {
   const c = useContext(Ctx);
   if (!c) throw new Error('useAppContext must be used within <PowerProvider>');
