@@ -29,7 +29,9 @@ const useStyles = makeStyles({
   bar: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacingHorizontalXS, flexWrap: 'wrap' },
   sep: { width: '1px', alignSelf: 'stretch', backgroundColor: tokens.colorNeutralStroke2, marginInline: tokens.spacingHorizontalXS },
   // Scrolls when the zoomed page is larger than the container — never widens the page itself.
-  scroll: { maxWidth: '100%', overflow: 'auto', display: 'flex', justifyContent: 'center' },
+  // `safe center`: centers while it fits, but aligns to the start when the page overflows, so the
+  // LEFT edge stays reachable by scrolling (plain `center` makes the left overflow unscrollable).
+  scroll: { maxWidth: '100%', overflow: 'auto', display: 'flex', justifyContent: 'safe center' },
 });
 
 export function PdfViewer(props: {
