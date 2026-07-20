@@ -253,7 +253,7 @@ internal static class Catalogo
                 new RequestParam("Text", ParamType.String, Optional: true),
                 new RequestParam("CreatorId", ParamType.Guid, Optional: true),
                 new RequestParam("Status", ParamType.Integer, Optional: true),
-                new RequestParam("ParticipantId", ParamType.Guid, Optional: true),
+                new RequestParam("ParticipantIds", ParamType.String, Optional: true), // CSV de GUIDs (AND)
                 new RequestParam("SignatureVersion", ParamType.Integer, Optional: true),
                 new RequestParam("Sort", ParamType.String, Optional: true),
                 new RequestParam("PageSize", ParamType.Integer, Optional: true),

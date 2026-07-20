@@ -3988,7 +3988,7 @@ export const dataSourcesInfo = {
           { "name": "Text", "in": "body", "required": false, "type": "string" },
           { "name": "CreatorId", "in": "body", "required": false, "type": "string", "format": "guid" },
           { "name": "Status", "in": "body", "required": false, "type": "number" },
-          { "name": "ParticipantId", "in": "body", "required": false, "type": "string", "format": "guid" },
+          { "name": "ParticipantIds", "in": "body", "required": false, "type": "string" },
           { "name": "SignatureVersion", "in": "body", "required": false, "type": "number" },
           { "name": "Sort", "in": "body", "required": false, "type": "string" },
           { "name": "PageSize", "in": "body", "required": false, "type": "number" },

@@ -11,7 +11,7 @@ export interface SearchDocumentsParams {
   Text?: string;
   CreatorId?: string;
   Status?: number;
-  ParticipantId?: string;
+  ParticipantIds?: string; // CSV of GUIDs (AND)
   SignatureVersion?: number;
   Sort?: string;
   PageSize?: number;

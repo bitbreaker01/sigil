@@ -375,7 +375,9 @@ export class MockSigilApi implements SigilApi {
     if (text) rows = rows.filter((r) => r.name.toLowerCase().includes(text));
     if (query.creatorId) rows = rows.filter((r) => r.creatorId === query.creatorId);
     if (query.status != null) rows = rows.filter((r) => r.state === query.status);
-    if (query.participantId) rows = rows.filter((r) => r.participants.some((p) => p.userId === query.participantId));
+    if (query.participantIds?.length) {
+      rows = rows.filter((r) => query.participantIds!.every((id) => r.participants.some((p) => p.userId === id)));
+    }
     if (query.signatureVersion != null) rows = rows.filter((r) => r.mySignatureVersion === query.signatureVersion);
     rows = sortMockDocs(rows, query.sort ?? 'createdDesc');
 

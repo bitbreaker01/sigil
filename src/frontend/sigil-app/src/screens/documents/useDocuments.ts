@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { sigilApi } from '../../api';
-import { DEFAULT_FILTERS, toQuery, type DocumentFilters, type DocumentSort } from './documentsModel';
+import { DEFAULT_FILTERS, toQuery, type DocumentFilters, type DocumentSort, type SelectedUser } from './documentsModel';
 
 export function useDocuments(initialSignatureVersion?: number) {
   const [filters, setFilters] = useState<DocumentFilters>(
@@ -25,12 +25,12 @@ export function useDocuments(initialSignatureVersion?: number) {
     () => toQuery({
       text: debouncedText,
       creatorId: filters.creatorId,
-      participantId: filters.participantId,
+      participants: filters.participants,
       status: filters.status,
       signatureVersion: filters.signatureVersion,
       sort: filters.sort,
     }),
-    [debouncedText, filters.creatorId, filters.participantId, filters.status, filters.signatureVersion, filters.sort],
+    [debouncedText, filters.creatorId, filters.participants, filters.status, filters.signatureVersion, filters.sort],
   );
 
   const q = useInfiniteQuery({
@@ -55,7 +55,10 @@ export function useDocuments(initialSignatureVersion?: number) {
     hasVersionFilter: filters.signatureVersion !== 'all',
     setText: (text: string) => setFilters((f) => ({ ...f, text })),
     setCreator: (creatorId: string) => setFilters((f) => ({ ...f, creatorId })),
-    setParticipant: (participantId: string) => setFilters((f) => ({ ...f, participantId })),
+    addParticipant: (u: SelectedUser) =>
+      setFilters((f) => (f.participants.some((p) => p.id === u.id) ? f : { ...f, participants: [...f.participants, u] })),
+    removeParticipant: (id: string) =>
+      setFilters((f) => ({ ...f, participants: f.participants.filter((p) => p.id !== id) })),
     setStatus: (status: number | 'all') => setFilters((f) => ({ ...f, status })),
     setSignatureVersion: (signatureVersion: number | 'all') => setFilters((f) => ({ ...f, signatureVersion })),
     setSort: (sort: DocumentSort) => setFilters((f) => ({ ...f, sort })),

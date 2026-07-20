@@ -12,20 +12,26 @@ describe('toQuery', () => {
   });
 
   it('omits "any" creator/participant/status/version', () => {
-    const q = toQuery({ ...DEFAULT_FILTERS, creatorId: '', participantId: '', status: 'all', signatureVersion: 'all' });
+    const q = toQuery({ ...DEFAULT_FILTERS, creatorId: '', participants: [], status: 'all', signatureVersion: 'all' });
     expect(q.creatorId).toBeUndefined();
-    expect(q.participantId).toBeUndefined();
+    expect(q.participantIds).toBeUndefined();
     expect(q.status).toBeUndefined();
     expect(q.signatureVersion).toBeUndefined();
   });
 
+  it('sends the selected participants as an id list (AND)', () => {
+    const q = toQuery({ ...DEFAULT_FILTERS, participants: [{ id: 'u2', name: 'Ana' }, { id: 'u3', name: 'Beto' }] });
+    expect(q.participantIds).toEqual(['u2', 'u3']);
+  });
+
   it('passes concrete filters through', () => {
     const q = toQuery({
-      text: 'nda', creatorId: 'u1', participantId: 'u2', status: 159460004, signatureVersion: 2, sort: 'nameAsc',
+      text: 'nda', creatorId: 'u1', participants: [{ id: 'u2', name: 'Ana' }],
+      status: 159460004, signatureVersion: 2, sort: 'nameAsc',
     });
     expect(q).toEqual({
       sort: 'nameAsc', pageSize: PAGE_SIZE, text: 'nda',
-      creatorId: 'u1', participantId: 'u2', status: 159460004, signatureVersion: 2,
+      creatorId: 'u1', participantIds: ['u2'], status: 159460004, signatureVersion: 2,
     });
   });
 });

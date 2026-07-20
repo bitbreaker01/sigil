@@ -344,7 +344,7 @@ export class PowerAppsSigilApi implements SigilApi {
       Text: query.text || undefined,
       CreatorId: query.creatorId || undefined,
       Status: query.status,
-      ParticipantId: query.participantId || undefined,
+      ParticipantIds: query.participantIds?.length ? query.participantIds.join(',') : undefined,
       SignatureVersion: query.signatureVersion,
       Sort: query.sort,
       PageSize: query.pageSize,

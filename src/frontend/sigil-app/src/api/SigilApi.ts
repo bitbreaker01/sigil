@@ -52,7 +52,7 @@ export interface DocumentRow extends TransactionView {
 export interface DocumentQuery {
   text?: string;
   creatorId?: string;
-  participantId?: string;
+  participantIds?: string[]; // AND — the doc must include ALL of these signers
   status?: number;
   signatureVersion?: number;
   sort?: string;

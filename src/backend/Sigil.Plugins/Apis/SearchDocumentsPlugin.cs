@@ -35,7 +35,11 @@ public class SearchDocumentsPlugin : SigilApiPlugin
         var text = e.Input<string>("Text")?.Trim();
         var creatorId = InputGuid("CreatorId");
         var status = e.InputOptionalInt("Status");
-        var participantId = InputGuid("ParticipantId");
+        // CSV of GUIDs — the doc must include ALL of them (AND).
+        var participantIds = (e.Input<string>("ParticipantIds") ?? string.Empty)
+            .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => Guid.TryParse(x.Trim(), out var g) ? g.ToString() : null)
+            .Where(x => x is not null).Cast<string>().Distinct().ToList();
         var signatureVersion = e.InputOptionalInt("SignatureVersion");
         var sort = e.Input<string>("Sort") ?? "createdDesc";
         var pageSize = Math.Min(Math.Max(e.InputOptionalInt("PageSize") ?? DefaultPageSize, 1), MaxPageSize);
@@ -111,8 +115,8 @@ public class SearchDocumentsPlugin : SigilApiPlugin
             filas = filas.Where(f => f.CreatorId == cf);
         if (status is { } sf)
             filas = filas.Where(f => f.Status == sf);
-        if (participantId is { } pf)
-            filas = filas.Where(f => f.Participants.Any(p => p.UserId == pf.ToString()));
+        if (participantIds.Count > 0)
+            filas = filas.Where(f => participantIds.All(pid => f.Participants.Any(p => p.UserId == pid)));
         if (signatureVersion is { } vf)
             filas = filas.Where(f => f.MySignatureVersion == vf);
 

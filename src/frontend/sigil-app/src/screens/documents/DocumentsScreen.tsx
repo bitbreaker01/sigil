@@ -16,6 +16,7 @@ import { TransactionCard } from '../dashboard/TransactionCard';
 import { useDocuments } from './useDocuments';
 import { FilterCombobox, type ComboOption } from './FilterCombobox';
 import { UserSearchCombobox } from './UserSearchCombobox';
+import { MultiUserSearch } from './MultiUserSearch';
 import type { DocumentSort } from './documentsModel';
 
 const SORTS: DocumentSort[] = ['createdDesc', 'createdAsc', 'sentDesc', 'sentAsc', 'completedDesc', 'completedAsc', 'nameAsc', 'nameDesc'];
@@ -74,8 +75,8 @@ export default function DocumentsScreen(props: {
         <UserSearchCombobox label={t('documents.creator')} anyLabel={t('documents.anyCreator')} className={s.field}
           selectedId={d.filters.creatorId} onSelect={(id) => d.setCreator(id)} />
 
-        <UserSearchCombobox label={t('documents.participant')} anyLabel={t('documents.anyParticipant')} className={s.field}
-          selectedId={d.filters.participantId} onSelect={(id) => d.setParticipant(id)} />
+        <MultiUserSearch label={t('documents.participant')} placeholder={t('documents.anyParticipant')} className={s.field}
+          selected={d.filters.participants} onAdd={d.addParticipant} onRemove={d.removeParticipant} />
 
         <FilterCombobox label={t('documents.status')} placeholder={t('documents.anyStatus')} className={s.field}
           selected={String(d.filters.status)} options={statusOpts}

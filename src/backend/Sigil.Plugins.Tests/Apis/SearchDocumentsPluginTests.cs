@@ -55,7 +55,7 @@ public class SearchDocumentsPluginTests
     }
 
     private (List<Row> Rows, int Total, string Next) Buscar(
-        string? text = null, Guid? creatorId = null, int? status = null, Guid? participantId = null,
+        string? text = null, Guid? creatorId = null, int? status = null, IReadOnlyCollection<Guid>? participantIds = null,
         int? signatureVersion = null, string? sort = null, int? pageSize = null, string? cookie = null)
     {
         var ip = _arnes.Contexto.InputParameters;
@@ -63,7 +63,7 @@ public class SearchDocumentsPluginTests
         if (text != null) ip["Text"] = text;
         if (creatorId is { } cr) ip["CreatorId"] = cr;
         if (status is { } st) ip["Status"] = st;
-        if (participantId is { } pa) ip["ParticipantId"] = pa;
+        if (participantIds is { Count: > 0 }) ip["ParticipantIds"] = string.Join(",", participantIds);
         if (signatureVersion is { } sv) ip["SignatureVersion"] = sv;
         if (sort != null) ip["Sort"] = sort;
         if (pageSize is { } ps) ip["PageSize"] = ps;
@@ -147,10 +147,26 @@ public class SearchDocumentsPluginTests
         SembrarParticipante(conAna, _otro);
         SembrarTx(_yo, "Solo yo");
 
-        var (rows, total, _) = Buscar(participantId: _otro);
+        var (rows, total, _) = Buscar(participantIds: new[] { _otro });
 
         Assert.Equal(1, total);
         Assert.Equal("Con Ana", rows.Single().Name);
+    }
+
+    [Fact]
+    public void FiltraPorVariosParticipantes_ExigeTodos_AND()
+    {
+        var tercero = _arnes.SembrarUsuario("Caro Tercera", "caro@bac.test");
+        var conAmbos = SembrarTx(_yo, "Con Ana y Caro");
+        SembrarParticipante(conAmbos, _otro);
+        SembrarParticipante(conAmbos, tercero);
+        var soloAna = SembrarTx(_yo, "Solo Ana");
+        SembrarParticipante(soloAna, _otro);
+
+        var (rows, total, _) = Buscar(participantIds: new[] { _otro, tercero });
+
+        Assert.Equal(1, total);
+        Assert.Equal("Con Ana y Caro", rows.Single().Name);
     }
 
     [Fact]
