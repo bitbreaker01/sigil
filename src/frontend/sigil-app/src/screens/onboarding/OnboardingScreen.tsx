@@ -26,6 +26,7 @@ import { useT } from '../../i18n/useT';
 import { downloadBase64 } from '../../api/binaries';
 import { useOnboarding } from './useOnboarding';
 import { SignatureMockup } from './SignatureMockup';
+import { SignatureEditor } from './SignatureEditor';
 
 const useStyles = makeStyles({
   card: { padding: tokens.spacingVerticalXL, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL },
@@ -79,7 +80,7 @@ export default function OnboardingScreen(props: {
 }): JSX.Element {
   const s = useStyles();
   const { t } = useT();
-  const { state, history, upload, save, cancelPreview, formatError } = useOnboarding();
+  const { state, history, upload, applyEdit, save, cancelPreview, formatError } = useOnboarding();
   const inputRef = useRef<HTMLInputElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [expandedDocs, setExpandedDocs] = useState<Set<number>>(new Set());
@@ -114,6 +115,10 @@ export default function OnboardingScreen(props: {
       )}
 
       {state.phase === 'processing' && <Spinner label={t('onboarding.processing')} />}
+
+      {state.phase === 'editing' && (
+        <SignatureEditor source={state.source} onApply={applyEdit} onCancel={cancelPreview} />
+      )}
 
       {state.phase === 'preview' && (
         <>

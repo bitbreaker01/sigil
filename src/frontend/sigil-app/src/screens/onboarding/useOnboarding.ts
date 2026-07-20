@@ -12,6 +12,7 @@ export type OnboardingState =
   | { phase: 'loading' }
   | { phase: 'ready'; currentSignature?: string; validatedOn?: string }
   | { phase: 'processing' }
+  | { phase: 'editing'; source: string } // raw upload (data-URL) — framing/crop/rotate/flip before validating
   | { phase: 'preview'; normalized: string } // validated, NOT yet saved — awaiting confirmation
   | { phase: 'success'; normalized: string }
   | { phase: 'rejected'; reasons: string[] }
@@ -20,7 +21,8 @@ export type OnboardingState =
 export interface UseOnboarding {
   state: OnboardingState;
   history: MasterSignatureVersion[];
-  upload: (file: File) => void;
+  upload: (file: File) => void; // read the file → the editor (no backend yet)
+  applyEdit: (base64: string) => void; // the edited PNG → VALIDATE (preview)
   save: () => void; // commit the previewed signature (call AFTER the user confirms the replacement)
   cancelPreview: () => void; // discard the preview, back to the current signature
   formatError: boolean;
@@ -84,6 +86,19 @@ export function useOnboarding(): UseOnboarding {
         const bytes = new Uint8Array(await file.arrayBuffer());
         const { bytesToBase64 } = await import('../../api/binaries');
         const base64 = await bytesToBase64(bytes);
+        // Straight to the editor — the user frames/crops/rotates before we validate (nothing persisted).
+        setState({ phase: 'editing', source: `data:image/png;base64,${base64}` });
+      } catch (e) {
+        setState({ phase: 'error', message: messageFrom(e) });
+      }
+    })();
+  }, []);
+
+  // The edited PNG (raw base64 from the editor) → VALIDATE (preview). Persists nothing until save().
+  const applyEdit = useCallback((base64: string) => {
+    void (async () => {
+      setState({ phase: 'processing' });
+      try {
         const r = await sigilApi.validateMasterSignature(base64); // PREVIEW — nothing persisted
         if (r.IsValid && r.NormalizedImageBase64) {
           pendingBase64.current = base64;
@@ -122,5 +137,5 @@ export function useOnboarding(): UseOnboarding {
     void loadCurrent();
   }, [loadCurrent]);
 
-  return { state, history, upload, save, cancelPreview, formatError };
+  return { state, history, upload, applyEdit, save, cancelPreview, formatError };
 }
