@@ -1,18 +1,17 @@
 // Multi-select async user picker for the "other participants" filter (AND semantics — the doc must
-// include ALL chosen signers). Chips for the current selection + a search Input that adds more.
+// include ALL chosen signers). Renders ONLY the search box (the selected chips live in their own
+// full-width row in DocumentsScreen, so the filter grid stays aligned and wraps well on mobile).
 // Built on a plain Input + results dropdown (Fluent's Combobox swallows keystrokes when controlled).
 
 import { useEffect, useRef, useState } from 'react';
-import { makeStyles, tokens, Field, Input, Badge } from '@fluentui/react-components';
-import { SearchRegular, DismissRegular } from '@fluentui/react-icons';
+import { makeStyles, tokens, Field, Input } from '@fluentui/react-components';
+import { SearchRegular } from '@fluentui/react-icons';
 import { sigilApi } from '../../api';
 import type { UserSummary } from '../../api/SigilApi';
 import type { SelectedUser } from './documentsModel';
 
 const useStyles = makeStyles({
   wrap: { position: 'relative' },
-  chips: { display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '4px' },
-  chip: { cursor: 'pointer' },
   menu: {
     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, marginTop: '2px',
     maxHeight: '220px', overflowY: 'auto',
@@ -33,9 +32,8 @@ export function MultiUserSearch(props: {
   label: string;
   placeholder: string;
   className?: string;
-  selected: SelectedUser[];
+  selected: SelectedUser[]; // already-chosen (excluded from results)
   onAdd: (u: SelectedUser) => void;
-  onRemove: (id: string) => void;
 }): JSX.Element {
   const s = useStyles();
   const [query, setQuery] = useState('');
@@ -58,19 +56,6 @@ export function MultiUserSearch(props: {
 
   return (
     <Field label={props.label} className={props.className}>
-      {props.selected.length > 0 && (
-        <div className={s.chips}>
-          {props.selected.map((p) => (
-            <Badge
-              key={p.id} appearance="tint" color="brand" className={s.chip}
-              icon={<DismissRegular />} iconPosition="after"
-              onClick={() => props.onRemove(p.id)}
-            >
-              {p.name}
-            </Badge>
-          ))}
-        </div>
-      )}
       <div className={s.wrap}>
         <Input
           value={query}

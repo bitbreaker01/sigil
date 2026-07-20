@@ -23,6 +23,7 @@ export const es = {
     anyCreator: 'Cualquier creador',
     participant: 'Otro participante',
     anyParticipant: 'Cualquiera',
+    mustInclude: 'Debe incluir:',
     status: 'Estado',
     anyStatus: 'Cualquier estado',
     signatureVersion: 'Versión de mi firma',

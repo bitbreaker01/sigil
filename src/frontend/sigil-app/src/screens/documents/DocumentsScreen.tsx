@@ -4,7 +4,7 @@
 // lists. Opened from the nav, or from the signature history pre-filtered to a version.
 
 import {
-  makeStyles, tokens, Card, Text, Input, Dropdown, Option, Field, Button, Spinner,
+  makeStyles, tokens, Card, Text, Input, Dropdown, Option, Field, Button, Spinner, Badge,
   MessageBar, MessageBarBody,
 } from '@fluentui/react-components';
 import { DismissRegular, SearchRegular } from '@fluentui/react-icons';
@@ -27,6 +27,9 @@ const useStyles = makeStyles({
   search: { flexGrow: 1, minWidth: '220px' },
   field: { minWidth: '160px' },
   chip: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS },
+  // Selected-participant chips live on their own full-width row so the filter grid stays aligned.
+  chips: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: tokens.spacingHorizontalS },
+  chipTag: { cursor: 'pointer' },
   list: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM },
   meta: { color: tokens.colorNeutralForeground3 },
   more: { display: 'flex', justifyContent: 'center', paddingBlock: tokens.spacingVerticalM },
@@ -76,7 +79,7 @@ export default function DocumentsScreen(props: {
           selectedId={d.filters.creatorId} onSelect={(id) => d.setCreator(id)} />
 
         <MultiUserSearch label={t('documents.participant')} placeholder={t('documents.anyParticipant')} className={s.field}
-          selected={d.filters.participants} onAdd={d.addParticipant} onRemove={d.removeParticipant} />
+          selected={d.filters.participants} onAdd={d.addParticipant} />
 
         <FilterCombobox label={t('documents.status')} placeholder={t('documents.anyStatus')} className={s.field}
           selected={String(d.filters.status)} options={statusOpts}
@@ -95,6 +98,19 @@ export default function DocumentsScreen(props: {
           </Dropdown>
         </Field>
       </div>
+
+      {d.filters.participants.length > 0 && (
+        <div className={s.chips}>
+          <Text size={200} className={s.meta}>{t('documents.mustInclude')}</Text>
+          {d.filters.participants.map((p) => (
+            <Badge key={p.id} appearance="tint" color="brand" className={s.chipTag}
+              icon={<DismissRegular />} iconPosition="after"
+              onClick={() => d.removeParticipant(p.id)}>
+              {p.name}
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {d.loading ? <Spinner label={t('common.loading')} />
         : d.error ? <MessageBar intent="error"><MessageBarBody>{t('common.genericError')}</MessageBarBody></MessageBar>
