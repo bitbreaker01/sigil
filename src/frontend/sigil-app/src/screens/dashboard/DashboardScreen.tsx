@@ -115,6 +115,7 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
                 </Button>
               </TransactionCard>
             ))}
+            {loadMore(d.pendingHasMore, d.pendingLoadingMore, d.loadMorePending)}
           </div>
         )
       ) : tab === 'requests' ? (

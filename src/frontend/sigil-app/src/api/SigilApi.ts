@@ -125,6 +125,17 @@ export interface TransactionPage {
   nextCookie: string;
 }
 
+// A doc awaiting the caller's signature (Pending tab) — the tx plus the caller's participant row.
+export interface PendingItem {
+  tx: TransactionView;
+  participant: ParticipantView;
+}
+
+export interface PendingPage {
+  rows: PendingItem[];
+  nextCookie: string;
+}
+
 export interface SigilApi {
   // Identity (getContext) — never authoritative (doc 05 §9).
   currentUser(): { id?: string; name?: string; upn?: string };
@@ -163,6 +174,8 @@ export interface SigilApi {
 
   // Table reads (projections for the screens)
   myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]>;
+  // Paged (recent-first) Pending for the dashboard's infinite scroll.
+  myPendingPage(cookie?: string): Promise<PendingPage>;
   myRequests(): Promise<TransactionView[]>;
   myParticipations(): Promise<TransactionView[]>;
   // Paged (recent-first) variants for the dashboard's infinite-scroll lists (§5.1 — don't load all).

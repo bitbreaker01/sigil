@@ -33,6 +33,7 @@ import type {
   DocumentQuery,
   DocumentPage,
   TransactionPage,
+  PendingPage,
 } from './SigilApi';
 import { getClient } from '@microsoft/power-apps/data';
 import { getContext } from '@microsoft/power-apps/app';
@@ -369,8 +370,49 @@ export class PowerAppsSigilApi implements SigilApi {
     const txRows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, { filter })) as Row[];
     // Preserve the participant order (recent-first) — the tx `or` filter doesn't guarantee order.
     const byId = new Map(txRows.map((r) => [s(r, COL.txId) ?? '', r]));
-    const rows = txIds.map((id) => byId.get(id)).filter((r): r is Row => !!r).map(txView);
+    const ordered = txIds.map((id) => byId.get(id)).filter((r): r is Row => !!r);
+    return { rows: await this.withCreatorNames(ordered), nextCookie };
+  }
+
+  async myPendingPage(cookie?: string): Promise<PendingPage> {
+    const opts: { filter: string; orderBy: string[]; maxPageSize: number; skipToken?: string } = {
+      filter: `_${COL.pUserId}_value eq ${await this.me()} and ${COL.status} eq ${PARTICIPANT_ACTIVE_TURN}`,
+      orderBy: ['createdon desc'], maxPageSize: DASH_PAGE_SIZE,
+    };
+    if (cookie) opts.skipToken = cookie;
+    const res = await dv.retrieveMultipleRecordsAsync<Row>(T.participant, opts);
+    if (!res.success) throw new Error(dataverseFaultMessage(res.error));
+    const nextCookie = res.skipToken ?? '';
+    const parts = res.data as Row[];
+    const txIds = [...new Set(parts.map((p) => lookup(p, COL.pTransactionId)).filter(Boolean) as string[])];
+    if (!txIds.length) return { rows: [], nextCookie };
+    const txRows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.tx, {
+      filter: txIds.map((id) => `${COL.txId} eq ${id}`).join(' or '),
+    })) as Row[];
+    const viewById = new Map((await this.withCreatorNames(txRows)).map((v) => [v.id, v]));
+    // Keep only docs still awaiting signature, in the participant (recent-first) order.
+    const rows = parts.flatMap((pr) => {
+      const tx = viewById.get(lookup(pr, COL.pTransactionId) ?? '');
+      return tx && (tx.state === TX_PENDING || tx.state === TX_PARTIALLY_SIGNED)
+        ? [{ tx, participant: partView(pr) }] : [];
+    });
     return { rows, nextCookie };
+  }
+
+  // Resolve creator display names from systemusers (the owner FormattedValue isn't reliably present
+  // on these reads, so "Sent by X" would otherwise be blank). One extra query per page.
+  private async withCreatorNames(rows: Row[]): Promise<TransactionView[]> {
+    const views = rows.map(txView);
+    const ids = [...new Set(views.map((v) => v.creatorId).filter(Boolean))];
+    if (!ids.length) return views;
+    const users = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.user, {
+      filter: ids.map((id) => `systemuserid eq ${id}`).join(' or '), select: ['systemuserid', 'fullname'],
+    })) as Row[];
+    const nameById = new Map(users.map((u) => [(s(u, 'systemuserid') ?? '').toLowerCase(), s(u, 'fullname') ?? '']));
+    return views.map((v) => {
+      const name = nameById.get(v.creatorId.toLowerCase());
+      return name ? { ...v, creatorName: name } : v;
+    });
   }
 
   // Phase 3: server-side paged search via the SearchDocuments Custom API. Omitted filters aren't sent.
