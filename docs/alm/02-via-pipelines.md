@@ -15,6 +15,8 @@ Power Platform Pipelines es la vía **in-product** de ALM: automatiza los despli
 
 Los pipelines despliegan la **solución** más la **configuración del destino**: conexiones, connection references y variables de entorno [3].
 
+**Mecanismo (importante entenderlo):** por dentro, un pipeline **exporta** la solución del origen apenas se pide el deploy, la **guarda en el host** y **despliega el mismo artefacto** a cada stage — *"Both managed and unmanaged solutions are automatically exported and stored in the pipelines host"* y *"the same solution artifact will be deployed"* [34]. Es decir, un pipeline **es** un export/import de zip gobernado. Consecuencia práctica: **el import manual (doc 01) es siempre una alternativa** al mismo artefacto — Microsoft hasta documenta descargarlo del host e importarlo a mano como workaround de rollback [34]. Lo que el pipeline agrega no es *capacidad de mover el zip*, sino **gobernanza** (§5).
+
 ## 2. Prerrequisitos (lo que exige la plataforma)
 
 - **Managed environments:** todos los ambientes destino (no-dev) del pipeline deben estar habilitados como **managed environments** [4]. Host y Dev no hace falta [4].
@@ -57,7 +59,7 @@ Cada paso citado en §Fuentes.
 - **Solo intra-tenant:** los pipelines **no** despliegan a un tenant distinto [29]. Relevante solo si los ambientes de Sigil cruzaran tenants (no es el caso).
 - **Delegated con stage owner + OAuth:** un delegated deployment de tipo *stage owner* **no** puede desplegar soluciones con connection references para conexiones **OAuth** [30]. (Sigil usa SP como delegado, no stage owner; aun así, tenerlo presente para las conexiones Outlook/Teams del doc 08.)
 - **Plugins / código:** desplegar plugins y otros componentes de código exige **System Administrator** en los destinos; roles menores no pueden [31] — por eso el SP delegado lleva System Administrator (§3.10).
-- **Code App en pipeline — NO VERIFICADO:** ninguna página oficial que haya leído confirma *por su nombre* que una **code app** se despliegue por Pipelines sin fricción; el overview de code apps confirma que **no** soportan git integration [32] y la página de ALM de code apps recomienda Pipelines como camino [2], pero doc 09 §11 ya marca como **NO VERIFICADO** la combinación exacta *code app + plugin package + flows en UNA solución* vía pipeline. **Se valida con los gates del Runbook B**; plan B: export/import manual (doc 01, doc 09 §11).
+- **Code App en pipeline:** la página oficial de ALM de code apps documenta **Pipelines como el camino de deploy** una vez que la app está en la solución [2], y como el pipeline es export/import de zip (§1), la code app **viaja en la solución**. Lo que queda **NO VERIFICADO** es más angosto y **operacional**: (a) la combinación exacta *code app + plugin package + flows en UNA solución* (doc 09 §11), y (b) si la code app toma un **appId nuevo** en el destino (doc 09 §11) — absorbido por el paso post-import de `env_AppPlayUrl` (doc 09 §6). **Se valida con los gates del Runbook B**; plan B siempre disponible: export/import manual del mismo artefacto (doc 01 §8).
 
 ## 7. Ejemplo Sigil
 
@@ -119,3 +121,4 @@ Verificadas contra Microsoft Learn el 2026-07-20.
 31. Delegated deployments (System Administrator requerido para desplegar plugins/código): https://learn.microsoft.com/en-us/power-platform/alm/delegated-deployments-setup
 32. Code apps overview (no soportan Power Platform Git integration): https://learn.microsoft.com/en-us/power-apps/developer/code-apps/overview
 33. Delegated deployments (quien habilita/modifica la config de SP debe ser owner de la enterprise application en Entra ID): https://learn.microsoft.com/en-us/power-platform/alm/delegated-deployments-setup
+34. Pipelines FAQ (managed/unmanaged se exportan y guardan en el host; se despliega el mismo artefacto; workaround: descargar e importar manualmente): https://learn.microsoft.com/en-us/power-platform/alm/pipelines

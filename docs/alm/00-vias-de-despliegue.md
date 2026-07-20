@@ -76,15 +76,17 @@ Sigil incluye una **Power Apps Code App**. Y la documentación oficial es explí
 - Las code apps **no soportan integración de código fuente (git)** [15][16].
 - El camino documentado: `pac code push` deja la app en la solución preferida, y **una vez en la solución se usan Power Platform Pipelines** para promover Dev → Test → Prod [16].
 
-**Implicancia honesta:**
-- La vía **2 (Pipelines)** es la única con soporte documentado end-to-end para la solución de Sigil **con** la code app adentro. Aun así, doc 09 §11 ya marcó como **NO VERIFICADO** la combinación exacta code app + plugin package + flows en UNA sola solución vía pipeline — se valida con los gates del Runbook B.
-- Las vías **1 (export/import)** y **3 (GitHub Actions)** son perfectamente válidas para todo lo **empaquetable** (tablas, choices, plugin package, flows, env vars). Pero el **componente code app** por unpack/pack **no está soportado** [14][15]; y no encontré página oficial que confirme que un export-as-managed → import manual de una solución que **contiene** una code app funcione limpio → **NO VERIFICADO**.
+**Implicancia (verificada — corrige una versión previa más pesimista):**
+- Las limitaciones de code apps son **solo dos**: no soportan **Solution Packager** (pack/unpack) [14] ni **git integration** [15]. **No** hay limitación sobre el export/import del **zip** de la solución.
+- Un pipeline, por dentro, **exporta la solución y la importa**: *"automatically exported and stored in the pipelines host"* y *"the same solution artifact will be deployed"* [17]; Microsoft incluso documenta **descargar ese artefacto e importarlo manualmente** en el destino como workaround [18]. Por lo tanto **la code app viaja dentro del zip de la solución** en cualquier vía que haga export/import directo — incluyendo el **import manual** (vía 1).
+- Lo único que NO aplica a la code app es el loop **unpack→commit→pack** (source control): eso descarta el patrón git-desempaquetado de la vía 3, **pero no** el export/import directo (que la vía 3 también puede hacer — ver doc 03 §7).
+- Queda un **NO VERIFICADO menor y operacional** (no bloqueante): si la code app recibe un **appId nuevo** en el destino (doc 09 §11) — se absorbe con el paso post-import de `env_AppPlayUrl` (doc 09 §6), y aplica igual a las tres vías.
 
-Por eso este playbook documenta las tres, pero para **Sigil** la recomendación operativa sigue siendo la del doc 09 (Pipelines para la solución completa), dejando export/import y GitHub Actions como vías plenas para otros tenants o para las partes empaquetables.
+Por eso, para **Sigil**, la recomendación del doc 09 (Pipelines) se sostiene por su **gobernanza** (preflight, orden inviolable, aprobaciones), **no** porque sea la única capaz de mover la code app: el export/import manual es una alternativa plena y el plan B confirmado.
 
 ## 6. Cómo elegir (árbol de decisión)
 
-1. **¿Tu solución tiene una Code App?** → Pipelines es la vía con soporte documentado para moverla dentro de la solución [16]. (Sigil cae acá.)
+1. **¿Tu solución tiene una Code App?** → La code app viaja en el **zip de la solución**, así que se mueve por **cualquier** vía que haga export/import directo (Pipelines, import manual, o `export-solution`→`import-solution` de GitHub Actions **sin** unpack/pack). Lo único vedado es el loop unpack→pack/git [14][15]. Pipelines es la vía **recomendada** por su gobernanza, no la única. (Sigil cae acá.)
 2. **¿Equipo con cultura git/DevOps y/o varios tenants?** → GitHub Actions (con OIDC) da el mejor control de versiones y portabilidad.
 3. **¿Equipo Power Platform que quiere gobernanza sin montar CI/CD?** → Pipelines.
 4. **¿Tenant chico, primer deploy, o necesitás un plan B siempre a mano?** → Export/Import manual.
@@ -130,3 +132,5 @@ Todas verificadas contra documentación oficial (Microsoft Learn) el 2026-07-20.
 14. Code apps ALM (no soportan solution packager): https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/alm
 15. Code apps ALM (no soportan integración de código fuente): https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/alm
 16. Code apps ALM (`pac code push` a la solución; luego Pipelines para Dev→Test→Prod): https://learn.microsoft.com/en-us/power-apps/developer/code-apps/how-to/alm
+17. Pipelines FAQ (el pipeline exporta la solución, la guarda en el host y despliega el mismo artefacto — es export/import de zip): https://learn.microsoft.com/en-us/power-platform/alm/pipelines
+18. Pipelines FAQ (workaround: descargar el artefacto del host e importarlo manualmente en el destino): https://learn.microsoft.com/en-us/power-platform/alm/pipelines
