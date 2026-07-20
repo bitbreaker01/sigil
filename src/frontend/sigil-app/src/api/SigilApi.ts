@@ -167,7 +167,9 @@ export interface SigilApi {
   myParticipations(): Promise<TransactionView[]>;
   // Paged (recent-first) variants for the dashboard's infinite-scroll lists (§5.1 — don't load all).
   myRequestsPage(cookie?: string): Promise<TransactionPage>;
-  myParticipationsPage(cookie?: string): Promise<TransactionPage>;
+  // `status` (optional) filters server-side (e.g. completed-only). Pages by participation, so a page
+  // may return fewer than the page size after the status filter — infinite scroll keeps loading.
+  myParticipationsPage(cookie?: string, status?: number): Promise<TransactionPage>;
   // Documents screen (Phase 3): server-side paged search — the backend filters/sorts/pages so the
   // client loads one page at a time. `cookie` chains pages (undefined = first page).
   searchDocuments(query: DocumentQuery, cookie?: string): Promise<DocumentPage>;

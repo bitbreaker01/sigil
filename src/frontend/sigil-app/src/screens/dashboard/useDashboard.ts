@@ -19,18 +19,21 @@ const KEYS = {
   masterSignature: ['dashboard', 'masterSignature'] as const,
 };
 
+const TX_COMPLETED = 159460004; // transaction state: Completed (server-side "completed only" filter)
+
 export function useDashboard() {
   const qc = useQueryClient();
   const sealingSince = useRef<number | undefined>(undefined);
   const [sealingCapped, setSealingCapped] = useState(false); // 3-min poll cap reached (§5.1)
   const [actionError, setActionError] = useState(false); // retry/download failed
+  const [onlyCompleted, setOnlyCompleted] = useState(false); // Participations "completed only" (server-side)
 
   const pending = useQuery({ queryKey: KEYS.pending, queryFn: () => sigilApi.myPending() });
   const masterSignature = useQuery({ queryKey: KEYS.masterSignature, queryFn: () => sigilApi.getMasterSignature() });
 
   const participations = useInfiniteQuery({
-    queryKey: KEYS.participations,
-    queryFn: ({ pageParam }) => sigilApi.myParticipationsPage(pageParam),
+    queryKey: [...KEYS.participations, onlyCompleted],
+    queryFn: ({ pageParam }) => sigilApi.myParticipationsPage(pageParam, onlyCompleted ? TX_COMPLETED : undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.nextCookie || undefined,
   });
@@ -103,6 +106,8 @@ export function useDashboard() {
     isSealingActive: hasSealing(requestList),
     sealingCapped,
     actionError,
+    onlyCompleted,
+    setOnlyCompleted,
     loading: pending.isLoading || requests.isLoading || participations.isLoading,
     error: pending.isError || requests.isError || participations.isError,
     requestsHasMore: requests.hasNextPage,

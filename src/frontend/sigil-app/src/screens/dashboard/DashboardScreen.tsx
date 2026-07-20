@@ -41,7 +41,6 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
   const { t } = useT();
   const d = useDashboard();
   const [tab, setTab] = useState<TabKey>('pending');
-  const [onlyCompleted, setOnlyCompleted] = useState(false);
   const now = Date.now();
 
   const download = (tx: Parameters<typeof d.downloadFinal>[0]) => (
@@ -144,10 +143,11 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
         )
       ) : (
         (() => {
-          const list = onlyCompleted ? d.participations.filter((tx) => isCompleted(tx.state)) : d.participations;
+          // The completed-only filter is applied SERVER-SIDE now (useDashboard passes the status).
+          const list = d.participations;
           return (
             <div className={s.list}>
-              <Switch checked={onlyCompleted} onChange={(_e, data) => setOnlyCompleted(!!data.checked)} label={t('dashboard.onlyCompleted')} />
+              <Switch checked={d.onlyCompleted} onChange={(_e, data) => d.setOnlyCompleted(!!data.checked)} label={t('dashboard.onlyCompleted')} />
               {list.length === 0 ? emptyState(t('dashboard.emptyParticipations')) : list.map((tx) => (
                 <TransactionCard key={tx.id} tx={tx} now={now} onOpen={() => props.onNavigate('detail', tx.id)}>
                   {isCompleted(tx.state) && download(tx)}

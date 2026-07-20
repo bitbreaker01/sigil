@@ -354,12 +354,12 @@ export class MockSigilApi implements SigilApi {
     return this.pageOf([...this.txs.values()].filter((tx) => tx.creatorId === this.seed.userId), cookie);
   }
 
-  async myParticipationsPage(cookie?: string): Promise<TransactionPage> {
+  async myParticipationsPage(cookie?: string, status?: number): Promise<TransactionPage> {
     await this.delay();
-    return this.pageOf(
-      [...this.txs.values()].filter((tx) => (this.participants.get(tx.id) ?? []).some((p) => p.userId === this.seed.userId)),
-      cookie,
-    );
+    const mine = [...this.txs.values()]
+      .filter((tx) => (this.participants.get(tx.id) ?? []).some((p) => p.userId === this.seed.userId))
+      .filter((tx) => status == null || tx.state === status);
+    return this.pageOf(mine, cookie);
   }
 
   private pageOf(all: TransactionView[], cookie?: string): TransactionPage {
