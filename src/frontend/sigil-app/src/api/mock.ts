@@ -26,6 +26,7 @@ import type {
   DocumentRow,
   DocumentQuery,
   DocumentPage,
+  TransactionPage,
 } from './SigilApi';
 import { base64ToBytes, sha256Hex } from './binaries';
 
@@ -346,6 +347,26 @@ export class MockSigilApi implements SigilApi {
     return [...this.txs.values()]
       .filter((tx) => (this.participants.get(tx.id) ?? []).some((p) => p.userId === this.seed.userId))
       .map((tx) => ({ ...tx }));
+  }
+
+  async myRequestsPage(cookie?: string): Promise<TransactionPage> {
+    await this.delay();
+    return this.pageOf([...this.txs.values()].filter((tx) => tx.creatorId === this.seed.userId), cookie);
+  }
+
+  async myParticipationsPage(cookie?: string): Promise<TransactionPage> {
+    await this.delay();
+    return this.pageOf(
+      [...this.txs.values()].filter((tx) => (this.participants.get(tx.id) ?? []).some((p) => p.userId === this.seed.userId)),
+      cookie,
+    );
+  }
+
+  private pageOf(all: TransactionView[], cookie?: string): TransactionPage {
+    const size = 25;
+    const offset = cookie ? Number.parseInt(cookie, 10) || 0 : 0;
+    const rows = all.slice(offset, offset + size).map((tx) => ({ ...tx }));
+    return { rows, nextCookie: offset + size < all.length ? String(offset + size) : '' };
   }
 
   async myDocuments(): Promise<DocumentRow[]> {

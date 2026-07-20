@@ -280,6 +280,7 @@ export const es = {
   },
   common: {
     loading: 'Cargando...',
+    loadMore: 'Cargar más',
     retry: 'Reintentar',
     cancel: 'Cancelar',
     continue: 'Continuar',

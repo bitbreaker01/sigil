@@ -31,6 +31,7 @@ const useStyles = makeStyles({
   empty: { padding: tokens.spacingVerticalXL, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: tokens.spacingVerticalM },
   section: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
   hint: { color: tokens.colorNeutralForeground3 },
+  more: { display: 'flex', justifyContent: 'center', paddingBlock: tokens.spacingVerticalS },
 });
 
 type TabKey = 'pending' | 'requests' | 'participations';
@@ -57,6 +58,13 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
       )}
     </Card>
   );
+
+  const loadMore = (show: boolean, busy: boolean, onClick: () => void) =>
+    show ? (
+      <div className={s.more}>
+        <Button appearance="secondary" disabled={busy} onClick={onClick}>{busy ? t('common.loading') : t('common.loadMore')}</Button>
+      </div>
+    ) : null;
 
   return (
     <div className={s.root}>
@@ -131,6 +139,7 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
                 {isSealing(tx.state) && <Text size={200} className={s.hint}>{t('dashboard.sealingNote')}</Text>}
               </TransactionCard>
             ))}
+            {loadMore(d.requestsHasMore, d.requestsLoadingMore, d.loadMoreRequests)}
           </div>
         )
       ) : (
@@ -144,6 +153,7 @@ export default function DashboardScreen(props: { onNavigate: (screen: Screen, tx
                   {isCompleted(tx.state) && download(tx)}
                 </TransactionCard>
               ))}
+              {loadMore(d.participationsHasMore, d.participationsLoadingMore, d.loadMoreParticipations)}
             </div>
           );
         })()
