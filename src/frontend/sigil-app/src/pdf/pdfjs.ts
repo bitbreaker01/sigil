@@ -1,12 +1,15 @@
-// pdf.js setup (doc 05 §6.1). The worker is bundled by Vite as a same-origin asset (`?url`) —
-// "plan A": it needs the environment CSP to allow `worker-src 'self'` (default Code App CSP is
-// `worker-src 'none'`, see doc 05 §6.1 / doc 09). In local dev there is no such CSP, so it just
-// works. This module is the ONLY place that touches pdfjs global config.
+// pdf.js setup (doc 05 §6.1). The worker is INLINED into the bundle (`?worker&inline`) and run from a
+// blob — NOT fetched as a separate `.mjs` asset. Why: hosted in the Power Apps Code App, the storage
+// proxy serves the worker `.mjs` with MIME `application/octet-stream`, and browsers reject module
+// scripts with a non-JS MIME (strict checking) — so `?url` fails hosted even with the CSP fixed.
+// Inlining sidesteps the CDN MIME entirely; it runs from a blob, so the environment CSP must allow
+// `worker-src blob:` (doc 09 / runbook A6). In local dev there is no CSP, so it just works. This
+// module is the ONLY place that touches pdfjs global config.
 
 import * as pdfjsLib from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker&inline';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+pdfjsLib.GlobalWorkerOptions.workerPort = new PdfWorker();
 
 export { pdfjsLib };
 export type PdfDoc = Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']>;
