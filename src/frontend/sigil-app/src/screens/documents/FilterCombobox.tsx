@@ -1,14 +1,32 @@
-// A searchable single-select for the Documents filter bar. Fluent's Combobox lets the user TYPE,
-// but it does NOT filter the options for you — this wraps that: a plain controlled input string the
-// user fully edits to filter, kept in sync with the selected option. Reused for every filter.
+// A searchable single-select over a FIXED local list (status / signature version). Built on a plain
+// Fluent Input + a results dropdown — the same reliable pattern as UserSearchCombobox — because
+// Fluent's Combobox fights a controlled value and swallows keystrokes.
 
-import { useEffect, useState } from 'react';
-import { Combobox, Option, Field } from '@fluentui/react-components';
+import { useState } from 'react';
+import { makeStyles, tokens, Field, Input } from '@fluentui/react-components';
 
 export interface ComboOption {
   value: string;
   text: string;
 }
+
+const useStyles = makeStyles({
+  wrap: { position: 'relative' },
+  menu: {
+    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, marginTop: '2px',
+    maxHeight: '220px', overflowY: 'auto',
+    backgroundColor: tokens.colorNeutralBackground1,
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
+    borderRadius: tokens.borderRadiusMedium,
+    boxShadow: tokens.shadow16,
+  },
+  item: {
+    display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none',
+    padding: `${tokens.spacingVerticalSNudge} ${tokens.spacingHorizontalM}`, cursor: 'pointer',
+    color: tokens.colorNeutralForeground1,
+    ':hover': { backgroundColor: tokens.colorNeutralBackground1Hover },
+  },
+});
 
 export function FilterCombobox(props: {
   label: string;
@@ -18,32 +36,38 @@ export function FilterCombobox(props: {
   options: readonly ComboOption[]; // first item is usually the "any" reset option
   onSelect: (value: string) => void;
 }): JSX.Element {
+  const s = useStyles();
   const { options, selected } = props;
   const selectedText = options.find((o) => o.value === selected)?.text ?? '';
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
 
-  // The input string. Starts as the selected option's label; the user edits it freely to search.
-  const [text, setText] = useState(selectedText);
-  // Re-sync when the selection changes from outside (picking an option, or a reset like clearDocIds).
-  useEffect(() => { setText(selectedText); }, [selectedText]);
-
-  const q = text.trim().toLowerCase();
-  // Show everything until the text actually diverges from the current label (i.e. the user is typing).
-  const shown = q === '' || text === selectedText
-    ? options
-    : options.filter((o) => o.text.toLowerCase().includes(q));
+  const q = query.trim().toLowerCase();
+  const shown = open && q ? options.filter((o) => o.text.toLowerCase().includes(q)) : options;
 
   return (
     <Field label={props.label} className={props.className}>
-      <Combobox
-        placeholder={props.placeholder}
-        value={text}
-        selectedOptions={[selected]}
-        onChange={(e) => setText(e.target.value)}
-        onOptionSelect={(_e, data) => props.onSelect(data.optionValue ?? '')}
-        onBlur={() => setText(selectedText)} // typed-but-not-selected → revert to the current selection
-      >
-        {shown.map((o) => <Option key={o.value} value={o.value}>{o.text}</Option>)}
-      </Combobox>
+      <div className={s.wrap}>
+        <Input
+          value={open ? query : selectedText}
+          placeholder={props.placeholder}
+          onChange={(_e, d) => { setQuery(d.value); setOpen(true); }}
+          onFocus={() => { setQuery(''); setOpen(true); }}
+          onBlur={() => setTimeout(() => setOpen(false), 150)} // let a result's mousedown land first
+        />
+        {open && (
+          <div className={s.menu}>
+            {shown.map((o) => (
+              <button
+                key={o.value} type="button" className={s.item}
+                onMouseDown={(e) => { e.preventDefault(); props.onSelect(o.value); setQuery(''); setOpen(false); }}
+              >
+                {o.text}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </Field>
   );
 }
