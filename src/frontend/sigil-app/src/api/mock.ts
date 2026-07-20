@@ -27,6 +27,7 @@ import type {
   DocumentQuery,
   DocumentPage,
   TransactionPage,
+  PendingPage,
 } from './SigilApi';
 import { base64ToBytes, sha256Hex } from './binaries';
 
@@ -347,6 +348,19 @@ export class MockSigilApi implements SigilApi {
     return [...this.txs.values()]
       .filter((tx) => (this.participants.get(tx.id) ?? []).some((p) => p.userId === this.seed.userId))
       .map((tx) => ({ ...tx }));
+  }
+
+  async myPendingPage(cookie?: string): Promise<PendingPage> {
+    await this.delay();
+    const all = [...this.txs.values()]
+      .filter((tx) => tx.state === 159460001 || tx.state === 159460002)
+      .flatMap((tx) => {
+        const me = (this.participants.get(tx.id) ?? []).find((p) => p.userId === this.seed.userId && p.state === 159460001);
+        return me ? [{ tx: { ...tx }, participant: { ...me } }] : [];
+      });
+    const size = 25;
+    const offset = cookie ? Number.parseInt(cookie, 10) || 0 : 0;
+    return { rows: all.slice(offset, offset + size), nextCookie: offset + size < all.length ? String(offset + size) : '' };
   }
 
   async myRequestsPage(cookie?: string): Promise<TransactionPage> {

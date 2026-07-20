@@ -28,7 +28,12 @@ export function useDashboard() {
   const [actionError, setActionError] = useState(false); // retry/download failed
   const [onlyCompleted, setOnlyCompleted] = useState(false); // Participations "completed only" (server-side)
 
-  const pending = useQuery({ queryKey: KEYS.pending, queryFn: () => sigilApi.myPending() });
+  const pending = useInfiniteQuery({
+    queryKey: KEYS.pending,
+    queryFn: ({ pageParam }) => sigilApi.myPendingPage(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.nextCookie || undefined,
+  });
   const masterSignature = useQuery({ queryKey: KEYS.masterSignature, queryFn: () => sigilApi.getMasterSignature() });
 
   const participations = useInfiniteQuery({
@@ -63,6 +68,7 @@ export function useDashboard() {
     },
   });
 
+  const pendingList = useMemo(() => pending.data?.pages.flatMap((p) => p.rows) ?? [], [pending.data]);
   const requestList = useMemo(() => requests.data?.pages.flatMap((p) => p.rows) ?? [], [requests.data]);
   const participationList = useMemo(() => participations.data?.pages.flatMap((p) => p.rows) ?? [], [participations.data]);
 
@@ -99,7 +105,10 @@ export function useDashboard() {
 
   return {
     firstRun: masterSignature.isSuccess && !masterSignature.data?.ImageBase64,
-    pending: pending.data ?? [],
+    pending: pendingList,
+    pendingHasMore: pending.hasNextPage,
+    pendingLoadingMore: pending.isFetchingNextPage,
+    loadMorePending: () => void pending.fetchNextPage(),
     requests: requestList,
     participations: participationList,
     sealingErrors: sealingErrors(requestList),
