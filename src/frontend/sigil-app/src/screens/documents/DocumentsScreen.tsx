@@ -12,6 +12,7 @@ import { useT } from '../../i18n/useT';
 import { transactionStateOf } from '../../domain/states';
 import { TransactionCard } from '../dashboard/TransactionCard';
 import { useDocuments } from './useDocuments';
+import { FilterCombobox, type ComboOption } from './FilterCombobox';
 import type { DocumentSort } from './documentsModel';
 
 const SORTS: DocumentSort[] = ['createdDesc', 'createdAsc', 'sentDesc', 'sentAsc', 'completedDesc', 'completedAsc', 'nameAsc', 'nameDesc'];
@@ -40,8 +41,24 @@ export default function DocumentsScreen(props: {
     const name = transactionStateOf(v);
     return name ? t(`transactionState.${name}`) : String(v);
   };
-  const creatorName = (id: string) => d.creators.find((c) => c.id === id)?.name ?? id;
-  const participantName = (id: string) => d.participants.find((p) => p.id === id)?.name ?? id;
+
+  // Option lists for the searchable comboboxes; the first entry resets the filter.
+  const creatorOpts: ComboOption[] = [
+    { value: '', text: t('documents.anyCreator') },
+    ...d.creators.map((c) => ({ value: c.id, text: c.name })),
+  ];
+  const participantOpts: ComboOption[] = [
+    { value: '', text: t('documents.anyParticipant') },
+    ...d.participants.map((p) => ({ value: p.id, text: p.name })),
+  ];
+  const statusOpts: ComboOption[] = [
+    { value: 'all', text: t('documents.anyStatus') },
+    ...d.statuses.map((st) => ({ value: String(st), text: statusText(st) })),
+  ];
+  const versionOpts: ComboOption[] = [
+    { value: 'all', text: t('documents.anySignatureVersion') },
+    ...d.signatureVersions.map((v) => ({ value: String(v), text: t('documents.versionLabel', { n: v }) })),
+  ];
 
   return (
     <Card className={s.root}>
@@ -60,42 +77,20 @@ export default function DocumentsScreen(props: {
             onChange={(_e, data) => d.setText(data.value)} placeholder={t('documents.searchPlaceholder')} />
         </Field>
 
-        <Field label={t('documents.creator')} className={s.field}>
-          <Dropdown value={d.filters.creatorId ? creatorName(d.filters.creatorId) : t('documents.anyCreator')}
-            selectedOptions={[d.filters.creatorId]}
-            onOptionSelect={(_e, data) => d.setCreator(data.optionValue ?? '')}>
-            <Option value="">{t('documents.anyCreator')}</Option>
-            {d.creators.map((c) => <Option key={c.id} value={c.id}>{c.name}</Option>)}
-          </Dropdown>
-        </Field>
+        <FilterCombobox label={t('documents.creator')} placeholder={t('documents.anyCreator')} className={s.field}
+          selected={d.filters.creatorId} options={creatorOpts} onSelect={(v) => d.setCreator(v)} />
 
-        <Field label={t('documents.participant')} className={s.field}>
-          <Dropdown value={d.filters.participantId ? participantName(d.filters.participantId) : t('documents.anyParticipant')}
-            selectedOptions={[d.filters.participantId]}
-            onOptionSelect={(_e, data) => d.setParticipant(data.optionValue ?? '')}>
-            <Option value="">{t('documents.anyParticipant')}</Option>
-            {d.participants.map((p) => <Option key={p.id} value={p.id}>{p.name}</Option>)}
-          </Dropdown>
-        </Field>
+        <FilterCombobox label={t('documents.participant')} placeholder={t('documents.anyParticipant')} className={s.field}
+          selected={d.filters.participantId} options={participantOpts} onSelect={(v) => d.setParticipant(v)} />
 
-        <Field label={t('documents.status')} className={s.field}>
-          <Dropdown value={d.filters.status === 'all' ? t('documents.anyStatus') : statusText(d.filters.status)}
-            selectedOptions={[String(d.filters.status)]}
-            onOptionSelect={(_e, data) => d.setStatus(data.optionValue === 'all' ? 'all' : Number(data.optionValue))}>
-            <Option value="all">{t('documents.anyStatus')}</Option>
-            {d.statuses.map((st) => <Option key={st} value={String(st)}>{statusText(st)}</Option>)}
-          </Dropdown>
-        </Field>
+        <FilterCombobox label={t('documents.status')} placeholder={t('documents.anyStatus')} className={s.field}
+          selected={String(d.filters.status)} options={statusOpts}
+          onSelect={(v) => d.setStatus(v === 'all' ? 'all' : Number(v))} />
 
         {d.signatureVersions.length > 0 && (
-          <Field label={t('documents.signatureVersion')} className={s.field}>
-            <Dropdown value={d.filters.signatureVersion === 'all' ? t('documents.anySignatureVersion') : t('documents.versionLabel', { n: d.filters.signatureVersion })}
-              selectedOptions={[String(d.filters.signatureVersion)]}
-              onOptionSelect={(_e, data) => d.setSignatureVersion(data.optionValue === 'all' ? 'all' : Number(data.optionValue))}>
-              <Option value="all">{t('documents.anySignatureVersion')}</Option>
-              {d.signatureVersions.map((v) => <Option key={v} value={String(v)}>{t('documents.versionLabel', { n: v })}</Option>)}
-            </Dropdown>
-          </Field>
+          <FilterCombobox label={t('documents.signatureVersion')} placeholder={t('documents.anySignatureVersion')} className={s.field}
+            selected={String(d.filters.signatureVersion)} options={versionOpts}
+            onSelect={(v) => d.setSignatureVersion(v === 'all' ? 'all' : Number(v))} />
         )}
 
         <Field label={t('documents.sort')} className={s.field}>

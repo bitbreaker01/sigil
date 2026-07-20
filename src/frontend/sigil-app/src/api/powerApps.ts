@@ -355,6 +355,20 @@ export class PowerAppsSigilApi implements SigilApi {
     const versionByDocId = new Map<string, number>();
     for (const v of history) for (const d of v.documents) versionByDocId.set(d.id.toLowerCase(), v.version);
 
+    // 3b) Resolve creator display names from systemusers. The owner lookup's FormattedValue isn't
+    // reliably present on these reads (it came back as the raw id), so look the names up explicitly.
+    const creatorIds = [...new Set([...txById.values()].map((r) => s(r, COL.owner)).filter(Boolean) as string[])];
+    const creatorRows = creatorIds.length
+      ? ok(await dv.retrieveMultipleRecordsAsync<Row>(T.user, {
+        filter: creatorIds.map((id) => `systemuserid eq ${id}`).join(' or '), select: ['systemuserid', 'fullname'],
+      })) as Row[]
+      : [];
+    const creatorNameById = new Map<string, string>();
+    for (const u of creatorRows) {
+      const uid = s(u, 'systemuserid'); const name = s(u, 'fullname');
+      if (uid && name) creatorNameById.set(uid.toLowerCase(), name);
+    }
+
     // 4) Assemble.
     return allTxIds.map((id) => {
       const r = txById.get(id)!;
@@ -364,6 +378,8 @@ export class PowerAppsSigilApi implements SigilApi {
         name: s(p, COL.pSignerName) ?? fmt(p, COL.pUserId) ?? '',
       }));
       const row: DocumentRow = { ...txView(r), participants };
+      const cname = creatorNameById.get((s(r, COL.owner) ?? '').toLowerCase());
+      if (cname) row.creatorName = cname;
       const created = s(r, 'createdon');
       if (created) row.createdOn = created;
       const version = versionByDocId.get(id.toLowerCase());
