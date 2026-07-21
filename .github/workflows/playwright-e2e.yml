@@ -34,5 +34,7 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
-          path: src/frontend/sigil-app/playwright-report/
+          path: |
+            src/frontend/sigil-app/playwright-report/
+            src/frontend/sigil-app/e2e/__shots__/
           retention-days: 30
