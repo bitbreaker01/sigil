@@ -100,7 +100,7 @@ Acá decís **dónde** firma cada persona en el documento (es obligatorio: cada 
 
 ## 5. Cómo verificar un documento
 
-**Cualquiera** puede verificar un PDF sellado por Sigil — no necesitás cuenta ni permisos. Sirve para comprobar que un documento que te pasaron es el **original** y **no fue modificado**.
+Desde la app, cualquier usuario de la organización puede verificar un PDF sellado por Sigil — no hace falta ningún permiso especial sobre el documento. (Y quien no tenga acceso a Sigil igual puede comprobarlo por fuera; ver el recuadro al final de esta sección.) Sirve para confirmar que un documento que te pasaron es el **original** y **no fue modificado**.
 
 1. Entrá a **Verificar**.
 2. **Arrastrá el PDF** o tocá **Seleccionar PDF**.
