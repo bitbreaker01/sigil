@@ -18,7 +18,9 @@ test('crear una transacción y firmarla (cadena autónoma)', async ({ page }) =>
   const titleBox = app.getByRole('textbox', { name: 'Request title' });
   await expect(titleBox).toBeVisible({ timeout: 30_000 });
   await titleBox.fill(title);
-  const next = app.getByRole('button', { name: 'Next' });
+  // El "Next" del wizard tiene texto visible; el "Next" (página siguiente) del visor de PDF es
+  // solo ícono (aria-label) → filtrar por texto los desambigua en el step de zonas.
+  const next = app.getByRole('button', { name: 'Next' }).filter({ hasText: 'Next' });
   await expect(next).toBeEnabled({ timeout: 30_000 });
   await next.click();
 
