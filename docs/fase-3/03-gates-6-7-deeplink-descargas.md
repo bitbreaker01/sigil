@@ -1,7 +1,7 @@
 # Sigil — F3 Cierre 03: Gates 6 y 7 (deep link desde Teams + descargas desde el iframe)
 
 **Documento operativo** (cierre de F3 — cómo ejecutar y pasar los gates 6 y 7, adelantados a Dev)
-**Estado:** Parcial — gate 6 tocado (el link de verify aterrizó bien en una prueba); falta el caso canónico y el gate 7
+**Estado:** ✅ Gate 7 hecho (desktop + móvil, 2026-07-21). Gate 6 validado con link manual; la versión canónica *desde una card de Teams real* depende de los flows de F4
 **Depende de:** [Runbook B gates 6/7](../runbooks/runbook-b-gates-post-import.md) (autoridad canónica), [doc 05 §3/§5/§11](../fase-0/05-frontend-code-app.md), [doc 10 §3](../fase-0/10-hoja-de-ruta.md) (por qué se adelantan a F3)
 **Leyenda:** 🧑 **acción tuya** · 📱 en el dispositivo · ✅ éxito · 🔧 si falla
 
