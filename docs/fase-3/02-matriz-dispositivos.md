@@ -1,7 +1,7 @@
 # Sigil — F3 Cierre 02: Matriz de dispositivos móviles reales
 
 **Documento operativo** (cierre de F3 — qué tenés que hacer para barrer la matriz móvil)
-**Estado:** Pendiente (hubo pruebas manuales sueltas; falta la pasada sistemática)
+**Estado:** ✅ Hecho (2026-07-21) — probado en Safari iOS + Chrome Android reales
 **Depende de:** [doc 05 §8](../fase-0/05-frontend-code-app.md) (matriz obligatoria), [doc 05 §5](../fase-0/05-frontend-code-app.md) (binarios/descargas), Runbook B gates 5/6/7
 **Leyenda:** 🧑 **acción tuya** · 📱 en el dispositivo · ✅ criterio de éxito
 

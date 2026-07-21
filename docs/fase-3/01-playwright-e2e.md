@@ -1,7 +1,7 @@
 # Sigil — F3 Cierre 01: Playwright E2E automatizado contra Dev
 
 **Documento operativo** (cierre de F3 — qué tenés que hacer para dejar el E2E automatizado corriendo)
-**Estado:** Pendiente de ejecución
+**Estado:** ✅ Hecho (2026-07-21) — suite E2E verde en CI: auth (sin MFA) + crear→firmar (self-seeding) + verify + smoke
 **Depende de:** [doc 11 §2/§3](../fase-0/11-testing-y-observabilidad.md) (decisión de stack + exclusión de CA), [doc 05 §4/§8](../fase-0/05-frontend-code-app.md) (pantallas y flujos), Runbook A §A12 (datos semilla)
 **Leyenda:** 🧑 **acción tuya (usuario)** · 🤖 acción de Claude/dev (implementación) · ⚠️ decisión/riesgo
 
