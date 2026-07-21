@@ -14,7 +14,7 @@ Sigil reemplaza el "imprimir, firmar a mano, escanear y mandar por correo". En s
 1. Alguien **crea una solicitud** con un PDF y elige quién debe firmarlo.
 2. A cada firmante le llega un aviso (correo + Teams). Cada uno **abre el documento y firma** desde su celular o computadora.
 3. Cuando firman todos, Sigil **sella** el documento: le estampa las firmas, le agrega una **hoja de cierre** con una constancia, y le pone una **marca de tiempo confiable**.
-4. Cualquiera puede **verificar** después que ese PDF es el original y no fue alterado — sin cuenta, sin instalar nada.
+4. Después, cualquiera puede **verificar** que ese PDF es el original y no fue alterado: desde la app (si tenés acceso a Sigil) o por fuera con herramientas estándar (sin cuenta ni instalación — ver §5).
 
 La firma que usás es tu **Firma Maestra**: una imagen de tu firma que configurás **una sola vez** y Sigil reutiliza en cada documento.
 
