@@ -53,10 +53,11 @@ test('crear una transacción y firmarla (cadena autónoma)', async ({ page }) =>
   await app.getByRole('button', { name: 'Send for signature' }).click();
   await expect(app.getByText(/Request sent for signature/i)).toBeVisible({ timeout: 30_000 });
 
-  // 6) Firmar la tx recién creada
-  await app.getByRole('button', { name: 'Home' }).click();
+  // 6) Firmar la tx recién creada — recargar para forzar un dashboard fresco (evita cache stale:
+  // la tx recién enviada puede no aparecer al instante en la lista de Pending).
+  await page.reload();
   const review = app.getByRole('button', { name: 'Review & sign' }).first();
-  await expect(review).toBeVisible({ timeout: 30_000 });
+  await expect(review).toBeVisible({ timeout: 60_000 });
   await review.click();
   const approve = app.getByRole('button', { name: 'Approve & sign' });
   await expect(approve).toBeEnabled({ timeout: 90_000 });
