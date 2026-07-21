@@ -11,7 +11,7 @@
 | 01 | **[Manual de Usuario](01-manual-usuario.md)** | Cualquiera que **use** Sigil: firmar, crear solicitudes, verificar | ✅ |
 | 02 | **[Manual del Operador](02-manual-operador.md)** | Quien **administra y mantiene** la plataforma en cada ambiente | ✅ |
 | 03 | **[Dossier de Evidencia y Cumplimiento](03-dossier-evidencia-cumplimiento.md)** | Auditoría, legal, cumplimiento: qué prueba Sigil y sus límites | ✅ |
-| 04 | **Guía del Desarrollador** | Quien **toca el código** o extiende la plataforma | 🟡 en preparación |
+| 04 | **[Guía del Desarrollador](04-guia-desarrollador.md)** | Quien **toca el código** o extiende la plataforma | ✅ |
 
 ## Cómo elegir tu guía
 - **"Me llegó un documento para firmar" / "Quiero mandar algo a firmar" / "Me dieron un PDF y quiero comprobar que es real"** → Guía 01.
