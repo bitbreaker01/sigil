@@ -5,3 +5,8 @@ dist/
 coverage/
 # Local-only dev config (e.g. self-signed HTTPS for phone/LAN testing)
 vite.*.config.ts
+# Playwright E2E: sesión autenticada (tokens) y reportes
+e2e/.auth/
+playwright-report/
+test-results/
+blob-report/

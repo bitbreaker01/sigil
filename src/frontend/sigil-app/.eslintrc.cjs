@@ -11,7 +11,7 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   parserOptions: { ecmaVersion: 2022, sourceType: 'module', ecmaFeatures: { jsx: true } },
   plugins: ['@typescript-eslint', 'react-refresh'],
-  ignorePatterns: ['dist', 'node_modules', 'generated', '*.cjs', 'vite.config.ts'],
+  ignorePatterns: ['dist', 'node_modules', 'generated', '*.cjs', 'vite.config.ts', 'e2e', 'playwright.config.ts', 'playwright-report'],
   rules: {
     'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],

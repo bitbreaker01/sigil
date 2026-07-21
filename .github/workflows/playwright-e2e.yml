@@ -1,0 +1,38 @@
+# E2E de Playwright contra Dev (doc fase-3/01-playwright-e2e.md).
+# MANUAL (workflow_dispatch): usa los secrets del environment 'dev' y loguea a Entra.
+# NO corre en cada PR — es una corrida on-demand contra la app real hosteada.
+name: E2E (Playwright) — Dev
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: src/frontend/sigil-app
+    env:
+      SIGIL_APP_URL: ${{ secrets.SIGIL_APP_URL }}
+      SIGIL_E2E_USER: ${{ secrets.SIGIL_E2E_USER }}
+      SIGIL_E2E_PASS: ${{ secrets.SIGIL_E2E_PASS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: src/frontend/sigil-app/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: src/frontend/sigil-app/playwright-report/
+          retention-days: 30
