@@ -7,6 +7,7 @@ coverage/
 vite.*.config.ts
 # Playwright E2E: sesión autenticada (tokens) y reportes
 e2e/.auth/
+e2e/__shots__/
 playwright-report/
 test-results/
 blob-report/
