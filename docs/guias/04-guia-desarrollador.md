@@ -305,7 +305,7 @@ import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker&inline';
 pdfjsLib.GlobalWorkerOptions.workerPort = new PdfWorker();
 ```
 
-Esto requiere que la CSP del ambiente permita `worker-src 'self' blob:` (el `blob:` es por el worker inline) y `connect-src 'self'`. Es config de ambiente (ver el Manual del Operador).
+Esto requiere que la CSP del ambiente permita `worker-src 'self' blob:`, **`child-src 'self' blob:`** (indispensable para Safari, que no soporta `worker-src` y cae a `child-src`) y `connect-src 'self'`. El `blob:` es por el worker inline. Es config de ambiente (ver el Manual del Operador).
 
 ### 4.5 Navegación y pantallas
 

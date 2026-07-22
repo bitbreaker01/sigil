@@ -73,7 +73,7 @@ y volver a esperar Active. No avanzar sin esto.
 3. PDF con fuentes CJK → renderiza.
 4. DevTools → Console: **cero violaciones CSP** (`Refused to ...`).
 
-**Éxito:** 3 PDFs renderizando sin violaciones. **Si falla:** revisar la config del A6 (¿reporting vs enforced? ¿directivas exactas **`worker-src 'self' blob:`** / `connect-src 'self'`? — el `blob:` es indispensable: el worker de pdf.js va inline como blob desde F3); si la CSP es correcta y el worker no arranca → plan B fake worker (doc 05 §6.1) y registrar el hallazgo.
+**Éxito:** 3 PDFs renderizando sin violaciones (probar SIEMPRE también en **Safari/iOS** — es el que más falla). **Si falla:** revisar la config del A6 (¿reporting vs enforced? ¿las **tres** directivas exactas **`worker-src 'self' blob:`** / **`child-src 'self' blob:`** / `connect-src 'self'`?). Dos cosas suelen romper esto: (a) falta el `blob:` (el worker de pdf.js va inline como blob desde F3); (b) **falta `child-src`** — Safari no lee `worker-src` y cae a `child-src`, así que sin él no carga ningún PDF en iPhone aunque en Chrome ande. Leé el error EXACTO de la consola (`Refused to create a worker from 'blob:...'`) para ver qué directiva bloquea. Si la CSP es correcta y el worker no arranca → plan B fake worker (doc 05 §6.1) y registrar el hallazgo.
 
 ## Gate 6 — Deep link completo desde Teams
 
