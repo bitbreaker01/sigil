@@ -37,27 +37,29 @@ export async function getEditedPng(
   rctx.rotate(rot);
   rctx.drawImage(image, -image.width / 2, -image.height / 2);
 
-  // 2) Extract the crop region (react-easy-crop's croppedAreaPixels is in this rotated space).
-  const region = rctx.getImageData(
-    Math.round(crop.x), Math.round(crop.y), Math.round(crop.width), Math.round(crop.height),
-  );
+  // 2) Extract the crop region via drawImage (croppedAreaPixels is in this rotated space). Using
+  // drawImage (not getImageData) is robust when the crop extends BEYOND the image — which happens
+  // when the user zooms out below 1 to fit a near-square signature into the wide 3:1 box: the area
+  // outside the image stays transparent (the signature ends up centered with transparent padding),
+  // whereas getImageData with negative/oversized coords is quirky across browsers.
+  const cw = Math.max(1, Math.round(crop.width));
+  const ch = Math.max(1, Math.round(crop.height));
+  const cropped = document.createElement('canvas');
+  cropped.width = cw;
+  cropped.height = ch;
+  const cctx = cropped.getContext('2d');
+  if (!cctx) throw new Error('no 2d context');
+  cctx.drawImage(rotated, -Math.round(crop.x), -Math.round(crop.y));
 
-  // 3) Output canvas — apply the H/V flip here (putImageData ignores transforms, so blit via a temp
-  // canvas + drawImage under a flip transform).
+  // 3) Output canvas — apply the H/V flip.
   const out = document.createElement('canvas');
-  out.width = region.width;
-  out.height = region.height;
+  out.width = cw;
+  out.height = ch;
   const octx = out.getContext('2d');
   if (!octx) throw new Error('no 2d context');
-
-  const tmp = document.createElement('canvas');
-  tmp.width = region.width;
-  tmp.height = region.height;
-  tmp.getContext('2d')?.putImageData(region, 0, 0);
-
   octx.translate(flipH ? out.width : 0, flipV ? out.height : 0);
   octx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-  octx.drawImage(tmp, 0, 0);
+  octx.drawImage(cropped, 0, 0);
 
   return out.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
 }

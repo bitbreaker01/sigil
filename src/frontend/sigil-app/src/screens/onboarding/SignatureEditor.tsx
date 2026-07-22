@@ -16,6 +16,10 @@ import { SignatureMockup } from './SignatureMockup';
 import { getEditedPng } from './cropImage';
 
 const SIGNATURE_ASPECT = 3 / 1; // the normalized signature box (600×200)
+// Allow zooming BELOW 1 so a near-square signature (little margin) can be shrunk to fit the wide
+// 3:1 box, centered, with transparent padding around it (restrictPosition is off). Without this,
+// minZoom=1 forces the image to cover the box and you can only capture a middle strip.
+const MIN_ZOOM = 0.2;
 
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM },
@@ -80,7 +84,7 @@ export function SignatureEditor(props: {
           zoom={zoom}
           rotation={rotation}
           aspect={SIGNATURE_ASPECT}
-          minZoom={1}
+          minZoom={MIN_ZOOM}
           maxZoom={5}
           restrictPosition={false}
           objectFit="contain"
@@ -93,7 +97,7 @@ export function SignatureEditor(props: {
 
       <div className={s.controls}>
         <Field label={t('onboarding.editZoom')} className={s.slider}>
-          <Slider min={1} max={5} step={0.05} value={zoom} onChange={(_e, d) => setZoom(d.value)} />
+          <Slider min={MIN_ZOOM} max={5} step={0.05} value={zoom} onChange={(_e, d) => setZoom(d.value)} />
         </Field>
         <Field label={t('onboarding.editRotate')} className={s.slider}>
           <Slider min={-180} max={180} step={1} value={rotation} onChange={(_e, d) => setRotation(d.value)} />
