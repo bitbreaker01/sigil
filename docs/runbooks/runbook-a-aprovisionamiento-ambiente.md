@@ -154,7 +154,7 @@ pac admin assign-user --environment <env-id> --user <application-client-id> --ro
 - Vía REST/PowerShell, actualizar directivas **reemplaza la colección completa**: siempre leer → modificar → escribir.
 
 **Procedimiento:**
-1. En la pestaña App: agregar `worker-src` = `'self'` (worker de pdf.js) y `connect-src` = `'self'` (cMaps/fonts/wasm para PDFs escaneados y CJK). Enforcement queda ACTIVO.
+1. En la pestaña App: agregar `worker-src` = **`'self' blob:`** (el worker de pdf.js se inyecta **inline como blob** — `?worker&inline` en el frontend, F3; sin `blob:` el visor NO arranca) y `connect-src` = `'self'` (cMaps/fonts/wasm para PDFs escaneados y CJK). Enforcement queda ACTIVO. ⚠️ **Corrección 2026-07-21:** este paso decía `worker-src 'self'` (sin `blob:`) — quedó desactualizado tras adoptar el worker inline en F3; el valor correcto es `'self' blob:` (confirmado en el primer despliegue a Test).
 2. Validar con la app real cuando exista (gate 5 del Runbook B: PDF normal + escaneado + CJK, cero violaciones en consola).
 3. Si hay que diagnosticar violaciones inesperadas: reporting endpoint configurado + apagar enforcement SOLO en Dev, el tiempo mínimo, y re-encender.
 
