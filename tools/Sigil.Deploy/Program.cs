@@ -6,8 +6,11 @@
 //   (default)  despliega: package + espera plugintypes + upsert de las 4 APIs.
 //   --grant    agrega al rol del SP los privilegios prv* para registrar plugins/APIs y sale.
 //   --package-only   solo (re)sube el package (sin tocar APIs).
+//   --interactive (o --user)   fuerza login interactivo (browser) en vez del SP.
 //
-// Credenciales: SIGIL_DATAVERSE_URL / SIGIL_CLIENT_ID / SIGIL_CLIENT_SECRET (mismas del .env).
+// Autenticación (auto): si SIGIL_CLIENT_ID/SECRET están en el entorno → Service Principal (sin
+//   browser, ideal para CI); si no (o con --interactive) → login interactivo del usuario en el
+//   navegador (requiere System Administrator). SIGIL_DATAVERSE_URL es siempre obligatorio.
 
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.PowerPlatform.Dataverse.Client;
@@ -19,15 +22,26 @@ using Sigil.Deploy;
 string? nupkgArg = args.FirstOrDefault(a => !a.StartsWith("--"));
 bool grantMode = args.Contains("--grant");
 bool packageOnly = args.Contains("--package-only");
+bool interactive = args.Contains("--interactive") || args.Contains("--user");
 
 var url = Env("SIGIL_DATAVERSE_URL");
-var clientId = Env("SIGIL_CLIENT_ID");
-var clientSecret = Env("SIGIL_CLIENT_SECRET");
+var clientId = Environment.GetEnvironmentVariable("SIGIL_CLIENT_ID");
+var clientSecret = Environment.GetEnvironmentVariable("SIGIL_CLIENT_SECRET");
 
-var connectionString =
-    $"AuthType=ClientSecret;Url={url};ClientId={clientId};ClientSecret='{clientSecret}';RequireNewInstance=true";
+// Dos modos de autenticación, elegidos automáticamente. La identidad de DESPLIEGUE es
+// independiente de la de runtime: elegir una u otra acá no cambia qué identidad opera los
+// flows ni el sellado.
+//  - Service Principal (por defecto si hay SIGIL_CLIENT_ID/SECRET): sin browser, para CI.
+//  - Login interactivo (--interactive, o si faltan esas credenciales): abre el navegador y te
+//    logueás como TU usuario (necesitás System Administrator). No requiere el SP.
+bool useSp = !interactive && !string.IsNullOrWhiteSpace(clientId) && !string.IsNullOrWhiteSpace(clientSecret);
+var connectionString = useSp
+    ? $"AuthType=ClientSecret;Url={url};ClientId={clientId};ClientSecret='{clientSecret}';RequireNewInstance=true"
+    // AppId/RedirectUri = app público de muestra de Microsoft para conexiones interactivas de
+    // Dataverse (documentado en ServiceClient); LoginPrompt=Auto abre el navegador.
+    : $"AuthType=OAuth;Url={url};AppId=51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri=app://58145B91-0C36-4500-8554-080854F2AC97;LoginPrompt=Auto;RequireNewInstance=true";
 
-Console.WriteLine($"[1] Conectando a {url} ...");
+Console.WriteLine($"[1] Conectando a {url} ({(useSp ? "service principal" : "login interactivo")}) ...");
 using var client = new ServiceClient(connectionString);
 if (!client.IsReady)
 {
