@@ -145,15 +145,24 @@ public static class ComposicionDeDocumento
                     y += 90;
                 }
 
-                // Pie probatorio: hash + verificación (SOLO en la última hoja).
+                // Pie probatorio: hash + verificación (SOLO en la última hoja). El texto se mantiene
+                // a la IZQUIERDA del QR (que arranca en x=462) y la URL de verificación se ENVUELVE
+                // en varias líneas: puede tener 130+ caracteres (dos GUIDs del play URL + el txId) y
+                // en una sola línea se salía de la página y pisaba el QR.
                 if (p == paginas - 1)
                 {
-                    gfx.DrawString("SHA-256 del documento aprobado (hash_contenido):", chica, XBrushes.Black,
-                        new XPoint(50, 700));
-                    gfx.DrawString(hashContenido, chica, XBrushes.Black, new XPoint(50, 712));
-                    gfx.DrawString($"Verificación: {url}?screen=verify&txId={txId}", chica, XBrushes.Black,
-                        new XPoint(50, 726));
-                    gfx.DrawString($"Identificador: {txId}", chica, XBrushes.Gray, new XPoint(50, 738));
+                    const double margenIzq = 50;
+                    const double anchoUtil = 400; // termina en x≈450, antes del QR (x=462)
+                    double fy = 686;
+                    gfx.DrawString("SHA-256 del documento aprobado (hash_contenido):", chica, XBrushes.Black, new XPoint(margenIzq, fy));
+                    fy += 11;
+                    gfx.DrawString(hashContenido, chica, XBrushes.Black, new XPoint(margenIzq, fy));
+                    fy += 16;
+                    gfx.DrawString("Verificación (escaneá el QR o abrí el enlace):", chica, XBrushes.Black, new XPoint(margenIzq, fy));
+                    fy += 11;
+                    DibujarTextoEnvuelto(gfx, $"{url}?screen=verify&txId={txId}", chica, XBrushes.Black, margenIzq, ref fy, anchoUtil, 10);
+                    fy += 3;
+                    gfx.DrawString($"Identificador: {txId}", chica, XBrushes.Gray, new XPoint(margenIzq, fy));
                 }
             }
 
@@ -180,6 +189,36 @@ public static class ComposicionDeDocumento
                 XObjectManual.DibujarImagenRgba(doc, page, $"SigQr{p}", qw, qh, qrgb, qalpha,
                     new MatrizCm(100, 0, 0, 100, 462, 40));
             }
+        }
+    }
+
+    /// <summary>
+    /// Dibuja texto envuelto por ANCHO máximo (char-wrap: las URLs no tienen espacios donde cortar).
+    /// Avanza <paramref name="y"/> por cada línea escrita — el llamante sigue componiendo debajo.
+    /// </summary>
+    private static void DibujarTextoEnvuelto(
+        XGraphics gfx, string texto, XFont fuente, XBrush brush,
+        double x, ref double y, double anchoMax, double interlineado)
+    {
+        var linea = "";
+        foreach (var ch in texto)
+        {
+            var prueba = linea + ch;
+            if (linea.Length > 0 && gfx.MeasureString(prueba, fuente).Width > anchoMax)
+            {
+                gfx.DrawString(linea, fuente, brush, new XPoint(x, y));
+                y += interlineado;
+                linea = ch.ToString();
+            }
+            else
+            {
+                linea = prueba;
+            }
+        }
+        if (linea.Length > 0)
+        {
+            gfx.DrawString(linea, fuente, brush, new XPoint(x, y));
+            y += interlineado;
         }
     }
 
