@@ -73,7 +73,7 @@ y volver a esperar Active. No avanzar sin esto.
 3. PDF con fuentes CJK → renderiza.
 4. DevTools → Console: **cero violaciones CSP** (`Refused to ...`).
 
-**Éxito:** 3 PDFs renderizando sin violaciones. **Si falla:** revisar la config del A6 (¿reporting vs enforced? ¿directivas exactas `worker-src 'self'` / `connect-src 'self'`?); si la CSP es correcta y el worker no arranca → plan B fake worker (doc 05 §6.1) y registrar el hallazgo.
+**Éxito:** 3 PDFs renderizando sin violaciones. **Si falla:** revisar la config del A6 (¿reporting vs enforced? ¿directivas exactas **`worker-src 'self' blob:`** / `connect-src 'self'`? — el `blob:` es indispensable: el worker de pdf.js va inline como blob desde F3); si la CSP es correcta y el worker no arranca → plan B fake worker (doc 05 §6.1) y registrar el hallazgo.
 
 ## Gate 6 — Deep link completo desde Teams
 
