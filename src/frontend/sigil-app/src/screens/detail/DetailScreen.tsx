@@ -28,10 +28,15 @@ const BADGE: Record<TransactionState, NonNullable<BadgeProps['color']>> = {
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL },
   card: { padding: tokens.spacingVerticalL, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM },
-  head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: tokens.spacingHorizontalM },
-  titleRow: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
+  // On phones the title eats the width and the actions get squeezed into a clipped right column;
+  // stack them so the actions get the full width below the title.
+  head: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: tokens.spacingHorizontalM,
+    '@media (max-width: 640px)': { flexDirection: 'column', alignItems: 'stretch' },
+  },
+  titleRow: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, flexWrap: 'wrap', minWidth: 0 },
   meta: { color: tokens.colorNeutralForeground3 },
-  actions: { display: 'flex', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
+  actions: { display: 'flex', gap: tokens.spacingHorizontalS, flexWrap: 'wrap', flexShrink: 0 },
   sectionTitle: { marginTop: tokens.spacingVerticalS },
 });
 

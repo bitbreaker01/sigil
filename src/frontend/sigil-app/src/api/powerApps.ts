@@ -438,7 +438,22 @@ export class PowerAppsSigilApi implements SigilApi {
     const rows = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.participant, {
       filter: `_${COL.pTransactionId}_value eq ${txId}`, orderBy: [`${COL.pOrder} asc`],
     })) as Row[];
-    return rows.map(partView);
+    const views = rows.map(partView);
+    // Until a participant signs, the snapshot name is empty AND the userId lookup FormattedValue
+    // isn't reliably present on this read — so partView falls back to the raw GUID. Resolve real
+    // names from systemusers (one extra query) so pending signers show their name, not their id.
+    const ids = [...new Set(views.map((v) => v.userId).filter(Boolean))];
+    if (!ids.length) return views;
+    const users = ok(await dv.retrieveMultipleRecordsAsync<Row>(T.user, {
+      filter: ids.map((id) => `systemuserid eq ${id}`).join(' or '), select: ['systemuserid', 'fullname'],
+    })) as Row[];
+    const nameById = new Map(users.map((u) => [(s(u, 'systemuserid') ?? '').toLowerCase(), s(u, 'fullname') ?? '']));
+    return views.map((v) => {
+      // Keep the signed snapshot name (name differs from the raw id); otherwise use the directory name.
+      const hasSnapshot = !!v.name && v.name.toLowerCase() !== v.userId.toLowerCase();
+      const real = nameById.get(v.userId.toLowerCase());
+      return real && !hasSnapshot ? { ...v, name: real } : v;
+    });
   }
 
   async zonesOf(txId: string): Promise<ZoneView[]> {

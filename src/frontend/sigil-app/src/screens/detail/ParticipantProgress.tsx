@@ -14,8 +14,11 @@ const COLOR: Record<ParticipantState, NonNullable<BadgeProps['color']>> = {
 
 const useStyles = makeStyles({
   list: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
-  row: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM },
-  grow: { flexGrow: 1, display: 'flex', flexDirection: 'column' },
+  // flexWrap lets the badges drop below on very narrow screens instead of being clipped.
+  row: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM, flexWrap: 'wrap' },
+  // minWidth:0 lets the name column shrink (and wrap) instead of pushing the badges off-screen.
+  grow: { flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflowWrap: 'anywhere' },
+  badges: { display: 'flex', gap: tokens.spacingHorizontalXS, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' },
   meta: { color: tokens.colorNeutralForeground3 },
 });
 
@@ -34,10 +37,12 @@ export function ParticipantProgress(props: { participants: readonly ParticipantV
               <Text>{p.name ?? p.userId}</Text>
               {p.signedOn && <Text size={200} className={s.meta}>{new Date(p.signedOn).toLocaleString()}</Text>}
             </div>
-            {props.routing === 'sequential' && p.order !== undefined && (
-              <Badge appearance="tint" color="informative">{t('detail.order', { n: p.order })}</Badge>
-            )}
-            {key && <Badge appearance="tint" color={name ? COLOR[name] : 'informative'}>{t(key)}</Badge>}
+            <div className={s.badges}>
+              {props.routing === 'sequential' && p.order !== undefined && (
+                <Badge appearance="tint" color="informative">{t('detail.order', { n: p.order })}</Badge>
+              )}
+              {key && <Badge appearance="tint" color={name ? COLOR[name] : 'informative'}>{t(key)}</Badge>}
+            </div>
           </div>
         );
       })}
