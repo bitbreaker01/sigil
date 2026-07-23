@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "appId": null,
+  "appId": "14bfecc2-325e-4f10-a4b5-5735c5bc4c84",
   "appDisplayName": "Sigil",
   "region": "prod",
   "appType": "CodeApp",
@@ -17,9 +17,8 @@
       "dataSources": [
         "commondataserviceforapps"
       ],
-      "authenticationType": "ServicePrincipalOauth",
-      "sharedConnectionId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps/connections/abcac2d06c374755be64f6b6bbad86c2",
-      "dataSets": {}
+      "dataSets": {},
+      "xrmConnectionReferenceLogicalName": "sanic_SigilConnDataverseSP"
     }
   },
   "databaseReferences": {

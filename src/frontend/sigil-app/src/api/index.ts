@@ -10,7 +10,7 @@
 import { MockSigilApi } from './mock';
 import type { SigilApi } from './SigilApi';
 
-const USE_REAL_BACKEND = false;
+const USE_REAL_BACKEND = true;
 
 async function create(): Promise<SigilApi> {
   if (!USE_REAL_BACKEND) return new MockSigilApi();
