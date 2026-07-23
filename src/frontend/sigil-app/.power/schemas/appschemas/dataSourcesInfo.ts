@@ -893,7 +893,8 @@ export const dataSourcesInfo = {
             "name": "$top",
             "in": "query",
             "required": false,
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           {
             "name": "$skiptoken",
@@ -1047,7 +1048,8 @@ export const dataSourcesInfo = {
             "name": "$top",
             "in": "query",
             "required": false,
-            "type": "integer"
+            "type": "integer",
+            "format": "int32"
           },
           {
             "name": "$skiptoken",
@@ -2628,7 +2630,8 @@ export const dataSourcesInfo = {
             "name": "item",
             "in": "body",
             "required": true,
-            "type": "object"
+            "type": "string",
+            "format": "binary"
           },
           {
             "name": "x-ms-file-name",
@@ -2690,7 +2693,8 @@ export const dataSourcesInfo = {
             "name": "item",
             "in": "body",
             "required": true,
-            "type": "object"
+            "type": "string",
+            "format": "binary"
           },
           {
             "name": "x-ms-file-name",
@@ -3542,5 +3546,495 @@ export const dataSourcesInfo = {
         }
       }
     }
+  },
+  "sanic_sigil_capi_canceltransaction": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_CancelTransaction": {
+        "path": "/api/data/v9.2/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_CancelTransaction",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "guid"
+          },
+          {
+            "name": "Reason",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responseInfo": {
+          "204": {
+            "type": "void"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_createtransaction": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_CreateTransaction": {
+        "path": "/api/data/v9.2/sanic_sigil_capi_CreateTransaction",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "Name",
+            "in": "body",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Message",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "RoutingType",
+            "in": "body",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ExpirationDays",
+            "in": "body",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "PdfBase64",
+            "in": "body",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ParticipantsJson",
+            "in": "body",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ZonesJson",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responseInfo": {
+          "200": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_deletedraft": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_DeleteDraft": {
+        "path": "/api/data/v9.2/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_DeleteDraft",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "guid"
+          }
+        ],
+        "responseInfo": {
+          "204": {
+            "type": "void"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_getdocumentcontent": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_GetDocumentContent": {
+        "path": "/api/data/v9.2/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_GetDocumentContent",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "guid"
+          },
+          {
+            "name": "DocumentType",
+            "in": "body",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responseInfo": {
+          "200": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_getmastersignature": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_GetMasterSignature": {
+        "path": "/api/data/v9.2/sanic_sigil_capi_GetMasterSignature",
+        "method": "POST",
+        "parameters": [],
+        "responseInfo": {
+          "200": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_getmastersignaturehistory": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_GetMasterSignatureHistory": {
+        "path": "/api/data/v9.2/sanic_sigil_capi_GetMasterSignatureHistory",
+        "method": "POST",
+        "parameters": [],
+        "responseInfo": {
+          "200": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_rejecttransaction": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_RejectTransaction": {
+        "path": "/api/data/v9.2/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_RejectTransaction",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "guid"
+          },
+          {
+            "name": "Reason",
+            "in": "body",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responseInfo": {
+          "204": {
+            "type": "void"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_retrysealing": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_RetrySealing": {
+        "path": "/api/data/v9.2/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_RetrySealing",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "guid"
+          }
+        ],
+        "responseInfo": {
+          "204": {
+            "type": "void"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_sendtransaction": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_SendTransaction": {
+        "path": "/api/data/v9.2/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_SendTransaction",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "guid"
+          }
+        ],
+        "responseInfo": {
+          "204": {
+            "type": "void"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_submitsignature": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_SubmitSignature": {
+        "path": "/api/data/v9.2/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_SubmitSignature",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "guid"
+          }
+        ],
+        "responseInfo": {
+          "200": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_updatedraft": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_UpdateDraft": {
+        "path": "/api/data/v9.2/sanic_sigil_tbl_transactions({id})/Microsoft.Dynamics.CRM.sanic_sigil_capi_UpdateDraft",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "guid"
+          },
+          {
+            "name": "Name",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "Message",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "RoutingType",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ExpirationDays",
+            "in": "body",
+            "required": false,
+            "type": "number"
+          },
+          {
+            "name": "PdfBase64",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ParticipantsJson",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ZonesJson",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responseInfo": {
+          "204": {
+            "type": "void"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_validatemastersignature": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_ValidateMasterSignature": {
+        "path": "/api/data/v9.2/sanic_sigil_capi_ValidateMasterSignature",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "ImageBase64",
+            "in": "body",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Persist",
+            "in": "body",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responseInfo": {
+          "200": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_verifydocument": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_VerifyDocument": {
+        "path": "/api/data/v9.2/sanic_sigil_capi_VerifyDocument",
+        "method": "POST",
+        "parameters": [
+          {
+            "name": "TransactionId",
+            "in": "body",
+            "required": false,
+            "type": "string",
+            "format": "guid"
+          },
+          {
+            "name": "Sha256Hash",
+            "in": "body",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responseInfo": {
+          "200": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_capi_searchdocuments": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {
+      "sanic_sigil_capi_SearchDocuments": {
+        "path": "/api/data/v9.2/sanic_sigil_capi_SearchDocuments",
+        "method": "POST",
+        "parameters": [
+          { "name": "Text", "in": "body", "required": false, "type": "string" },
+          { "name": "CreatorId", "in": "body", "required": false, "type": "string", "format": "guid" },
+          { "name": "Status", "in": "body", "required": false, "type": "number" },
+          { "name": "ParticipantIds", "in": "body", "required": false, "type": "string" },
+          { "name": "SignatureVersion", "in": "body", "required": false, "type": "number" },
+          { "name": "Sort", "in": "body", "required": false, "type": "string" },
+          { "name": "PageSize", "in": "body", "required": false, "type": "number" },
+          { "name": "PagingCookie", "in": "body", "required": false, "type": "string" }
+        ],
+        "responseInfo": {
+          "200": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "sanic_sigil_tbl_transactions": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
+  },
+  "sanic_sigil_tbl_participants": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
+  },
+  "sanic_sigil_tbl_signaturezones": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
+  },
+  "sanic_sigil_tbl_events": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
+  },
+  "systemusers": {
+    "tableId": "",
+    "version": "",
+    "primaryKey": "",
+    "dataSourceType": "Dataverse",
+    "apis": {}
   }
 };
