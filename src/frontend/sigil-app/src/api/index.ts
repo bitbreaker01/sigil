@@ -2,15 +2,17 @@
 // in the real app, PowerAppsSigilApi. The decision is made ONCE here — screens import `sigilApi`
 // and don't know which one it is.
 //
-// Flip USE_REAL_BACKEND to true to run against the real Dataverse backend (needs the Power Apps
-// runtime + the generated clients — use `power-apps run` or the deployed Code App). The real client
-// is loaded via a DYNAMIC import gated on the flag, so `npm run dev`/Vitest never pull in
-// @microsoft/power-apps (its ESM entry doesn't resolve under Node) when the mock is active.
+// USE_REAL_BACKEND is driven by the BUILD MODE, not hand-toggled: production builds (`vite build`,
+// i.e. the deployed Code App via `pac code push`) → real backend; dev/test (`npm run dev`, Vitest)
+// → mock. This kills the class of bug where a hand-set `true` gets committed and breaks CI: Vitest
+// runs under Node, where @microsoft/power-apps's ESM entry doesn't resolve, so the real client is
+// loaded via a DYNAMIC import gated on the flag — non-PROD never pulls in the SDK. To exercise the
+// real backend locally (`power-apps run`), set this to true temporarily — do NOT commit that.
 
 import { MockSigilApi } from './mock';
 import type { SigilApi } from './SigilApi';
 
-const USE_REAL_BACKEND = true;
+const USE_REAL_BACKEND = import.meta.env.PROD;
 
 async function create(): Promise<SigilApi> {
   if (!USE_REAL_BACKEND) return new MockSigilApi();
