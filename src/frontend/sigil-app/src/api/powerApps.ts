@@ -55,6 +55,7 @@ import {
   Sanic_sigil_capi_VerifyDocumentService,
   Sanic_sigil_capi_SearchDocumentsService,
 } from '../generated';
+import { txValue, participantValue, routingValue } from '../domain/states';
 
 // The Dataverse data client (retrieveMultipleRecordsAsync/retrieveRecordAsync). NOT the low-level
 // connector ListRecords — that path returns "Invalid organization URL 'null'" in local mode.
@@ -116,10 +117,11 @@ const COL = {
 } as const;
 
 const DASH_PAGE_SIZE = 25; // dashboard infinite-scroll page size
-const PARTICIPANT_ACTIVE_TURN = 159460001;
-const TX_PENDING = 159460001;
-const TX_PARTIALLY_SIGNED = 159460002;
-const ROUTING_SEQUENTIAL = 159460000;
+// Derived from states.ts (the single source of the choice numbers), not re-hardcoded here.
+const PARTICIPANT_ACTIVE_TURN = participantValue('activeTurn');
+const TX_PENDING = txValue('pendingSignature');
+const TX_PARTIALLY_SIGNED = txValue('partiallySigned');
+const ROUTING_SEQUENTIAL = routingValue('sequential');
 
 type Row = Record<string, unknown>;
 const s = (r: Row, k: string): string | undefined => (r[k] == null ? undefined : String(r[k]));

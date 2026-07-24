@@ -76,8 +76,14 @@ export const EVENT_TYPE: Record<number, EventType> = {
   159460012: 'tsaAbandoned',
 };
 
-// Routing travels as a contract token, not as a number.
+// Routing travels as a contract token, not as a number — but the backend returns it numeric, so the
+// number↔token map lives here too (this file is the single place the choice numbers live).
 export type Routing = 'sequential' | 'parallel';
+
+export const ROUTING_STATE: Record<number, Routing> = {
+  159460000: 'sequential',
+  159460001: 'parallel',
+};
 
 /** States in which the transaction still allows signing actions. */
 export const SIGNABLE_STATES: ReadonlySet<TransactionState> = new Set([
@@ -96,3 +102,14 @@ export const TERMINAL_STATES: ReadonlySet<TransactionState> = new Set([
 export function transactionStateOf(value: number | undefined): TransactionState | undefined {
   return value === undefined ? undefined : TRANSACTION_STATE[value];
 }
+
+// Reverse lookup: the numeric value for a logical state. OData filters need the number; deriving it
+// from the maps above keeps THIS file the single place the choice numbers live in the frontend.
+function valueOf<T extends string>(map: Record<number, T>, name: T): number {
+  const hit = Object.entries(map).find(([, v]) => v === name);
+  if (!hit) throw new Error(`unknown state in states.ts: ${name}`);
+  return Number(hit[0]);
+}
+export const txValue = (name: TransactionState): number => valueOf(TRANSACTION_STATE, name);
+export const participantValue = (name: ParticipantState): number => valueOf(PARTICIPANT_STATE, name);
+export const routingValue = (name: Routing): number => valueOf(ROUTING_STATE, name);
