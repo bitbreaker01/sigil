@@ -1,7 +1,7 @@
-// Detail screen (doc 05 §4.4, RF-05/24/27/30, RNF-04): state + expiration, participant progress,
+// Detail screen: state + expiration, participant progress,
 // event timeline, and the reject/cancel reason. Actions are gated by role/state — download the
-// final PDF (completed), Cancel (creator, RF-30), Retry sealing (creator, sealing error). The tx
-// polls while sealing (§5.1). Identity gating is a UI hint only; the backend enforces (doc 04 §3.3).
+// final PDF (completed), Cancel (creator), Retry sealing (creator, sealing error). The tx
+// polls while sealing. Identity gating is a UI hint only; the backend enforces.
 
 import { useState } from 'react';
 import {

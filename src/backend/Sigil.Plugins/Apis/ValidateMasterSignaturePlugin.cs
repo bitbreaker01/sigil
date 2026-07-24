@@ -1,7 +1,7 @@
-// sanic_sigil_capi_ValidateMasterSignature (ADR-009, RF-01/02, doc 04 §3.1) — Unbound.
+// sanic_sigil_capi_ValidateMasterSignature — Unbound.
 // Valida (cómputo local) y normaliza la Firma Maestra. Con Persist=true crea una NUEVA versión
-// vigente y desactiva la anterior EN LA MISMA operación (versionado — doc 03 §4.5, el historial
-// jamás se pisa). SOLO opera sobre la firma del propio llamante (doc 04 §3.3: jamás acepta un
+// vigente y desactiva la anterior EN LA MISMA operación (versionado — el historial
+// jamás se pisa). SOLO opera sobre la firma del propio llamante (jamás acepta un
 // userId como parámetro).
 // In: ImageBase64, Persist? (default false → SOLO valida/preview; el frontend muestra el preview
 //     y CONFIRMA antes de reemplazar la firma vigente — el reemplazo es irreversible). Out: IsValid,
@@ -21,7 +21,7 @@ namespace Sigil.Plugins.Apis;
 
 public class ValidateMasterSignaturePlugin : SigilApiPlugin
 {
-    // Límite de CARGA (doc 04 §3.4: longitud antes de decodificar): la spec limita el peso
+    // Límite de CARGA (longitud antes de decodificar): la spec limita el peso
     // del NORMALIZADO (maxKB); la carga cruda admite hasta 10× eso — una firma escaneada
     // legítima puede pesar más que su versión normalizada. Decisión 2026-07-16.
     private const int FactorDeCargaSobreMaxKB = 10;
@@ -51,23 +51,23 @@ public class ValidateMasterSignaturePlugin : SigilApiPlugin
             throw new InvalidPluginExecutionException("El contenido recibido no es base64 válido.");
         }
 
-        // 2. Validación + normalización (núcleo puro — ADR-009).
+        // 2. Validación + normalización (núcleo puro).
         var resultado = MotorDeFirmaMaestra.Procesar(bytes, spec);
 
         e.Output("IsValid", resultado.EsValida);
         e.Output("MetricsJson", resultado.MetricsJson);
         if (!resultado.EsValida)
         {
-            // Un motivo por línea: el frontend los separa de forma confiable (RF-02).
+            // Un motivo por línea: el frontend los separa de forma confiable.
             e.Output("FailureReasons", string.Join("\n", resultado.Motivos));
             e.Trace.Trace("ValidateMasterSignature: rechazada ({0} motivo(s)).", resultado.Motivos.Count);
-            return; // veredicto, no excepción — el frontend muestra los motivos (RF-02)
+            return; // veredicto, no excepción — el frontend muestra los motivos
         }
 
         // Válida: SIEMPRE devolver el normalizado para el preview, persista o no.
         e.Output("NormalizedImageBase64", Convert.ToBase64String(resultado.PngNormalizado!));
 
-        // Sin Persist → solo preview (default): el frontend confirma antes de reemplazar (RF-02).
+        // Sin Persist → solo preview (default): el frontend confirma antes de reemplazar.
         var persist = e.Contexto.InputParameters.TryGetValue("Persist", out var pv) && pv is bool pb && pb;
         if (!persist)
         {
@@ -75,7 +75,7 @@ public class ValidateMasterSignaturePlugin : SigilApiPlugin
             return;
         }
 
-        // 3. Versionado (doc 03 §4.5): desactivar la vigente y crear la nueva EN LA MISMA operación.
+        // 3. Versionado: desactivar la vigente y crear la nueva EN LA MISMA operación.
         var versiones = Consultas.VersionesDeFirmaDe(e.Servicio, e.Llamante);
         var versionNueva = versiones.Count == 0
             ? 1
@@ -93,7 +93,7 @@ public class ValidateMasterSignaturePlugin : SigilApiPlugin
         var upn = yo.GetAttributeValue<string>(SchemaNames.Usuario.Upn)
                   ?? yo.GetAttributeValue<string>(SchemaNames.Usuario.FullName) ?? e.Llamante.ToString();
 
-        // El sufijo " v{N}" JAMÁS se trunca (doc 03 §4.5 define el formato): se recorta el UPN.
+        // El sufijo " v{N}" JAMÁS se trunca (es parte del formato): se recorta el UPN.
         var sufijo = $" v{versionNueva}";
         var firma = new Entity(SchemaNames.FirmaMaestra.Entidad);
         firma[SchemaNames.FirmaMaestra.Name] = Consultas.Truncar(upn, 200 - sufijo.Length) + sufijo;

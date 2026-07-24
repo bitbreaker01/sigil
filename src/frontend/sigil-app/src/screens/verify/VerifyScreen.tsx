@@ -1,4 +1,4 @@
-// Verify screen (doc 05 §4.5, RF-20/21). Presentational: consumes useVerify.
+// Verify screen. Presentational: consumes useVerify.
 // Two paths: (a) deep link with txId → shows the certificate; (b) the user drags/picks
 // the PDF → local SHA-256 → verdict Green (intact) / Red (altered) / Gray (not found).
 // The file NEVER leaves the browser: only the 64-hex hash travels.

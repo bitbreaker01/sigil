@@ -1,4 +1,4 @@
-// Pure helpers for the dashboard (doc 05 §4.1): due-date urgency (RF-27) and state predicates.
+// Pure helpers for the dashboard: due-date urgency and state predicates.
 // No React here so the logic is unit-testable; the hook composes these over the seam data.
 
 import type { TransactionView } from '../../api/SigilApi';
@@ -28,7 +28,7 @@ export function isCompleted(state: number): boolean {
   return transactionStateOf(state) === 'completed';
 }
 
-/** Any transaction currently sealing → the list should poll (doc 05 §5.1). */
+/** Any transaction currently sealing → the list should poll. */
 export function hasSealing(txs: readonly TransactionView[]): boolean {
   return txs.some((t) => isSealing(t.state));
 }

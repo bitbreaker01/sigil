@@ -1,4 +1,4 @@
-// Persistent header (doc 05 §4/§8): Sigil brand, primary nav, language toggle, current user.
+// Persistent header: Sigil brand, primary nav, language toggle, current user.
 // Responsive by design — the nav is inline on desktop and collapses into a menu on phones
 // (no horizontal scrolling). Purely presentational (container-presentational pattern).
 

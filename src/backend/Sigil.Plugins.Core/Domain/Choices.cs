@@ -1,10 +1,10 @@
-// Espejo en código del Apéndice A del doc 12 — valores REALES del portal (prefijo 15946).
+// Espejo en código del Apéndice A (docs/referencia/12-convenciones-nomenclatura.md) — valores REALES del portal (prefijo 15946).
 // Sincronización garantizada por ChoicesTests (contra el doc) y CF-A16 (doc contra ambiente).
 // El resto del código referencia SIEMPRE estos nombres lógicos, jamás números.
 
 namespace Sigil.Plugins.Core.Domain;
 
-/// <summary>sanic_sigil_choice_transactionstatus (doc 03 §3, RF-08).</summary>
+/// <summary>sanic_sigil_choice_transactionstatus.</summary>
 public enum TransactionStatus
 {
     Borrador = 159460000,
@@ -18,7 +18,7 @@ public enum TransactionStatus
     Cancelado = 159460008,
 }
 
-/// <summary>sanic_sigil_choice_participantstatus (doc 03 §3).</summary>
+/// <summary>sanic_sigil_choice_participantstatus.</summary>
 public enum ParticipantStatus
 {
     Pendiente = 159460000,
@@ -27,14 +27,14 @@ public enum ParticipantStatus
     Rechazado = 159460003,
 }
 
-/// <summary>sanic_sigil_choice_routingtype (doc 03 §3, RF-09/10).</summary>
+/// <summary>sanic_sigil_choice_routingtype.</summary>
 public enum RoutingType
 {
     Secuencial = 159460000,
     Paralelo = 159460001,
 }
 
-/// <summary>sanic_sigil_choice_tsastatus (doc 03 §3, ADR-005).</summary>
+/// <summary>sanic_sigil_choice_tsastatus.</summary>
 public enum TsaStatus
 {
     SelladoConTsa = 159460000,
@@ -42,7 +42,7 @@ public enum TsaStatus
     ReSelladoPendiente = 159460002,
 }
 
-/// <summary>sanic_sigil_choice_eventtype (doc 03 §3, RNF-04).</summary>
+/// <summary>sanic_sigil_choice_eventtype.</summary>
 public enum EventType
 {
     TransaccionCreada = 159460000,

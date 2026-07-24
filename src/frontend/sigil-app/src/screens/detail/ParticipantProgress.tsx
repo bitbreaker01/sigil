@@ -1,5 +1,5 @@
-// Participant progress (doc 05 §4.4): who has signed, whose turn it is, and the signing order for
-// sequential routing. State labels come from i18n by logical name (RNF-06).
+// Participant progress: who has signed, whose turn it is, and the signing order for
+// sequential routing. State labels come from i18n by logical name.
 
 import { makeStyles, tokens, Text, Avatar, Badge, type BadgeProps } from '@fluentui/react-components';
 import { useT } from '../../i18n/useT';

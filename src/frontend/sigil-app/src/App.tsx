@@ -1,4 +1,4 @@
-// App shell: header + internal state-based routing (doc 05 §3). The INITIAL route comes from
+// App shell: header + internal state-based routing. The INITIAL route comes from
 // the query params (once); from then on, React state. Screens are loaded lazily so the initial
 // bundle doesn't drag in pdf.js (only sign/create/verify load it).
 
@@ -49,7 +49,7 @@ export function App(): JSX.Element {
     if (r.screen !== 'dashboard' || r.txId) setRoute(r);
   }, [ready, queryParams]);
   // When onboarding is opened mid-flow (e.g. from Sign without a Master Signature), remember where
-  // to return so the user lands back on that screen after configuring — doc 05 §4.3 "auto-return".
+  // to return so the user lands back on that screen after configuring — "auto-return".
   const [returnTo, setReturnTo] = useState<Route | undefined>(undefined);
 
   const navigate = (screen: Screen, txId?: string, signatureVersion?: number) => {

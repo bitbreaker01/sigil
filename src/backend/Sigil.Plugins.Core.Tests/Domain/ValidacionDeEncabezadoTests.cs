@@ -1,6 +1,6 @@
-// M7 — validación del encabezado de Create/UpdateDraft: Name (Texto 200 — doc 03 §4.1),
-// ExpirationDays (entero positivo — RF-27) y el token de RoutingType del contrato
-// ("sequential" | "parallel" — mismo vocabulario que signersummary.routing, doc 04 §4).
+// M7 — validación del encabezado de Create/UpdateDraft: Name (Texto 200),
+// ExpirationDays (entero positivo) y el token de RoutingType del contrato
+// ("sequential" | "parallel" — mismo vocabulario que signersummary.routing).
 
 using Sigil.Plugins.Core.Domain;
 
@@ -22,7 +22,7 @@ public class ValidacionDeEncabezadoTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [InlineData("secuencial")] // el contrato es en inglés — el espejo del frontend también (doc 05)
+    [InlineData("secuencial")] // el contrato es en inglés — el espejo del frontend también
     [InlineData("both")]
     public void M7_RoutingType_TokenInvalido_EsRechazado(string? token)
     {
@@ -50,7 +50,7 @@ public class ValidacionDeEncabezadoTests
         Assert.Empty(ValidacionDeEntrada.ValidarEncabezado(null, expirationDays: null, message: null, nombreObligatorio: false));
     }
 
-    [Fact] // Texto 200 (doc 03 §4.1) — el límite del schema se valida antes del Create
+    [Fact] // Texto 200 — el límite del schema se valida antes del Create
     public void M7_Encabezado_NombreSobre200Chars_EsRechazado()
     {
         Assert.NotEmpty(ValidacionDeEntrada.ValidarEncabezado(new string('x', 201), expirationDays: null));
@@ -70,13 +70,13 @@ public class ValidacionDeEncabezadoTests
         Assert.NotEmpty(ValidacionDeEntrada.ValidarEncabezado("Doc", expirationDays: dias));
     }
 
-    [Fact] // null es válido: aplica sanic_sigil_env_ExpirationDefaultDays al enviar (doc 03 §4.1)
+    [Fact] // null es válido: aplica sanic_sigil_env_ExpirationDefaultDays al enviar
     public void M7_Encabezado_ExpirationDaysNull_EsValido()
     {
         Assert.Empty(ValidacionDeEntrada.ValidarEncabezado("Doc", expirationDays: null));
     }
 
-    [Fact] // A6 — Message es Texto multilínea 2.000 (doc 03 §4.1)
+    [Fact] // A6 — Message es Texto multilínea 2.000
     public void M7_Encabezado_MessageSobre2000Chars_EsRechazado()
     {
         Assert.NotEmpty(ValidacionDeEntrada.ValidarEncabezado("Doc", expirationDays: null, message: new string('m', 2001)));

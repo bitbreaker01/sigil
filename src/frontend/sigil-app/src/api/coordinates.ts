@@ -1,4 +1,4 @@
-// Coordinate contract for the zone editor (doc 05 §6.3, shared with doc 04 §6.1):
+// Coordinate contract for the zone editor:
 // zones are stored in % of the page's VISIBLE area (CropBox), origin TOP-LEFT,
 // VISUAL orientation — INDEPENDENT of zoom. pdf.js renders in visual orientation
 // (applies /Rotate and CropBox), so the frontend measures on the rendered canvas and
@@ -42,5 +42,5 @@ export function clamp(v: number, min: number, max: number): number {
 }
 
 export function round(v: number): number {
-  return Math.round(v * 10000) / 10000; // precision 4 (doc 03 §4.3)
+  return Math.round(v * 10000) / 10000; // precision 4
 }

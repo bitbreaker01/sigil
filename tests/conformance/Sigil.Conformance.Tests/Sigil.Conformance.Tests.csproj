@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Suite de CONFORMIDAD (doc 11 §1 regla 5): prueba la EXISTENCIA y correcta creación
+    <!-- Suite de CONFORMIDAD: prueba la EXISTENCIA y correcta creación
          de cada componente del ambiente (incluido lo creado a mano en Power Platform).
          Rojos hasta que el componente existe; verdes cuando se creó bien.
          Se auto-omite (Skip) si no hay conexión configurada — jamás finge verde. -->
@@ -20,7 +20,7 @@
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
     <PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.2.26" />
     <!-- Solo para los smokes E2E: fabricar un PDF real (CF-D05/D06/D08) y una firma
-         sintética que pasa los umbrales de ADR-009 (CF-D07/D08). -->
+         sintética que pasa los umbrales (CF-D07/D08). -->
     <PackageReference Include="PDFsharp" Version="6.2.4" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
   </ItemGroup>

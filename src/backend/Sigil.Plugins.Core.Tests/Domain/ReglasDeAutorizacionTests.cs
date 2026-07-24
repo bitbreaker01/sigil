@@ -1,6 +1,6 @@
-// M1 — Autorización negativa (doc 11 §4): un test negativo por cada fila de la tabla
-// de autorización del doc 04 §3.3, más los positivos que delimitan la regla.
-// Regla general del doc 04: "cada validación de autorización que falte es una escalada
+// M1 — Autorización negativa: un test negativo por cada fila de la tabla
+// de autorización, más los positivos que delimitan la regla.
+// Regla general: "cada validación de autorización que falte es una escalada
 // de privilegios de facto" — estas reglas son puras (Domain/) y la cáscara solo las invoca.
 
 using Sigil.Plugins.Core.Domain;
@@ -13,7 +13,7 @@ public class ReglasDeAutorizacionTests
     private static readonly Guid Participante = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid Ajeno = Guid.Parse("99999999-9999-9999-9999-999999999999");
 
-    // ── UpdateDraft / DeleteDraft: creador + estado Borrador (doc 04 §3.3) ──
+    // ── UpdateDraft / DeleteDraft: creador + estado Borrador ──
 
     [Fact]
     public void M1_EdicionDeBorrador_ElCreadorEnBorrador_EstaAutorizado()
@@ -49,7 +49,7 @@ public class ReglasDeAutorizacionTests
         Assert.Contains("borrador", motivo, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── GetDocumentContent (doc 04 §3.3): creador O participante; final solo en
+    // ── GetDocumentContent: creador O participante; final solo en
     //    Completado; content para participantes solo desde Pendiente de Firma ──
 
     [Fact]

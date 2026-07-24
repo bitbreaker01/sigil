@@ -1,6 +1,6 @@
-// Dashboard (doc 05 §4.1, RF-22/24): three tabs over useDashboard. First-run banner nudges the
+// Dashboard: three tabs over useDashboard. First-run banner nudges the
 // user to set up their Master Signature; sealing errors surface prominently with a retry CTA;
-// "My participations" offers a completed-only filter with direct download of the final PDF (RF-24).
+// "My participations" offers a completed-only filter with direct download of the final PDF.
 
 import { useState } from 'react';
 import {

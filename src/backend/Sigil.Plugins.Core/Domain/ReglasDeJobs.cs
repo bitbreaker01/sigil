@@ -1,4 +1,4 @@
-// Reglas puras de los jobs diarios (doc 04 §3.1, doc 06 §3/§4 — R5: expiración y
+// Reglas puras de los jobs diarios (expiración y
 // recordatorios derivan de DATOS, no de timers). Los filtros por estado son el corazón:
 // expirar una Sellando destruiría firmas puestas; recordar una terminal sería spam eterno.
 
@@ -8,7 +8,7 @@ namespace Sigil.Plugins.Core.Domain;
 
 public static class ReglasDeJobs
 {
-    /// <summary>T12: SOLO Pendiente de Firma y Firmado Parcialmente expiran (doc 04 §3.1).</summary>
+    /// <summary>T12: SOLO Pendiente de Firma y Firmado Parcialmente expiran.</summary>
     public static bool EsExpirable(TransactionStatus estado)
         => estado is TransactionStatus.PendienteDeFirma or TransactionStatus.FirmadoParcialmente;
 
@@ -16,7 +16,7 @@ public static class ReglasDeJobs
         => expiresOnUtc < ahoraUtc;
 
     /// <summary>
-    /// T14 (doc 06 R7): Sellando sin actividad del worker por más de 24 h → Error de Sellado.
+    /// T14: Sellando sin actividad del worker por más de 24 h → Error de Sellado.
     /// Umbral deliberadamente holgado: el intervalo entre reintentos de OperationStatus.Retry
     /// no está documentado — un umbral corto pisaría un worker legítimamente reintentando.
     /// </summary>
@@ -24,7 +24,7 @@ public static class ReglasDeJobs
         => ultimaActividadUtc < ahoraUtc.AddHours(-24);
 
     /// <summary>
-    /// RF-12: el recordatorio vence por cadencia desde el ÚLTIMO recordatorio (o desde la
+    /// El recordatorio vence por cadencia desde el ÚLTIMO recordatorio (o desde la
     /// activación del turno si nunca hubo) — lastreminderon evita duplicados del flow diario.
     /// </summary>
     public static bool RecordatorioVencido(DateTime turnActivadoEn, DateTime? ultimoRecordatorio,
@@ -35,7 +35,7 @@ public static class ReglasDeJobs
     }
 
     /// <summary>
-    /// RNF-06: idioma por LCID de usersettings.uilanguageid — primary language id (10 bits
+    /// Idioma por LCID de usersettings.uilanguageid — primary language id (10 bits
     /// bajos): 0x0A = español, 0x09 = inglés; cualquier otro (o ausente) → default del ambiente.
     /// </summary>
     public static string IdiomaDeLcid(int? lcid, string idiomaDefault)

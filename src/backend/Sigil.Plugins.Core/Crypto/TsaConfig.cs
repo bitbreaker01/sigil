@@ -1,6 +1,6 @@
-// Configuración de endpoints TSA — el JSON de sanic_sigil_env_TsaEndpoints (doc 04 §4).
-// Orden = prioridad (ADR-005). HTTPS OBLIGATORIO: un canal claro habilita MITM del token
-// (doc 04 §6.4) — el parse rechaza http:// aunque el sandbox lo permita.
+// Configuración de endpoints TSA — el JSON de sanic_sigil_env_TsaEndpoints.
+// Orden = prioridad. HTTPS OBLIGATORIO: un canal claro habilita MITM del token
+// — el parse rechaza http:// aunque el sandbox lo permita.
 
 using System;
 using System.Collections.Generic;
@@ -37,7 +37,7 @@ public sealed class TsaConfig
         {
             if (!Uri.TryCreate(e.Url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
                 throw new InvalidOperationException(
-                    $"Endpoint TSA inválido: '{e.Url}' — solo se aceptan URLs https:// (doc 04 §6.4).");
+                    $"Endpoint TSA inválido: '{e.Url}' — solo se aceptan URLs https://.");
             if (e.TimeoutSeconds < 1)
                 throw new InvalidOperationException($"Endpoint TSA '{e.Url}': timeoutSeconds debe ser positivo.");
         }

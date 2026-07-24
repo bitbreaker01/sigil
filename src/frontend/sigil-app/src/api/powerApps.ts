@@ -208,7 +208,7 @@ function mapRawDoc(r: RawDoc): DocumentRow {
 
 export class PowerAppsSigilApi implements SigilApi {
   // Identity is NOT taken from here: the app shell resolves getContext() (async) ONCE at startup and
-  // provides it via PowerProvider (doc 05 §9). This exists for the seam contract only.
+  // provides it via PowerProvider. This exists for the seam contract only.
   currentUser() {
     return {};
   }

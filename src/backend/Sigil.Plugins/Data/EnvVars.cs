@@ -1,4 +1,4 @@
-// Lectura de variables de entorno con caché POR EJECUCIÓN (doc 04 §8 — verificado:
+// Lectura de variables de entorno con caché POR EJECUCIÓN (verificado:
 // la plataforma no cachea RetrieveEnvironmentVariableValue). Variable faltante o
 // mal formada → fallo RUIDOSO: una validación de tamaño con un default inventado
 // es una validación de mentira.
@@ -22,7 +22,7 @@ public sealed class EnvVars(IOrganizationService servicio)
             !decimal.TryParse(crudo, NumberStyles.Number, CultureInfo.InvariantCulture, out var valor))
         {
             throw new InvalidPluginExecutionException(
-                $"La variable de entorno {schemaName} no está configurada o no es numérica — revisar el Runbook A (CF-A09).");
+                $"La variable de entorno {schemaName} no está configurada o no es numérica.");
         }
         if (valor < 1)
         {
@@ -46,7 +46,7 @@ public sealed class EnvVars(IOrganizationService servicio)
         if (string.IsNullOrWhiteSpace(valor))
         {
             throw new InvalidPluginExecutionException(
-                $"La variable de entorno {schemaName} no está configurada — revisar el Runbook A (CF-A09).");
+                $"La variable de entorno {schemaName} no está configurada.");
         }
         return valor!;
     }

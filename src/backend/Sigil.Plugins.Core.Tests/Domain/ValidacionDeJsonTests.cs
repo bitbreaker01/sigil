@@ -1,5 +1,5 @@
-// M7 — Validación de entrada (doc 11 §4 / doc 04 §3.4): ParticipantsJson y ZonesJson.
-// Reglas puras: duplicados, órdenes con huecos, zonas huérfanas/fuera de rango, schema §4.
+// M7 — Validación de entrada: ParticipantsJson y ZonesJson.
+// Reglas puras: duplicados, órdenes con huecos, zonas huérfanas/fuera de rango, schema.
 // La parte que exige Dataverse (usuarios existentes y habilitados) vive en la cáscara.
 
 using Sigil.Plugins.Core.Domain;
@@ -86,7 +86,7 @@ public class ValidacionDeJsonTests
         Assert.False(r.EsValido);
     }
 
-    [Fact] // schema §4: "order solo en secuencial" — en paralelo es un error de contrato
+    [Fact] // schema: "order solo en secuencial" — en paralelo es un error de contrato
     public void M7_Participants_ParaleloConOrder_EsRechazado()
     {
         var r = ValidacionDeEntrada.ValidarParticipants(
@@ -147,7 +147,7 @@ public class ValidacionDeJsonTests
         Assert.Contains(r.Errores, e => e.Contains(U3.ToString(), StringComparison.OrdinalIgnoreCase));
     }
 
-    [Theory] // página inexistente: error explícito, jamás borrado silencioso (doc 04 §3.1)
+    [Theory] // página inexistente: error explícito, jamás borrado silencioso
     [InlineData(0)]
     [InlineData(4)]
     [InlineData(-1)]
@@ -161,7 +161,7 @@ public class ValidacionDeJsonTests
         Assert.Contains(r.Errores, e => e.Contains(pagina.ToString(), StringComparison.Ordinal));
     }
 
-    [Theory] // coordenadas 0–100 (doc 03 §4.3 / doc 04 §3.4); zona que desborda la página también
+    [Theory] // coordenadas 0–100; zona que desborda la página también
     [InlineData(-0.5, 10, 20, 8)]
     [InlineData(10, 101, 20, 8)]
     [InlineData(10, 10, -1, 8)]

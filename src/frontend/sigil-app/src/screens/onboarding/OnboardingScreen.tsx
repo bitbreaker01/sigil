@@ -1,4 +1,4 @@
-// Master Signature onboarding (doc 05 §4.6, RF-01/02). Presentational: consumes useOnboarding.
+// Master Signature onboarding. Presentational: consumes useOnboarding.
 // Upload PNG → validate → specific reasons or normalized preview; shows the current one.
 
 import { useRef, useState } from 'react';
@@ -136,7 +136,7 @@ export default function OnboardingScreen(props: {
         </>
       )}
 
-      {/* Irreversible-replacement confirmation (RF-02). */}
+      {/* Irreversible-replacement confirmation. */}
       <Dialog open={confirmOpen} onOpenChange={(_e, d) => setConfirmOpen(d.open)}>
         <DialogSurface>
           <DialogBody>

@@ -1,5 +1,5 @@
 // Integration test of the sign hook against the mock seam: loads the tx + my zones + document,
-// gates approve on render (RF-03), and exercises approve/reject.
+// gates approve on render, and exercises approve/reject.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -42,7 +42,7 @@ describe('useSign', () => {
     expect(result.current.canAct).toBe(true);
   });
 
-  it('gates approve on a successful render (RF-03)', async () => {
+  it('gates approve on a successful render', async () => {
     const { result } = renderHook(() => useSign(ndaId), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.loading).toBe(false));
     await waitFor(() => expect(result.current.documentBase64).toBeDefined());

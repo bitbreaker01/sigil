@@ -1,8 +1,8 @@
-// sanic_sigil_capi_VerifyDocument — los DOS modos de verificación (doc 04 §3.1, RF-20/21):
+// sanic_sigil_capi_VerifyDocument — los DOS modos de verificación:
 //   Modo B (por TransactionId, llega del QR / Detail): constancia + veredicto contra ESE finalhash.
 //   Modo A (por Sha256Hash solo): búsqueda en el ledger por finalhash — soltás cualquier PDF sellado
 //   y, si su hash está registrado, es auténtico e íntegro (sin QR, como Adobe/DocuSign).
-// Datos semilla explícitos; efectos verificados leyendo el stub (doc 11 §2) — jamás mocks.
+// Datos semilla explícitos; efectos verificados leyendo el stub — jamás mocks.
 
 using System;
 using System.Linq;
@@ -92,7 +92,7 @@ public class VerifyDocumentPluginTests
         Assert.Null(IsIntact);
     }
 
-    [Fact] // el evento de verificación (tipo 11) queda anclado a la tx del ledger hallado (RNF-04)
+    [Fact] // el evento de verificación (tipo 11) queda anclado a la tx del ledger hallado
     public void ModoA_HashRegistrado_RegistraElEventoAncladoALaTxDelLedger()
     {
         var txId = SembrarTransaccionSellada();

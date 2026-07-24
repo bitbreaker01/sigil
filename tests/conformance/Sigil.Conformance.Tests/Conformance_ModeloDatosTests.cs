@@ -8,15 +8,15 @@ using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 
 /// <summary>
-/// Conformidad del MODELO DE DATOS (doc 03) — CF-A16/A17/A18.
-/// CF-A16: valores de choices del ambiente == Apéndice A del doc 12 (lo que consumen los flows).
+/// Conformidad del MODELO DE DATOS — CF-A16/A17/A18.
+/// CF-A16: valores de choices del ambiente == Apéndice A (docs/referencia/12-convenciones-nomenclatura.md) (lo que consumen los flows).
 /// CF-A17: cada columna existe con su tipo Y SU BINDING (a qué choice apunta cada Picklist,
 ///         a qué tabla cada Lookup — sin binding, el tipo solo es un falso verde).
-/// CF-A18: autonumber del ledger con el formato exacto del doc 03 §4.4.
+/// CF-A18: autonumber del ledger con el formato exacto.
 /// Pendiente registrado: behaviors de DateTime (User Local) — se agrega con la suite CF-B.
 /// </summary>
 [Collection("dataverse")]
-public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper output)
+public class Conformance_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper output)
 {
     // ── CF-A16: choices vs Apéndice A ────────────────────────────────────────
 
@@ -25,11 +25,11 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
     {
         var apendice = LeerApendiceA();
         Assert.True(apendice.Count == 5,
-            $"El Apéndice A del doc 12 debe tener los 5 choices; el parser leyó {apendice.Count}. ¿Cambió el formato de la tabla?");
+            $"El Apéndice A debe tener los 5 choices; el parser leyó {apendice.Count}. ¿Cambió el formato de la tabla?");
         var totalOpciones = apendice.Values.Sum(o => o.Count);
-        // 31 = 9+4+2+3+13 (doc 03 §3; eventtype creció a 13 el 2026-07-16 con "TSA abandonada")
+        // 31 = 9+4+2+3+13 (eventtype creció a 13 el 2026-07-16 con "TSA abandonada")
         Assert.True(totalOpciones == 31,
-            $"El Apéndice A debe tener 31 opciones (9+4+2+3+13 — doc 03 §3); el parser leyó {totalOpciones}.");
+            $"El Apéndice A debe tener 31 opciones (9+4+2+3+13); el parser leyó {totalOpciones}.");
     }
 
     [SkippableFact] // CF-A16
@@ -48,7 +48,7 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
             }
             catch (System.ServiceModel.FaultException)
             {
-                Assert.Fail($"El choice global '{choiceName}' no existe en el ambiente (Runbook A §A7, doc 03 §3).");
+                Assert.Fail($"El choice global '{choiceName}' no existe en el ambiente.");
                 return;
             }
 
@@ -95,7 +95,7 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
     {
         var raiz = BuscarRaizDelRepo();
         var ruta = Path.Combine(raiz, "docs", "referencia", "12-convenciones-nomenclatura.md");
-        Assert.True(File.Exists(ruta), $"No se encontró el doc 12 en {ruta}.");
+        Assert.True(File.Exists(ruta), $"No se encontró el Apéndice A en {ruta}.");
 
         var resultado = new Dictionary<string, Dictionary<string, int>>();
         var patron = new Regex(@"^\|\s*(sanic_sigil_choice_\w+)\s*\|\s*(.+?)\s*\|\s*(\d+)\s*\|", RegexOptions.Compiled);
@@ -120,7 +120,7 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
         return dir!.FullName;
     }
 
-    // ── CF-A17: columnas (nombre + tipo + BINDING) según doc 03 §4 ───────────
+    // ── CF-A17: columnas (nombre + tipo + BINDING) ───────────
     // binding: para PicklistType = nombre del choice global; para LookupType = tabla destino;
     // para el resto = null. Tipos en notación AttributeTypeName (FileType = columnas File).
 
@@ -198,7 +198,7 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
         }
         catch (System.ServiceModel.FaultException)
         {
-            Assert.Fail($"La tabla '{t}' no existe en el ambiente (doc 03 §4 — Runbook A §A7).");
+            Assert.Fail($"La tabla '{t}' no existe en el ambiente.");
             throw; // inalcanzable
         }
     });
@@ -212,12 +212,12 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
 
         var attr = metadata.Attributes?.FirstOrDefault(a => a.LogicalName == columna);
         Assert.True(attr is not null,
-            $"La columna '{columna}' no existe en '{tabla}' (doc 03 §4). Columnas sanic_* presentes: " +
+            $"La columna '{columna}' no existe en '{tabla}'. Columnas sanic_* presentes: " +
             $"[{string.Join(", ", (metadata.Attributes ?? []).Where(a => a.LogicalName.StartsWith("sanic_")).Select(a => a.LogicalName))}]");
 
         var tipoReal = attr!.AttributeTypeName?.Value ?? attr.AttributeType?.ToString() ?? "?";
         Assert.True(tipoEsperado == tipoReal,
-            $"'{tabla}.{columna}': el doc 03 exige tipo {tipoEsperado} pero el ambiente tiene {tipoReal}. " +
+            $"'{tabla}.{columna}': se exige tipo {tipoEsperado} pero el ambiente tiene {tipoReal}. " +
             "El TIPO no se puede cambiar después de creada la columna: borrarla y recrearla.");
 
         // El BINDING es parte del tipo (hallazgo del antagonista): un Picklist atado al choice
@@ -229,9 +229,9 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
                 var choiceReal = picklist.OptionSet?.Name ?? "(sin option set)";
                 Assert.True(bindingEsperado == choiceReal,
                     $"'{tabla}.{columna}': debe usar el choice global '{bindingEsperado}' pero usa '{choiceReal}'. " +
-                    "Recrear la columna eligiendo el choice correcto (doc 03 §4).");
+                    "Recrear la columna eligiendo el choice correcto.");
                 Assert.True(picklist.OptionSet?.IsGlobal == true,
-                    $"'{tabla}.{columna}': el choice debe ser GLOBAL (doc 03 §3), no local de la tabla.");
+                    $"'{tabla}.{columna}': el choice debe ser GLOBAL, no local de la tabla.");
                 break;
             case LookupAttributeMetadata lookup:
                 var targets = lookup.Targets ?? [];
@@ -241,7 +241,7 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
         }
     }
 
-    // ── CF-A18: autonumber del ledger (doc 03 §4.4 — "Formato exacto") ───────
+    // ── CF-A18: autonumber del ledger ("Formato exacto") ───────
 
     [SkippableFact] // CF-A18
     public void CF_A18_Ledger_PrimariaAutonumber_ConElFormatoExacto()
@@ -255,6 +255,6 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
 
         Assert.True(primaria!.AutoNumberFormat == "SIGIL-{DATETIMEUTC:yyyy}-{SEQNUM:6}",
             $"La primaria del ledger debe ser autonumber con formato exacto 'SIGIL-{{DATETIMEUTC:yyyy}}-{{SEQNUM:6}}' " +
-            $"(doc 03 §4.4); el ambiente tiene: '{primaria.AutoNumberFormat ?? "(sin autonumber)"}'.");
+            $"el ambiente tiene: '{primaria.AutoNumberFormat ?? "(sin autonumber)"}'.");
     }
 }

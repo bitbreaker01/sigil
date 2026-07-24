@@ -1,7 +1,7 @@
-// Base de todos los plugins de Custom APIs (doc 04 §3): plumbing del contexto, servicio
+// Base de todos los plugins de Custom APIs: plumbing del contexto, servicio
 // ELEVADO (toda escritura es del sistema; el llamante — InitiatingUserId — se usa SOLO
 // para autorización y snapshots), manejo de errores del patrón del proyecto y el seam
-// de archivos sustituible en tests (doc 11 §2).
+// de archivos sustituible en tests.
 
 using System;
 using System.Collections.Generic;
@@ -18,10 +18,10 @@ public abstract class SigilApiPlugin : IPlugin
         var trace = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
         var factory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
 
-        // null = contexto de sistema (servicio elevado — doc 04 §3, "todo escribe el sistema").
+        // null = contexto de sistema (servicio elevado — "todo escribe el sistema").
         var servicio = factory.CreateOrganizationService(null);
 
-        // Seams (doc 11 §2/§3): si el provider trae dobles (tests), se usan; en Dataverse
+        // Seams: si el provider trae dobles (tests), se usan; en Dataverse
         // real GetService devuelve null y se crean los de producción.
         var archivos = serviceProvider.GetService(typeof(IFileTransfer)) as IFileTransfer
                        ?? CrearFileTransfer(servicio);
@@ -41,7 +41,7 @@ public abstract class SigilApiPlugin : IPlugin
         }
         catch (Exception ex)
         {
-            // Tracing seguro (doc 04 §2): jamás PII ni payloads — el detalle técnico va al trace.
+            // Tracing seguro: jamás PII ni payloads — el detalle técnico va al trace.
             trace.Trace("{0}: error inesperado: {1}", GetType().Name, ex);
             throw new InvalidPluginExecutionException(
                 $"{GetType().Name}: error inesperado — revisar el trace del plugin.", ex);
@@ -50,7 +50,7 @@ public abstract class SigilApiPlugin : IPlugin
 
     protected abstract void Ejecutar(EntornoDeApi entorno);
 
-    /// <summary>Seam de file blocks (doc 11 §2): los tests lo sustituyen con un doble en memoria.</summary>
+    /// <summary>Seam de file blocks: los tests lo sustituyen con un doble en memoria.</summary>
     protected virtual IFileTransfer CrearFileTransfer(IOrganizationService servicio)
         => new FileTransferDataverse(servicio);
 }
@@ -69,7 +69,7 @@ public sealed class EntornoDeApi(
     public IFileTransfer Archivos { get; } = archivos;
     public ISelladorTsa SelladorTsa { get; } = selladorTsa ?? new SelladorTsaReal();
 
-    /// <summary>Identidad del llamante — SOLO para autorización y snapshots (doc 04 §3).</summary>
+    /// <summary>Identidad del llamante — SOLO para autorización y snapshots.</summary>
     public Guid Llamante => Contexto.InitiatingUserId;
 
     /// <summary>Parámetro de entrada opcional (los obligatorios los valida cada handler).</summary>
@@ -99,7 +99,7 @@ public sealed class EntornoDeApi(
 
     public void Output(string nombre, object valor) => Contexto.OutputParameters[nombre] = valor;
 
-    /// <summary>Corta la ejecución con TODOS los errores de validación juntos (doc 04 §8).</summary>
+    /// <summary>Corta la ejecución con TODOS los errores de validación juntos.</summary>
     public void Rechazar(IReadOnlyList<string> errores)
         => throw new InvalidPluginExecutionException(string.Join(" ", errores));
 }

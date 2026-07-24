@@ -1,7 +1,7 @@
 namespace Sigil.Plugins.Tests;
 
 /// <summary>
-/// Canario del harness net462 (corre en runner Windows — doc 11 §2).
+/// Canario del harness net462 (corre en runner Windows).
 /// Se reemplaza por los tests de orquestación (M1/M2...) cuando se decida
 /// FakeXrmEasy comercial vs stub propio (F1).
 /// </summary>

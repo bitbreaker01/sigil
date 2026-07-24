@@ -1,4 +1,4 @@
-// sanic_sigil_capi_CancelTransaction (T13, RF-30/Q-08): el creador retira la transacción.
+// sanic_sigil_capi_CancelTransaction (T13): el creador retira la transacción.
 // Estados elegibles: Pendiente de Firma, Firmado Parcialmente y Error de Sellado (cierra el
 // ciclo de vida de fallos deterministas) — JAMÁS Sellando (el pipeline está trabajando).
 // Motivo opcional. Evento 12; la notificación la emiten los flows (R3), no el motor.
@@ -20,7 +20,7 @@ public class CancelTransactionPlugin : SigilApiPlugin
             throw new InvalidPluginExecutionException(
                 $"El motivo supera los 2.000 caracteres permitidos (tiene {reason.Length}).");
 
-        LockDeFila.Tomar(e.Servicio, target.Id); // R2 — usa el lock de §5 (doc 04 §3.1)
+        LockDeFila.Tomar(e.Servicio, target.Id); // R2 — usa el lock de fila
 
         var (estado, creador) = Consultas.EstadoYCreador(e.Servicio, target.Id);
         var motivo = ReglasDeAutorizacion.MotivoParaRechazarCancelacion(e.Llamante, creador, estado);

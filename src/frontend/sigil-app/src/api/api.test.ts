@@ -1,5 +1,5 @@
-// M11 (doc 11 §4) — the wizard validations are a MIRROR of doc 04 §3.4, the coordinate math
-// is the shared contract (doc 04 §6.1), and binaries decode without freezing the thread.
+// M11 — the wizard validations are a MIRROR, the coordinate math
+// is the shared contract, and binaries decode without freezing the thread.
 // The same edge cases as the backend, on the client side.
 
 import { describe, it, expect } from 'vitest';
@@ -13,7 +13,7 @@ import {
 import { pxToPercent, percentToPx } from './coordinates';
 import { base64ToBytes, bytesToBase64 } from './binaries';
 
-describe('validateParticipants — mirror doc 04 §3.4', () => {
+describe('validateParticipants', () => {
   it('parallel without order is valid', () => {
     expect(validateParticipants([{ userId: 'a' }, { userId: 'b' }], 'parallel', 20).ok).toBe(true);
   });
@@ -40,7 +40,7 @@ describe('validateParticipants — mirror doc 04 §3.4', () => {
   });
 });
 
-describe('validateZones — mirror doc 04 §3.4', () => {
+describe('validateZones', () => {
   const parts = new Set(['a', 'b']);
   it('valid zone passes', () => {
     expect(validateZones([{ userId: 'a', page: 1, x: 10, y: 10, w: 20, h: 8 }], parts, 3).ok).toBe(true);
@@ -59,7 +59,7 @@ describe('validateZones — mirror doc 04 §3.4', () => {
   });
 });
 
-describe('participantsWithoutZone — RF-28', () => {
+describe('participantsWithoutZone', () => {
   it('lists who is missing a zone', () => {
     const missing = participantsWithoutZone(
       [{ userId: 'a' }, { userId: 'b' }, { userId: 'c' }],
@@ -95,7 +95,7 @@ describe('validatePdf', () => {
   });
 });
 
-describe('coordinates — contract doc 04 §6.1 (roundtrip)', () => {
+describe('coordinates — contract (roundtrip)', () => {
   it('px → % → px returns to the same place', () => {
     const pct = pxToPercent({ xPx: 100, yPx: 50, wPx: 200, hPx: 80 }, 400, 800);
     expect(pct).toEqual({ x: 25, y: 6.25, w: 50, h: 10 });

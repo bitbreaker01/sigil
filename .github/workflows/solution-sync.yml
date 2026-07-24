@@ -93,6 +93,18 @@ jobs:
           echo "Prune OK. Componentes que quedan:"
           ls -1 _unpacked
 
+      - name: Sanear nombres ilegales en Windows
+        run: |
+          set -euo pipefail
+          # Windows prohíbe < > : " | ? * en nombres de archivo; pac unpack nombra los roles con "|"
+          # (ej. "Sigil | SR | User.xml") → rompe el checkout en runners y clones Windows.
+          find _unpacked -depth -name '*[|<>:"?*]*' -print0 | while IFS= read -r -d '' f; do
+            dir=$(dirname "$f"); base=$(basename "$f")
+            safe=$(printf '%s' "$base" | tr '|<>:"?*' '-------')
+            mv "$f" "$dir/$safe"
+            echo "  saneado: $base -> $safe"
+          done
+
       - name: Sincronizar en solutions/unpacked/
         run: |
           set -euo pipefail

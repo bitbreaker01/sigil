@@ -1,4 +1,4 @@
-// Shared PDF viewer (doc 05 §6.1) used by the zone editor and the sign screen. Owns:
+// Shared PDF viewer used by the zone editor and the sign screen. Owns:
 //  - ROBUST width measurement via a callback ref (an element-state effect that runs whenever the
 //    canvas container (re)appears — fixes the "blank on first entry / must re-enter" bug where a
 //    useRef+useLayoutEffect([]) missed the element because it mounted after a loading state).

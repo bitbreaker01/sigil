@@ -15,7 +15,7 @@ public class HashUtilTests
         Assert.Equal("BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD", hex);
     }
 
-    [Fact] // formato del schema: Texto 64, sin separadores (doc 03 §4.1 contenthash)
+    [Fact] // formato del schema: Texto 64, sin separadores (contenthash)
     public void Sha256Hex_Emite64HexMayusculas()
     {
         var hex = HashUtil.Sha256Hex([1, 2, 3]);

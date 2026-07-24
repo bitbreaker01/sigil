@@ -1,7 +1,7 @@
-// sanic_sigil_capi_SendTransaction (T4, doc 04 §3.1 / doc 06): Borrador → Pendiente de Firma.
-// Guards: creador + Borrador; todo participante con ≥1 zona (RF-28 — bloquea listando);
+// sanic_sigil_capi_SendTransaction (T4): Borrador → Pendiente de Firma.
+// Guards: creador + Borrador; todo participante con ≥1 zona (bloquea listando);
 // PDF presente. Efectos: senton/expireson, contenthash (ancla temprana del sellado),
-// share a participantes (+eventos previos: la cascada no los cubre — doc 03 §2),
+// share a participantes (+eventos previos: la cascada no los cubre),
 // activación de turnos (P2), evento 2. La historia es permanente desde acá (R6).
 
 using System;
@@ -49,11 +49,11 @@ public class SendTransactionPlugin : SigilApiPlugin
                 .Where(p => sinZona.Contains(p.GetAttributeValue<EntityReference>(SchemaNames.Participante.UserId).Id))
                 .Select(p => p.GetAttributeValue<string>(SchemaNames.Participante.Name));
             throw new InvalidPluginExecutionException(
-                $"Estos participantes no tienen zona de firma asignada (RF-28): {string.Join(", ", nombres)}. " +
+                $"Estos participantes no tienen zona de firma asignada: {string.Join(", ", nombres)}. " +
                 "Asigná al menos una zona a cada firmante antes de enviar.");
         }
 
-        // ── contenthash: SHA-256 del PDF de contenido, calculado AL ENVIAR (doc 03 §4.1) ──
+        // ── contenthash: SHA-256 del PDF de contenido, calculado AL ENVIAR ──
         byte[] pdf;
         try
         {

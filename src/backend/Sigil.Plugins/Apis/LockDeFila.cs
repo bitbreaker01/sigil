@@ -1,7 +1,7 @@
-// Lock de fila (doc 04 §5): todo plugin que decide sobre estado compartido ejecuta,
+// Lock de fila: todo plugin que decide sobre estado compartido ejecuta,
 // como PRIMERA operación dentro de su transacción de BD, un Update sobre la columna
 // técnica sanic_sigil_locktoken. PROHIBIDO lockear escribiendo el status: los triggers
-// de los flows disparan aunque el valor escrito sea idéntico (verificado — doc 08 §7).
+// de los flows disparan aunque el valor escrito sea idéntico (verificado).
 // Después del lock, SIEMPRE re-leer el estado: las ejecuciones concurrentes quedaron
 // serializadas detrás de este update.
 

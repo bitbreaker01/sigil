@@ -1,4 +1,4 @@
-// States by LOGICAL NAME (doc 05 §2, RNF-06): the backend returns numeric choice values
+// States by LOGICAL NAME: the backend returns numeric choice values
 // (159460xxx); the UI maps them to a stable logical name, and EVERY visible label comes from
 // i18n indexed by that name. Showing a formatted value directly is an i18n bug.
 //
@@ -76,10 +76,10 @@ export const EVENT_TYPE: Record<number, EventType> = {
   159460012: 'tsaAbandoned',
 };
 
-// Routing travels as a contract token (doc 04 §4), not as a number.
+// Routing travels as a contract token, not as a number.
 export type Routing = 'sequential' | 'parallel';
 
-/** States in which the transaction still allows signing actions (doc 06 §3). */
+/** States in which the transaction still allows signing actions. */
 export const SIGNABLE_STATES: ReadonlySet<TransactionState> = new Set([
   'pendingSignature',
   'partiallySigned',

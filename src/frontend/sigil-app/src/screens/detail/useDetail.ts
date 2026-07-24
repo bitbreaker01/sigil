@@ -1,7 +1,7 @@
-// Detail container (doc 05 §4.4): the transaction + its participants + event timeline via TanStack
-// Query. Polls while the tx is sealing (§5.1, 3-min cap → still-processing message). Creator-only
-// actions (cancel RF-30, retry) are gated by identity — NON-authoritative UI hint; the backend
-// enforces authorization (doc 04 §3.3). The final PDF is fetched directly, never cached (§5.2).
+// Detail container: the transaction + its participants + event timeline via TanStack
+// Query. Polls while the tx is sealing (3-min cap → still-processing message). Creator-only
+// actions (cancel, retry) are gated by identity — NON-authoritative UI hint; the backend
+// enforces authorization. The final PDF is fetched directly, never cached.
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient, type Query } from '@tanstack/react-query';
@@ -65,7 +65,7 @@ export function useDetail(txId: string) {
     }
   }, [txId, invalidate]);
 
-  // `versionLabel` is the localized version name for the file name (RNF-06: no hardcoded strings).
+  // `versionLabel` is the localized version name for the file name (no hardcoded strings).
   const download = useCallback(async (documentType: 'content' | 'final', versionLabel: string) => {
     setActionError(false);
     try {

@@ -1,4 +1,4 @@
-// Contrato de coordenadas (doc 04 §6.1): las zonas vienen en % del área VISIBLE de la
+// Contrato de coordenadas: las zonas vienen en % del área VISIBLE de la
 // página (CropBox; MediaBox si no hay), origen ARRIBA-IZQUIERDA, en orientación VISUAL.
 // Evidencia del spike (2026-07-10): el espacio de usuario del PDF es RAW y /Rotate NO se
 // compensa solo — esta clase produce la matriz cm que coloca una imagen upright en la
@@ -25,7 +25,7 @@ public static class TransformacionDeCoordenadas
 {
     public static MatrizCm ParaZona(PdfPage page, double x, double y, double w, double h)
     {
-        // Área visible: CropBox si está definido, MediaBox si no (doc 04 §6.1).
+        // Área visible: CropBox si está definido, MediaBox si no.
         var crop = page.Elements.ContainsKey("/CropBox") ? page.CropBox : page.MediaBox;
         double cx0 = Math.Min(crop.X1, crop.X2), cx1 = Math.Max(crop.X1, crop.X2);
         double cy0 = Math.Min(crop.Y1, crop.Y2), cy1 = Math.Max(crop.Y1, crop.Y2);

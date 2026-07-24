@@ -1,5 +1,5 @@
-// sanic_sigil_capi_SendTransaction — T4 (docs 04 §3.1, 06). Los asserts centrales:
-// completitud de zonas RF-28 (M9), contenthash como ancla temprana, activación de turnos
+// sanic_sigil_capi_SendTransaction — T4. Los asserts centrales:
+// completitud de zonas (M9), contenthash como ancla temprana, activación de turnos
 // P2 por enrutamiento, share a participantes + eventos retroactivos (M13), evento 2.
 
 using System;
@@ -58,7 +58,7 @@ public class SendTransactionPluginTests
         Assert.Throws<InvalidPluginExecutionException>(() => Ejecutar(txId, _firmante1));
     }
 
-    [Fact] // M9/RF-28 — el guard de T4: participante sin zona bloquea, LISTÁNDOLO
+    [Fact] // M9 — el guard de T4: participante sin zona bloquea, LISTÁNDOLO
     public void M9_ParticipanteSinZona_BloqueaElEnvio_Listandolo()
     {
         var txId = _arnes.SembrarTransaccion(_creador, TransactionStatus.Borrador, RoutingType.Paralelo);
@@ -118,7 +118,7 @@ public class SendTransactionPluginTests
         Assert.Equal(senton.AddDays(3), tx.GetAttributeValue<DateTime>(SchemaNames.Tx.ExpiresOn));
     }
 
-    [Fact] // doc 04 §5 / S4 — el lock precede a todo, también en Send
+    [Fact] // S4 — el lock precede a todo, también en Send
     public void ElLock_EsLaPrimeraOperacion()
     {
         var txId = SembrarBorradorListo(RoutingType.Paralelo, (_firmante1, null));

@@ -1,5 +1,5 @@
 // Configuración de la validación/normalización de la Firma Maestra — el JSON de
-// sanic_sigil_env_SignatureImageSpec (doc 04 §4, ADR-009). Umbrales iniciales del doc,
+// sanic_sigil_env_SignatureImageSpec. Umbrales iniciales,
 // calibrables por ambiente sin redeploy.
 
 using System;
@@ -16,17 +16,17 @@ public sealed class SignatureSpec
     [JsonPropertyName("targetHeightPx")]
     public int TargetHeightPx { get; set; }
 
-    /// <summary>Peso máximo del PNG NORMALIZADO (ADR-009: "se limita su peso").</summary>
+    /// <summary>Peso máximo del PNG NORMALIZADO (se limita su peso).</summary>
     [JsonPropertyName("maxKB")]
     public int MaxKB { get; set; }
 
-    /// <summary>Fracción mínima de píxeles totalmente transparentes (RF-02: fondo transparente).</summary>
+    /// <summary>Fracción mínima de píxeles totalmente transparentes (fondo transparente).</summary>
     [JsonPropertyName("minAlphaRatio")]
     public double MinAlphaRatio { get; set; }
 
     /// <summary>
     /// Contraste RMS mínimo — RMS del APARTAMIENTO de la tinta respecto del fondo blanco,
-    /// sobre píxeles no transparentes (enmienda a ADR-009 del 2026-07-16: el RMS global del
+    /// sobre píxeles no transparentes (enmienda del 2026-07-16: el RMS global del
     /// histograma castiga a las firmas de trazo fino; ver MotorDeFirmaMaestra).
     /// </summary>
     [JsonPropertyName("minRmsContrast")]

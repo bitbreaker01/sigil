@@ -1,6 +1,6 @@
-// sanic_sigil_capi_UpdateDraft (doc 04 §3.1) — Bound. Edita un borrador; todos los inputs
+// sanic_sigil_capi_UpdateDraft — Bound. Edita un borrador; todos los inputs
 // de Create, opcionales (null = no cambiar). Reglas clave:
-//   - Lock de fila PRIMERO (doc 04 §5) + re-lectura + autorización (creador + Borrador).
+//   - Lock de fila PRIMERO + re-lectura + autorización (creador + Borrador).
 //   - Si reemplaza el PDF, REVALIDA las zonas persistidas contra el nuevo documento:
 //     páginas inexistentes → error explícito listando las zonas, jamás borrado silencioso.
 //   - Cambiar el enrutamiento exige reenviar ParticipantsJson (las reglas de orden cambian).
@@ -22,7 +22,7 @@ public class UpdateDraftPlugin : SigilApiPlugin
     protected override void Ejecutar(EntornoDeApi e)
     {
         var target = e.Target;
-        LockDeFila.Tomar(e.Servicio, target.Id); // SIEMPRE primero (doc 04 §5)
+        LockDeFila.Tomar(e.Servicio, target.Id); // SIEMPRE primero
 
         var tx = Consultas.Transaccion(e.Servicio, target.Id);
         var estado = (TransactionStatus)tx.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.Status).Value;
@@ -61,7 +61,7 @@ public class UpdateDraftPlugin : SigilApiPlugin
         }
 
         // A2: reemplazar participantes destruye sus zonas por cascada parental; sin ZonesJson
-        // explícito eso sería una pérdida silenciosa (el doc 04 §3.1 la prohíbe). Se exige
+        // explícito eso sería una pérdida silenciosa (prohibida). Se exige
         // ZonesJson (aunque sea "[]" para borrar) cuando hay zonas persistidas que se perderían.
         if (participantsJson is not null && zonesJson is null &&
             HayZonasPersistidas(e.Servicio, Consultas.ParticipantesDe(e.Servicio, target.Id)))
@@ -149,7 +149,7 @@ public class UpdateDraftPlugin : SigilApiPlugin
         {
             // Borrar las zonas de los salientes EXPLÍCITAMENTE (no confiar en la cascada parental):
             // explícito es testeable y defiende ante una cascada mal configurada — igual que
-            // DeleteDraft borra los eventos a mano (doc 06 T3). El guard A2 ya garantizó que el
+            // DeleteDraft borra los eventos a mano. El guard A2 ya garantizó que el
             // llamante mandó ZonesJson cuando había zonas que perder.
             foreach (var z in Consultas.ZonasDe(e.Servicio, participantesActuales.Select(p => p.Id).ToList()))
                 e.Servicio.Delete(SchemaNames.Zona.Entidad, z.Id);
@@ -186,7 +186,7 @@ public class UpdateDraftPlugin : SigilApiPlugin
             CreateTransactionPlugin.CrearZonas(e, zonasNuevas, participantePorUsuario, owner);
         }
 
-        // Sin evento: UpdateDraft no transiciona estado (doc 04 §8 — evento por transición).
+        // Sin evento: UpdateDraft no transiciona estado (evento por transición).
         e.Trace.Trace("UpdateDraft: {0} actualizada.", target.Id);
     }
 

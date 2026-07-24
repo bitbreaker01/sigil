@@ -1,4 +1,4 @@
-// sanic_sigil_capi_GetDocumentContent — orquestación (doc 04 §3.1/§3.3).
+// sanic_sigil_capi_GetDocumentContent — orquestación.
 // Las filas de M1 de esta API: ajeno rechazado; participante NO lee borradores no
 // enviados; final solo en Completado. El happy path devuelve los bytes exactos en base64.
 
@@ -93,7 +93,7 @@ public class GetDocumentContentPluginTests
         Assert.Equal(Convert.ToBase64String(pdfFinal), _arnes.Contexto.OutputParameters["PdfBase64"]);
     }
 
-    [Fact] // el contenido lo puede leer el participante desde Pendiente de Firma (doc 04 §3.3)
+    [Fact] // el contenido lo puede leer el participante desde Pendiente de Firma
     public void Feliz_UnParticipante_LeeElContenido_TrasElEnvio()
     {
         var txId = _arnes.SembrarTransaccion(_creador, TransactionStatus.PendienteDeFirma);

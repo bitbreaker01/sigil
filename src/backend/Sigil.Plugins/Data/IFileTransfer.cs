@@ -1,7 +1,7 @@
-// Seam de columnas File (doc 11 §2 — límite declarado): ningún fake simula los mensajes
+// Seam de columnas File (límite declarado): ningún fake simula los mensajes
 // de file blocks, así que la cáscara define su propia interfaz de transferencia. Los tests
 // la sustituyen con un doble en memoria; la implementación real (FileTransferDataverse)
-// solo se ejercita contra Dev (gates del doc 09).
+// solo se ejercita contra Dev (gates de despliegue).
 
 using Microsoft.Xrm.Sdk;
 

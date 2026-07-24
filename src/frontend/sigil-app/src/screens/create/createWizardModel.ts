@@ -1,9 +1,9 @@
-// Pure model of the create wizard (doc 05 §4.2). NO React here — all step gating, validation,
+// Pure model of the create wizard. NO React here — all step gating, validation,
 // and the CreateTransaction input construction live as pure functions so they are trivially
 // testable. The hook (useCreateWizard) holds React state and calls these + the seam.
 //
-// Steps (doc 05 §4.2): (1) PDF + request header, (2) signers + routing, (3) MANDATORY signature
-// zones (§6.3, RF-28: every signer ≥1 zone; the step can't be skipped and "Send" stays blocked
+// Steps: (1) PDF + request header, (2) signers + routing, (3) MANDATORY signature
+// zones (every signer ≥1 zone; the step can't be skipped and "Send" stays blocked
 // until complete), (4) review → send or save draft.
 
 import type { Routing } from '../../domain/states';
@@ -89,7 +89,7 @@ export function zonesStepErrors(draft: WizardDraft): string[] {
     participantIds,
     pageCount,
   ).errors;
-  // RF-28: mandatory — every participant needs ≥1 zone; the step can't be completed otherwise.
+  // Mandatory — every participant needs ≥1 zone; the step can't be completed otherwise.
   const missing = participantsMissingZone(draft);
   const completeness = missing.length ? ['validation.participantsWithoutZone'] : [];
   return dedupe([...geometry, ...completeness]);
@@ -119,12 +119,12 @@ export function stepErrors(step: WizardStep, draft: WizardDraft, limits: WizardL
   }
 }
 
-/** Can we move forward from this step? (zones includes the RF-28 completeness gate.) */
+/** Can we move forward from this step? (zones includes the completeness gate.) */
 export function canAdvance(step: WizardStep, draft: WizardDraft, limits: WizardLimits): boolean {
   return stepErrors(step, draft, limits).length === 0;
 }
 
-/** Send requires EVERY step valid, including mandatory zones (RF-28). */
+/** Send requires EVERY step valid, including mandatory zones. */
 export function canSend(draft: WizardDraft, limits: WizardLimits): boolean {
   return (
     canAdvance('pdf', draft, limits) &&
@@ -133,7 +133,7 @@ export function canSend(draft: WizardDraft, limits: WizardLimits): boolean {
   );
 }
 
-/** Draft may be incomplete (doc 05 §4.2: "save draft" allows incomplete), but createTransaction
+/** Draft may be incomplete ("save draft" allows incomplete), but createTransaction
  *  needs at minimum a PDF and a name. */
 export function canSaveDraft(draft: WizardDraft): boolean {
   const name = draft.name.trim();
@@ -150,7 +150,7 @@ export function prevStep(step: WizardStep): WizardStep {
   return WIZARD_STEPS[Math.max(i - 1, 0)]!;
 }
 
-/** Build the CreateTransaction input from the draft (doc 04 §3.1/§4). Assumes a PDF exists. */
+/** Build the CreateTransaction input from the draft. Assumes a PDF exists. */
 export function buildCreateInput(draft: WizardDraft): CreateTransactionInput {
   if (!draft.pdf) throw new Error('buildCreateInput called without a PDF');
   const participants = draft.participants.map((p) =>

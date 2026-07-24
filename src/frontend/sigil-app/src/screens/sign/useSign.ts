@@ -1,7 +1,7 @@
-// Sign container (doc 05 §4.3, RF-03/04/13/28). Loads the transaction, its participants and zones
+// Sign container. Loads the transaction, its participants and zones
 // (which zones are MINE vs others) and whether the user has a Master Signature. The document to
 // sign is a binary: fetched DIRECTLY and kept in screen-local state, freed on unmount — never in
-// the Query cache (§5.2). "Approve" is gated on a successful render (RF-03, `rendered`).
+// the Query cache. "Approve" is gated on a successful render (`rendered`).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -42,7 +42,7 @@ export function useSign(txId: string) {
   const parts = useMemo(() => participants.data ?? [], [participants.data]);
   const allZones = useMemo(() => zones.data ?? [], [zones.data]);
   const myParticipant = me ? parts.find((p) => p.userId === me) : undefined;
-  // Only the active-turn participant can sign/reject (doc 04 §3.3). UI hint — backend enforces (§9).
+  // Only the active-turn participant can sign/reject. UI hint — backend enforces.
   const canAct = !!myParticipant && PARTICIPANT_STATE[myParticipant.state] === 'activeTurn';
   const { myZones, otherZones } = useMemo(() => {
     const mine = myParticipant ? allZones.filter((z) => z.participantId === myParticipant.id) : [];

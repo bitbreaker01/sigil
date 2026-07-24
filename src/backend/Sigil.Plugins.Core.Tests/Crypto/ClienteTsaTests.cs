@@ -1,6 +1,6 @@
-// M6 — Cliente TSA (doc 11 §4 / doc 04 §6.4): CertReq=true, nonce aleatorio verificado,
+// M6 — Cliente TSA: CertReq=true, nonce aleatorio verificado,
 // DOBLE validación, fallback en orden, rate limit, rechazo de http://.
-// Sin servidor ni puertos (doc 11 §3): HttpMessageHandler stub + respuestas RFC 3161
+// Sin servidor ni puertos: HttpMessageHandler stub + respuestas RFC 3161
 // FABRICADAS con TimeStampResponseGenerator y un certificado TSA self-signed.
 
 using System.Net;
@@ -71,7 +71,7 @@ public class ClienteTsaTests : IDisposable
         Assert.Equal("https://tsa.uno", r.Endpoint);
     }
 
-    [Fact] // el REQUEST cumple el contrato: CertReq=true y nonce presente (doc 04 §6.4)
+    [Fact] // el REQUEST cumple el contrato: CertReq=true y nonce presente
     public void M6_ElRequest_LlevaCertReqYNonce()
     {
         TimeStampRequest? capturado = null;
@@ -89,7 +89,7 @@ public class ClienteTsaTests : IDisposable
         Assert.NotNull(capturado.Nonce);
     }
 
-    // ── las respuestas MALAS se descartan y se intenta el siguiente (fallback ADR-005) ──
+    // ── las respuestas MALAS se descartan y se intenta el siguiente (fallback) ──
 
     [Fact] // nonce equivocado: la TSA responde a OTRO request → Validate(request) la descarta
     public void M6_NonceEquivocado_SeDescarta_YCaeAlSiguienteEndpoint()
@@ -204,7 +204,7 @@ public class ClienteTsaTests : IDisposable
         }
     }
 
-    /// <summary>Handler stub: una función por llamada, en orden (doc 11 §3 — sin red).</summary>
+    /// <summary>Handler stub: una función por llamada, en orden (sin red).</summary>
     private sealed class HandlerStub(params Func<byte[], HttpResponseMessage>[] respuestas) : HttpMessageHandler
     {
         private int _llamada;

@@ -1,8 +1,8 @@
-// Dashboard container (doc 05 §4.1 + §5.1): the three lists + the first-run signal via TanStack
+// Dashboard container: the three lists + the first-run signal via TanStack
 // Query. Requests & Participations are infinite-scroll (recent-first, server-side paged) so the
-// dashboard never loads everything (§5.1). "My requests" polls every 5 s WHILE something is sealing,
+// dashboard never loads everything. "My requests" polls every 5 s WHILE something is sealing,
 // capped at 3 min, after which auto-poll stops and the user can refresh. Binaries (the final PDF)
-// are fetched DIRECTLY through the seam and streamed to a download — never through the cache (§5.2).
+// are fetched DIRECTLY through the seam and streamed to a download — never through the cache.
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,7 +24,7 @@ const TX_COMPLETED = 159460004; // transaction state: Completed (server-side "co
 export function useDashboard() {
   const qc = useQueryClient();
   const sealingSince = useRef<number | undefined>(undefined);
-  const [sealingCapped, setSealingCapped] = useState(false); // 3-min poll cap reached (§5.1)
+  const [sealingCapped, setSealingCapped] = useState(false); // 3-min poll cap reached
   const [actionError, setActionError] = useState(false); // retry/download failed
   const [onlyCompleted, setOnlyCompleted] = useState(false); // Participations "completed only" (server-side)
 
@@ -43,7 +43,7 @@ export function useDashboard() {
     getNextPageParam: (last) => last.nextCookie || undefined,
   });
 
-  // Poll only while a loaded page has a sealing tx, and only until the 3-min cap (§5.1). Sealing
+  // Poll only while a loaded page has a sealing tx, and only until the 3-min cap. Sealing
   // txs are the most recent (just sent to seal) → they land on the first page, so watching the
   // loaded pages is enough. At the cap we stop auto-polling and surface a manual refresh.
   const requests = useInfiniteQuery({
@@ -84,7 +84,7 @@ export function useDashboard() {
     }
   }, [qc]);
 
-  // Final PDF: fetched directly (not cached) and streamed to a download (§5.2/§5.3).
+  // Final PDF: fetched directly (not cached) and streamed to a download.
   const downloadFinal = useCallback(async (tx: TransactionView) => {
     setActionError(false);
     try {

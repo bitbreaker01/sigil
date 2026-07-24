@@ -1,7 +1,7 @@
-// Navigation by query params (doc 05 §3): the ONLY external entry point is the
+// Navigation by query params: the ONLY external entry point is the
 // screen/txId pair. It's read ONCE at startup (getContext().app.queryParams or, in dev, the URL);
 // from then on navigation is internal React state (history is untouched — the app runs
-// embedded in the host's iframe, doc 05 §3).
+// embedded in the host's iframe).
 
 export type Screen = 'dashboard' | 'sign' | 'verify' | 'detail' | 'create' | 'onboarding' | 'documents';
 

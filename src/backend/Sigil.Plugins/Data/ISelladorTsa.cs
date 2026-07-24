@@ -1,4 +1,4 @@
-// Seam del sello TSA (doc 11 §3): los tests inyectan un doble (respuestas buenas/malas
+// Seam del sello TSA: los tests inyectan un doble (respuestas buenas/malas
 // sin red); la implementación real delega en el ClienteTsa del núcleo (validado en el
 // sandbox por el spike). Se resuelve vía IServiceProvider, igual que IFileTransfer.
 

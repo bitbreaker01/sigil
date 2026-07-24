@@ -1,5 +1,5 @@
-// Contratos JSON de las Custom APIs (doc 04 §4) — el schema canónico compartido con el
-// frontend (doc 05). Los nombres de propiedad JSON son camelCase por contrato.
+// Contratos JSON de las Custom APIs — el schema canónico compartido con el
+// frontend. Los nombres de propiedad JSON son camelCase por contrato.
 
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ public sealed class ParticipantInput
     public int? Order { get; set; }
 }
 
-/// <summary>Elemento de ZonesJson (input; 1..N por participante — obligatorias al enviar, RF-28).</summary>
+/// <summary>Elemento de ZonesJson (input; 1..N por participante — obligatorias al enviar).</summary>
 public sealed class ZoneInput
 {
     [JsonPropertyName("userId")]
@@ -28,7 +28,7 @@ public sealed class ZoneInput
     [JsonPropertyName("page")]
     public int Page { get; set; }
 
-    // Coordenadas en % del ancho/alto visible de la página, origen arriba-izquierda (doc 04 §6.1).
+    // Coordenadas en % del ancho/alto visible de la página, origen arriba-izquierda.
     [JsonPropertyName("x")]
     public double X { get; set; }
 
@@ -57,7 +57,7 @@ public sealed class PdfValidado
 
 /// <summary>
 /// Resultado de una validación: o el valor parseado, o la lista COMPLETA de errores
-/// accionables (jamás "inválido" a secas — doc 04 §8, mensajes accionables).
+/// accionables (jamás "inválido" a secas — mensajes accionables).
 /// </summary>
 public sealed class ResultadoDe<T> where T : class
 {

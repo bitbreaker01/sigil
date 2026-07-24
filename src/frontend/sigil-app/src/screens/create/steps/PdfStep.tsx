@@ -1,5 +1,5 @@
-// Step 1 (doc 05 §4.2): the request header + PDF. Cheap validation (extension/size) happens
-// BEFORE encoding base64 (doc 04 §3.4 — never encode 27 MB just to reject it). Once accepted,
+// Step 1: the request header + PDF. Cheap validation (extension/size) happens
+// BEFORE encoding base64 (never encode 27 MB just to reject it). Once accepted,
 // the file is encoded and its page count read (needed to validate zone pages downstream).
 
 import { useRef, useState } from 'react';

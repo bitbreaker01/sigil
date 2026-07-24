@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- net8: los tests del núcleo puro corren en cualquier plataforma (doc 04 §2 / doc 11 §2) -->
+    <!-- net8: los tests del núcleo puro corren en cualquier plataforma -->
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>

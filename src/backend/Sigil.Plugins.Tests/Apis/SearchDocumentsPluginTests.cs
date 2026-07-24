@@ -1,4 +1,4 @@
-// SearchDocuments (doc 05 — escala): base creados ∪ participados, filtros/orden/paginación
+// SearchDocuments (escala): base creados ∪ participados, filtros/orden/paginación
 // server-side, y enriquecimiento (nombres + versión de mi firma). Verificación por el JSON de salida.
 
 using System;

@@ -1,6 +1,6 @@
 // Consultas y escrituras compartidas por los handlers de Custom APIs.
 // Todo corre con el servicio elevado; el ownerid se setea EXPLÍCITO en cada Create
-// (doc 03 §4: el owner no se hereda al crear hijos — verificado).
+// (el owner no se hereda al crear hijos — verificado).
 
 using System;
 using System.Collections.Generic;
@@ -30,7 +30,7 @@ public static class Consultas
                 SchemaNames.Tx.Name, SchemaNames.Tx.ExpirationDays));
 
     /// <summary>
-    /// Carga y valida a los firmantes: existentes Y habilitados (doc 04 §3.4 — la parte
+    /// Carga y valida a los firmantes: existentes Y habilitados (la parte
     /// de ParticipantsJson que solo Dataverse puede responder). Falla listando a los ausentes.
     /// </summary>
     public static Dictionary<Guid, (string Nombre, string Email)> UsuariosHabilitados(
@@ -82,7 +82,7 @@ public static class Consultas
     }
 
     /// <summary>
-    /// La versión VIGENTE de la Firma Maestra del usuario (doc 03 §4.5) — null si no tiene.
+    /// La versión VIGENTE de la Firma Maestra del usuario — null si no tiene.
     /// Si el riesgo residual documentado se materializa (dos vigentes — incluso con el MISMO
     /// número de versión, si el usuario compitió consigo mismo), el desempate es total:
     /// mayor versión, y a igual versión el Id mayor — determinístico en cualquier caso.
@@ -123,7 +123,7 @@ public static class Consultas
         };
         query.Criteria.AddCondition(SchemaNames.FirmaMaestra.UserId, ConditionOperator.Equal, userId);
         query.AddOrder(SchemaNames.FirmaMaestra.Version, OrderType.Descending);
-        // "Más nuevo primero" es parte del contrato (doc 03 §4.5). El AddOrder lo resuelve contra
+        // "Más nuevo primero" es parte del contrato. El AddOrder lo resuelve contra
         // Dataverse real, pero el orden se garantiza in-memory para no depender de que el backend
         // ordene (el stub de tests no lo hace — el bug quedaba invisible sin correr net462).
         return servicio.RetrieveMultiple(query).Entities
@@ -132,7 +132,7 @@ public static class Consultas
     }
 
     /// <summary>Participaciones FIRMADAS que usaron alguna de estas versiones de Firma Maestra
-    /// (para mostrar "qué documentos firmé con cada versión" — doc 03 §4.5). Devuelve la fila del
+    /// (para mostrar "qué documentos firmé con cada versión"). Devuelve la fila del
     /// participante con su masterSignatureId y transactionId.</summary>
     public static IReadOnlyList<Entity> FirmasPorVersionDeFirma(
         IOrganizationService servicio, IReadOnlyCollection<Guid> versionIds)
@@ -165,7 +165,7 @@ public static class Consultas
     }
 
     /// <summary>
-    /// GrantAccess de LECTURA (doc 03 §2): la cascada de Share solo cubre hijos existentes
+    /// GrantAccess de LECTURA: la cascada de Share solo cubre hijos existentes
     /// al momento del share — los eventos posteriores se comparten explícitamente acá.
     /// </summary>
     public static void CompartirLectura(IOrganizationService servicio, EntityReference registro, Guid userId)
@@ -208,7 +208,7 @@ public static class Consultas
         return servicio.RetrieveMultiple(query).Entities.ToList();
     }
 
-    /// <summary>Snapshot del actor para eventos (doc 03 §4.6) — SIEMPRE del contexto, jamás del cliente.</summary>
+    /// <summary>Snapshot del actor para eventos — SIEMPRE del contexto, jamás del cliente.</summary>
     public static (string Nombre, string Email) SnapshotDeActor(IOrganizationService servicio, Guid userId)
     {
         var fila = servicio.Retrieve(SchemaNames.Usuario.Entidad, userId,
@@ -238,7 +238,7 @@ public static class Consultas
             ev[SchemaNames.Evento.DocumentHash] = documentHash;
         var id = servicio.Create(ev);
 
-        // Cada evento nuevo se comparte explícitamente (doc 03 §2: Share Cascade None).
+        // Cada evento nuevo se comparte explícitamente (Share Cascade None).
         if (lectores is not null)
         {
             var eventoRef = new EntityReference(SchemaNames.Evento.Entidad, id);

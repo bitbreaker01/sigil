@@ -1,8 +1,8 @@
-// sanic_sigil_capi_SearchDocuments (doc 05 — escala) — Unbound. Búsqueda PAGINADA de los documentos
+// sanic_sigil_capi_SearchDocuments — Unbound. Búsqueda PAGINADA de los documentos
 // en los que el llamante está involucrado (creados ∪ participados), con filtros, orden y paginación
 // del lado del servidor para que el cliente NUNCA cargue el set completo. El conjunto se carga con
 // queries simples (Equal/In — estilo de la casa, sin FetchXML ni LinkEntity) y el filtrado/orden/
-// paginado corre in-memory sobre el set ACOTADO del propio usuario. Solo lo PROPIO (doc 04 §3.3).
+// paginado corre in-memory sobre el set ACOTADO del propio usuario. Solo lo PROPIO.
 // Out: ResultsJson (la página), Total (total filtrado), NextPagingCookie (offset opaco, "" = última).
 
 using System;

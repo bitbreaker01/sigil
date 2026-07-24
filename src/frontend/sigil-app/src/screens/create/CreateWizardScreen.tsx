@@ -1,4 +1,4 @@
-// Create-request wizard shell (doc 05 §4.2): a 4-step stepper over useCreateWizard. Each step is
+// Create-request wizard shell: a 4-step stepper over useCreateWizard. Each step is
 // a presentational component; this shell owns navigation (Back/Next) and the step gating. On a
 // successful submit it shows the outcome and lets the user leave (onExit).
 

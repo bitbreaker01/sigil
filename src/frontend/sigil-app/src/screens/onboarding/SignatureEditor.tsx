@@ -1,4 +1,4 @@
-// Signature editor (RF-01): before saving, the user frames their signature — crop (locked to the 3:1
+// Signature editor: before saving, the user frames their signature — crop (locked to the 3:1
 // signature ratio so what they crop is exactly what appears, no letterbox), zoom, rotate, and flip
 // H/V. A live document preview updates as they adjust. All client-side (canvas); only on "Continue"
 // do we hand the edited PNG back for validation. Touch-friendly (react-easy-crop) for phone use.

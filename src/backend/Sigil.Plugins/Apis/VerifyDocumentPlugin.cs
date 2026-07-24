@@ -1,15 +1,15 @@
-// sanic_sigil_capi_VerifyDocument (RF-20/21, ADR-007, doc 04 §3.1) — Unbound.
+// sanic_sigil_capi_VerifyDocument — Unbound.
 // Dos modos: (a) por TransactionId (llega del QR / Detail) → constancia + veredicto contra ESE
 // finalhash; sin Sha256Hash, solo constancia. (b) por Sha256Hash SOLO → búsqueda en el ledger por
 // finalhash (soltás cualquier PDF sellado, como Adobe/DocuSign; hallado ⇒ auténtico e íntegro).
-// Verificación cruzada extendida (doc 03 §4.6): todos los documenthash de eventos de
+// Verificación cruzada extendida: todos los documenthash de eventos de
 // firma iguales entre sí e iguales al contenthash del ledger, y columnas de sistema de
 // esos eventos sin modificación posterior (modifiedon==createdon, modifiedby==createdby)
 // — con su límite declarado: no detiene a quien toma la identidad del motor ni al
 // sysadmin; para esos, la defensa es la evidencia externa (TSA).
 // La constancia incluye hash_final EN CLARO (no es secreto: describe un archivo ya
-// distribuido). Escribe el evento tipo 11 con actor (el tradeoff declarado del doc 04
-// §3.3: quien posee un txId obtiene metadatos, y su verificación queda registrada).
+// distribuido). Escribe el evento tipo 11 con actor (el tradeoff declarado:
+// quien posee un txId obtiene metadatos, y su verificación queda registrada).
 // Out: Found, IsIntact?, MetadataJson, TsaTokenBase64?.
 
 using System;
@@ -49,7 +49,7 @@ public class VerifyDocumentPlugin : SigilApiPlugin
         };
         // Modo por-txId: filtra por la transacción. Modo por-hash: filtra por finalhash (igualdad
         // insensible a mayúsculas en Dataverse). Quien busca por hash posee el archivo (sus bytes):
-        // mismo umbral de posesión que el txId del QR — no amplía la divulgación (doc 04 §3.3).
+        // mismo umbral de posesión que el txId del QR — no amplía la divulgación.
         if (txIdOpt is Guid txIdVal)
             q.Criteria.AddCondition(SchemaNames.Ledger.TransactionId, ConditionOperator.Equal, txIdVal);
         else
@@ -62,7 +62,7 @@ public class VerifyDocumentPlugin : SigilApiPlugin
             e.Output("MetadataJson", "{\"found\":false}");
 
             // Si veníamos por txId y la TRANSACCIÓN existe, la verificación se registra igual (el
-            // evento ancla a la transacción, no al ledger — doc 03 §4.6; RNF-04 captura toda
+            // evento ancla a la transacción, no al ledger — captura toda
             // verificación, incluida una sobre una tx aún sin sellar). Un txId inexistente —o una
             // búsqueda por hash sin coincidencia— no deja rastro (no hay ancla). Antagonista A3.
             if (txIdOpt is Guid txSinLedger && TransaccionExiste(e, txSinLedger, out var creadorSinLedger))
@@ -123,7 +123,7 @@ public class VerifyDocumentPlugin : SigilApiPlugin
         if (!string.IsNullOrEmpty(token))
             e.Output("TsaTokenBase64", token);
 
-        // Evento 11 (RNF-04): cada verificación queda registrada con su actor.
+        // Evento 11: cada verificación queda registrada con su actor.
         var (_, creador) = Consultas.EstadoYCreador(e.Servicio, txId);
         var lectores = LectoresDe(e, txId, creador);
         var actor = Consultas.SnapshotDeActor(e.Servicio, e.Llamante);
@@ -158,7 +158,7 @@ public class VerifyDocumentPlugin : SigilApiPlugin
             .ToList();
 
     /// <summary>
-    /// Verificación cruzada del historial (doc 03 §4.6): eventos de firma con documenthash
+    /// Verificación cruzada del historial: eventos de firma con documenthash
     /// homogéneo e igual al contenthash, sin señales de edición posterior.
     /// </summary>
     private static bool VerificarHistorial(EntornoDeApi e, Guid txId, string contentHash)

@@ -1,4 +1,4 @@
-// Reglas de autorización de negocio (doc 04 §3.3) — funciones PURAS: la cáscara net462
+// Reglas de autorización de negocio — funciones PURAS: la cáscara net462
 // resuelve identidades y estado contra Dataverse y delega acá la decisión.
 // Contrato: null = autorizado; string = motivo accionable del rechazo (va al
 // InvalidPluginExecutionException del plugin, jamás silencioso).
@@ -18,7 +18,7 @@ public static class ReglasDeAutorizacion
 {
     /// <summary>
     /// UpdateDraft / DeleteDraft (y a futuro SendTransaction): el llamante es el creador
-    /// (owner) Y el estado es Borrador. Doc 04 §3.3 fila 1.
+    /// (owner) Y el estado es Borrador.
     /// </summary>
     public static string? MotivoParaRechazarEdicionDeBorrador(Guid llamante, Guid creador, TransactionStatus estado)
     {
@@ -30,7 +30,7 @@ public static class ReglasDeAutorizacion
     }
 
     /// <summary>
-    /// CancelTransaction (T13, doc 04 §3.3): el llamante es el creador y el estado es
+    /// CancelTransaction (T13): el llamante es el creador y el estado es
     /// Pendiente de Firma, Firmado Parcialmente o Error de Sellado — jamás Sellando
     /// (el pipeline está trabajando) ni terminales.
     /// </summary>
@@ -46,7 +46,7 @@ public static class ReglasDeAutorizacion
     }
 
     /// <summary>
-    /// SubmitSignature / RejectTransaction (doc 04 §3.3): el llamante es participante de
+    /// SubmitSignature / RejectTransaction: el llamante es participante de
     /// ESA transacción con estado Turno Activo, y la transacción está en un estado firmable.
     /// Un Pendiente en secuencial no puede accionar: aún no le llegó el documento.
     /// </summary>
@@ -63,7 +63,7 @@ public static class ReglasDeAutorizacion
     }
 
     /// <summary>
-    /// GetDocumentContent (doc 04 §3.3): creador O participante; "final" solo en Completado;
+    /// GetDocumentContent: creador O participante; "final" solo en Completado;
     /// "content" para participantes solo desde Pendiente de Firma en adelante — la existencia
     /// del registro de participante NO implica que el documento ya le fue presentado.
     /// </summary>

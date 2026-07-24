@@ -1,5 +1,5 @@
 // Fixtures fabricadas en memoria (sin binarios en el repo): un PDF de una página y una
-// firma PNG que pasa los tres umbrales de ADR-009 (trazos negros sobre fondo transparente).
+// firma PNG que pasa los tres umbrales (trazos negros sobre fondo transparente).
 
 using PdfSharp.Pdf;
 using SixLabors.ImageSharp;

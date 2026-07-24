@@ -1,7 +1,8 @@
-// Los enums de Domain/ son el espejo en código del Apéndice A del doc 12 (valores REALES
+// Los enums de Domain/ son el espejo en código del Apéndice A
+// (docs/referencia/12-convenciones-nomenclatura.md) (valores REALES
 // del portal, prefijo 15946 — cotejados en el ambiente por CF-A16). Este test los mantiene
-// sincronizados con el doc: si el Apéndice cambia, esto se pone rojo ANTES que un flow
-// compare contra un número viejo. El doc 04 manda referenciar estados por nombre lógico,
+// sincronizados con el Apéndice: si el Apéndice cambia, esto se pone rojo ANTES que un flow
+// compare contra un número viejo. Los estados se referencian por nombre lógico,
 // jamás por número mágico — el número vive UNA vez, acá, verificado.
 
 using System.Globalization;
@@ -27,7 +28,7 @@ public class ChoicesTests
     public void CadaChoiceDelApendiceA_TieneSuEnumEnCore_ConLosMismosValores()
     {
         var apendice = LeerApendiceA();
-        Assert.Equal(5, apendice.Count); // los 5 choices globales del doc 03 §3
+        Assert.Equal(5, apendice.Count); // los 5 choices globales
 
         foreach (var (choice, opciones) in apendice)
         {
@@ -52,7 +53,7 @@ public class ChoicesTests
     [Fact]
     public void LosValores_UsanElOptionValuePrefixDelPublisher()
     {
-        // 15946 → 15946xxxx (doc 12 §2). Un valor fuera del prefijo = choice de otro publisher.
+        // 15946 → 15946xxxx (Apéndice A, docs/referencia/12-convenciones-nomenclatura.md). Un valor fuera del prefijo = choice de otro publisher.
         foreach (var enumType in Espejo.Values)
         foreach (var v in Enum.GetValues(enumType).Cast<object>())
             Assert.InRange(Convert.ToInt32(v), 159460000, 159469999);
@@ -87,7 +88,7 @@ public class ChoicesTests
     private static Dictionary<string, Dictionary<string, int>> LeerApendiceA()
     {
         var ruta = Path.Combine(BuscarRaizDelRepo(), "docs", "referencia", "12-convenciones-nomenclatura.md");
-        Assert.True(File.Exists(ruta), $"No se encontró el doc 12 en {ruta}.");
+        Assert.True(File.Exists(ruta), $"No se encontró el Apéndice A en {ruta}.");
 
         var resultado = new Dictionary<string, Dictionary<string, int>>();
         var patron = new Regex(@"^\|\s*(sanic_sigil_choice_\w+)\s*\|\s*(.+?)\s*\|\s*(\d+)\s*\|", RegexOptions.Compiled);

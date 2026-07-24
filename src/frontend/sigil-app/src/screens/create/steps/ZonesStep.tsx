@@ -1,4 +1,4 @@
-// Step 3 (doc 05 §6.3, RF-28): the zone editor. Signers place zones by drawing on the rendered
+// Step 3: the zone editor. Signers place zones by drawing on the rendered
 // PDF (no default position). Provides, besides drag/resize, numeric x/y/w/h inputs (accessibility
 // + precision) and a per-signer checklist that blocks the step until every signer has a zone.
 
@@ -73,7 +73,7 @@ export function ZonesStep({ wizard }: { wizard: CreateWizard }): JSX.Element {
   const armedSigner = wizard.draft.participants.find((p) => p.userId === armed);
   const armedColor = armed ? styleMap.get(armed)?.color : undefined;
 
-  // Numeric path (accessibility, §6.3): x/y move, width resizes; height is DERIVED to keep the
+  // Numeric path (accessibility): x/y move, width resizes; height is DERIVED to keep the
   // 3:1 signature ratio (setZoneField), so a zone can never distort the signature.
   const setCoord = (key: 'x' | 'y' | 'w', value: string) => {
     if (!selected || !size) return;

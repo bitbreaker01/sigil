@@ -1,12 +1,12 @@
-// Composición del documento final (ADR-011, doc 04 §6/§7 pasos 3-5): incrustar las firmas
+// Composición del documento final (pasos 3-5): incrustar las firmas
 // en sus zonas, agregar la hoja de cierre (con overflow), escribir los metadatos del
 // documento y serializar UNA SOLA VEZ (los bytes van a hash_final, TSA y upload).
 //
-// CORRECCIÓN DE DISEÑO (2026-07-16): el doc 04 §6.2/§7 paso 4 pedía imprimir el "número
+// CORRECCIÓN DE DISEÑO (2026-07-16): el paso 4 pedía imprimir el "número
 // de ledger" en la hoja/metadatos, pero el ledger (autonumber) nace en el paso 8 — DESPUÉS
-// del upload (orden mandatorio por idempotencia, §7). El número no puede conocerse al
+// del upload (orden mandatorio por idempotencia). El número no puede conocerse al
 // componer. La hoja imprime hash_contenido + URL de verificación + txId (que el QR ya
-// codifica); el número de ledger lo muestra la verificación (VerifyDocument). Enmienda en doc 04.
+// codifica); el número de ledger lo muestra la verificación (VerifyDocument).
 
 using System;
 using System.Collections.Generic;
@@ -53,7 +53,7 @@ public sealed class FirmanteEnHoja
 
 public static class ComposicionDeDocumento
 {
-    /// <summary>Firmantes por página de hoja de cierre — con más, overflow a páginas adicionales (ADR-011).</summary>
+    /// <summary>Firmantes por página de hoja de cierre — con más, overflow a páginas adicionales.</summary>
     public const int FirmantesPorHoja = 6;
 
     private static readonly object CandadoDeFuente = new();
@@ -61,7 +61,7 @@ public static class ComposicionDeDocumento
 
     /// <summary>
     /// Pipeline puro de composición: bytes del contenido aprobado → bytes del documento final.
-    /// UNA serialización (doc 04 §7 paso 5): el llamante calcula hash_final sobre el retorno.
+    /// UNA serialización (paso 5): el llamante calcula hash_final sobre el retorno.
     /// </summary>
     public static byte[] ComponerDocumentoFinal(
         byte[] contenidoPdf,
@@ -76,7 +76,7 @@ public static class ComposicionDeDocumento
         using var ms = new MemoryStream(contenidoPdf, 0, contenidoPdf.Length, writable: false, publiclyVisible: true);
         using var doc = PdfReader.Open(ms, PdfDocumentOpenMode.Modify);
 
-        // Paso 3 — incrustar cada firma en SUS zonas (contrato de coordenadas §6.1).
+        // Paso 3 — incrustar cada firma en SUS zonas (contrato de coordenadas).
         // El contenido ORIGINAL de cada página tocada se envuelve en q/Q UNA vez: un PDF
         // real puede terminar con la CTM alterada o estado gráfico sin balancear, y la
         // firma aterrizaría en cualquier lado (antagonista A8 — patrón estándar de stamping).
@@ -98,7 +98,7 @@ public static class ComposicionDeDocumento
             }
         }
 
-        // Paso 4a — hoja de cierre consolidada, con overflow (§6.2).
+        // Paso 4a — hoja de cierre consolidada, con overflow.
         AgregarHojasDeCierre(doc, firmantes, hashContenido, urlDeVerificacion, transactionId);
 
         // Paso 4b — metadatos del documento (visibles en las propiedades — enmienda: sin nº de ledger).
@@ -181,7 +181,7 @@ public static class ComposicionDeDocumento
                 ey += 90;
             }
 
-            // QR de verificación (§6.2) — solo en la última hoja, junto al pie.
+            // QR de verificación — solo en la última hoja, junto al pie.
             if (p == paginas - 1)
             {
                 var qr = QrPng($"{url}?screen=verify&txId={txId}");

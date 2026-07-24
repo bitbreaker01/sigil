@@ -1,4 +1,4 @@
-// Script de carrera de locks (doc 11 §3 / doc 04 §5) — LA validación que ningún stub da:
+// Script de carrera de locks — LA validación que ningún stub da:
 // la serialización real del lock de fila de SQL, ejercitada con requests CONCURRENTES
 // contra Dev. Los tests unitarios prueban la lógica post-lock con interleavings simulados;
 // esto prueba que el lock EXISTE y funciona bajo concurrencia real.
@@ -94,7 +94,7 @@ try
         (f.Id, new EntityReference(TxTable, txA))).ToList());
 
     // ── PRUEBA REAL DEL LOCK (antagonista C2): el conteo de IsLastSigner. Los dos modos de
-    //    falla del doc 04 §5 se cazan ACÁ: (a) zombi → nadie es último → ultimos==0;
+    //    falla se cazan ACÁ: (a) zombi → nadie es último → ultimos==0;
     //    (b) doble worker → varios se creen últimos → ultimos>1. El assert de ledger de más
     //    abajo NO prueba el lock (el alternate key de SQL lo haría pasar en verde aunque el
     //    lock falle en modo (b)) — valida el alternate key, que es una prueba distinta.
@@ -103,19 +103,19 @@ try
     if (errores.Count > 0)
         fallas.Add($"A: {errores.Count} firma(s) lanzaron excepción: {string.Join(" | ", errores.Select(e => e.Error))}");
     if (ultimos != 1)
-        fallas.Add($"A [PRUEBA DEL LOCK]: IsLastSigner=true apareció {ultimos} veces — DEBE ser exactamente 1 (doc 04 §5: exactamente uno ve cero pendientes). {ultimos} = lock roto ({(ultimos == 0 ? "modo zombi" : "doble worker")}).");
+        fallas.Add($"A [PRUEBA DEL LOCK]: IsLastSigner=true apareció {ultimos} veces — DEBE ser exactamente 1 (exactamente uno ve cero pendientes). {ultimos} = lock roto ({(ultimos == 0 ? "modo zombi" : "doble worker")}).");
 
     var estadoA = EsperarSellandoOcompletado(admin, txA);
     if (estadoA is not (Sellando or Completado))
         fallas.Add($"A: la transacción quedó en estado {estadoA}, no Sellando/Completado (¿zombi?).");
 
-    // el worker debe converger a Completado con UN solo ledger (valida el alternate key, doc 03 §4.4)
+    // el worker debe converger a Completado con UN solo ledger (valida el alternate key)
     var estadoFinalA = EsperarEstado(admin, txA, Completado, 180);
     if (estadoFinalA != Completado)
         fallas.Add($"A: no llegó a Completado en 180 s (estado {estadoFinalA}).");
     var ledgersA = ContarLedgers(admin, txA);
     if (ledgersA != 1)
-        fallas.Add($"A [alternate key]: hay {ledgersA} ledgers — el alternate key debía garantizar 1 (doc 03 §4.4).");
+        fallas.Add($"A [alternate key]: hay {ledgersA} ledgers — el alternate key debía garantizar 1.");
     var firmadosA = ContarParticipantes(admin, txA, Firmado);
     if (firmadosA != firmantes.Count)
         fallas.Add($"A: {firmadosA}/{firmantes.Count} participantes quedaron Firmado.");
@@ -307,8 +307,8 @@ void LimpiarTx(ServiceClient client, Guid txId)
 {
     try
     {
-        // event y ledger son Delete Restrict hacia la tx (doc 03 §2): borrar primero.
-        // participant y zona son Cascade All → caen con la tx (doc 03 §2 líneas 44-45),
+        // event y ledger son Delete Restrict hacia la tx: borrar primero.
+        // participant y zona son Cascade All → caen con la tx,
         // no hace falta borrarlos a mano.
         foreach (var tabla in new[] { "sanic_sigil_tbl_event", "sanic_sigil_tbl_ledgerentry" })
         {

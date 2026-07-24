@@ -1,9 +1,9 @@
-// XObject de imagen escrito A MANO (hallazgo del spike 2026-07-15, doc 04 §1/§10):
+// XObject de imagen escrito A MANO (hallazgo del spike 2026-07-15):
 // el importador PNG de PDFsharp (XImage.FromStream) devuelve null dentro del sandbox
 // net462 — las imágenes se incrustan como dict /Image con stream RGB FlateDecode +
 // /SMask DeviceGray para el alfa, y el operador Do en el content stream. VALIDADO en
 // el sandbox real (spike v1.0.8: smaskFound=true, roundtrip OK). Portado del spike con
-// la matriz cm generalizada (rotaciones — doc 04 §6.1).
+// la matriz cm generalizada (rotaciones).
 
 using System;
 using System.Globalization;

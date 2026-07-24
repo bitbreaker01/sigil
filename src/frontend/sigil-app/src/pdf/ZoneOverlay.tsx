@@ -1,5 +1,5 @@
-// Zone editor overlay (doc 05 §6.3, RF-28). Absolutely positioned over the rendered PDF page.
-// Signers place their signature zones by DRAWING a rectangle (no default position, RF-28) and
+// Zone editor overlay. Absolutely positioned over the rendered PDF page.
+// Signers place their signature zones by DRAWING a rectangle (no default position) and
 // then dragging/resizing it. Everything is kept in the shared %-coordinate contract (zoom
 // independent) — px is only a transient view computed from the rendered canvas size.
 

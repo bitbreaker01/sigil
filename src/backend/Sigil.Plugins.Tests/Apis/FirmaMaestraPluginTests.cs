@@ -1,4 +1,4 @@
-// sanic_sigil_capi_ValidateMasterSignature + GetMasterSignature (ADR-009, doc 03 §4.5).
+// sanic_sigil_capi_ValidateMasterSignature + GetMasterSignature.
 // Los asserts del versionado: cada carga válida crea una versión NUEVA, exactamente una
 // vigente por usuario, el historial jamás se pisa. Un rechazo es VEREDICTO (IsValid=false),
 // no excepción, y no crea nada.
@@ -73,7 +73,7 @@ public class FirmaMaestraPluginTests
         Assert.Equal("image/png", _arnes.Archivos.MimeTypes[clave]);
     }
 
-    [Fact] // versionado doc 03 §4.5: nueva vigente + anterior desactivada, historial intacto
+    [Fact] // versionado: nueva vigente + anterior desactivada, historial intacto
     public void Validate_Resubida_CreaLaV2_YDesactivaLaV1_SinBorrarNada()
     {
         var png = Convert.ToBase64String(ArnesDeApi.PngDeFirmaQueValida());
@@ -139,7 +139,7 @@ public class FirmaMaestraPluginTests
         Assert.Contains("base64", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact] // orden mandatorio: tamaño ANTES de decodificar (doc 04 §3.4)
+    [Fact] // orden mandatorio: tamaño ANTES de decodificar
     public void Validate_SobreElLimiteDeCarga_FallaPorTamano_NoPorDecodificacion()
     {
         var gigante = new string('!', 150 * 10 * 1024 * 4 / 3 + 200); // > 10×maxKB y ni siquiera base64
@@ -167,7 +167,7 @@ public class FirmaMaestraPluginTests
         Assert.IsType<DateTime>(_arnes.Contexto.OutputParameters["ValidatedOn"]);
     }
 
-    [Fact] // doc 04 §3.3: SOLO la firma propia — la de otro usuario es invisible
+    [Fact] // SOLO la firma propia — la de otro usuario es invisible
     public void Get_DevuelveLaFirmaDelLlamante_NoLaDeOtro()
     {
         Validar(Convert.ToBase64String(ArnesDeApi.PngDeFirmaQueValida()), _usuario);
@@ -186,7 +186,7 @@ public class FirmaMaestraPluginTests
         Assert.Equal(0, arr.GetArrayLength());
     }
 
-    [Fact] // doc 03 §4.5: todas las versiones, más nueva primero, con la vigente marcada y su imagen
+    [Fact] // todas las versiones, más nueva primero, con la vigente marcada y su imagen
     public void History_TrasDosCargas_DevuelveAmbasVersiones_MasNuevaPrimero_ConVigenteMarcada()
     {
         var png = Convert.ToBase64String(ArnesDeApi.PngDeFirmaQueValida());
@@ -204,7 +204,7 @@ public class FirmaMaestraPluginTests
         Assert.NotEqual("0001-01-01T00:00:00.0000000", arr[0].GetProperty("validatedOn").GetString());
     }
 
-    [Fact] // doc 04 §3.3: el historial es SOLO el propio
+    [Fact] // el historial es SOLO el propio
     public void History_SoloDelLlamante_NoDeOtro()
     {
         Validar(Convert.ToBase64String(ArnesDeApi.PngDeFirmaQueValida()), _usuario);
@@ -226,7 +226,7 @@ public class FirmaMaestraPluginTests
         Assert.Empty(_arnes.Archivos.Subidas);
     }
 
-    [Fact] // #2: el historial trae los documentos firmados con cada versión (doc 03 §4.5)
+    [Fact] // #2: el historial trae los documentos firmados con cada versión
     public void History_TraeLosDocumentosFirmadosConCadaVersion()
     {
         var v1 = _arnes.SembrarFirmaMaestra(_usuario, ArnesDeApi.PngDeFirmaQueValida(), version: 1, vigente: true);

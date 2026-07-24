@@ -1,4 +1,4 @@
-// MOCK implementation of SigilApi (doc 11 §2 — declared limit: it does not replace the smokes
+// MOCK implementation of SigilApi (declared limit: it does not replace the smokes
 // against Dev). In-memory data that mimics the real backend's behavior just enough to develop
 // and test the UI without an environment. It validates NO security (that's the backend's job) —
 // it only produces responses with the correct shape.
@@ -85,7 +85,7 @@ export class MockSigilApi implements SigilApi {
   private readonly events = new Map<string, EventView[]>();
   private readonly docs = new Map<string, string>(); // txId → PdfBase64 (kept out of the app's Query cache)
   private masterSignature: string | undefined;
-  private readonly signatureVersions: MasterSignatureVersion[] = []; // immutable history (doc 03 §4.5)
+  private readonly signatureVersions: MasterSignatureVersion[] = []; // immutable history
   private seq = 1;
 
   constructor(private readonly seed: Seed = {
@@ -111,13 +111,13 @@ export class MockSigilApi implements SigilApi {
     return FAKE_USERS.filter((u) => u.name.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q));
   }
 
-  // Preview only (RF-02): validate WITHOUT persisting — the UI confirms before replacing.
+  // Preview only: validate WITHOUT persisting — the UI confirms before replacing.
   async validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput> {
     await this.delay();
     return this.validateSignature(imageBase64);
   }
 
-  // Commit: validate again and, if valid, create the new immutable active version (doc 03 §4.5).
+  // Commit: validate again and, if valid, create the new immutable active version.
   async saveMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput> {
     await this.delay();
     const r = this.validateSignature(imageBase64);
