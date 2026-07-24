@@ -39,8 +39,15 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Setup .NET 8 (runtime del pac CLI)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
       - name: Instalar Power Platform CLI (pac)
-        uses: microsoft/powerplatform-actions/actions-install@v1
+        run: |
+          dotnet tool install --global Microsoft.PowerApps.CLI.Tool
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Descargar el zip UNMANAGED del Release
         env:

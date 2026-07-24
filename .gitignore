@@ -17,3 +17,7 @@ dist/
 # Artefactos locales
 *.tsr
 TestResults/
+
+# Solución: los zips van a Releases (no al árbol); unpack-inspect es temporal
+*.zip
+unpack-inspect/
