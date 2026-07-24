@@ -1,9 +1,9 @@
 // Sigil.Deploy — despliegue del backend en Dev por SDK puro (sin pac CLI).
-//   Registra el plugin package sanic_Sigil y las 4 Custom APIs de negocio (spec: ApiSpec.cs),
+//   Registra el plugin package sanic_Sigil y las 17 Custom APIs de negocio (spec: ApiSpec.cs),
 //   idempotente (re-corre sin duplicar), y las coloca en la solución sigil_core_sigil.
 //
 // Modos:
-//   (default)  despliega: package + espera plugintypes + upsert de las 4 APIs.
+//   (default)  despliega: package + espera plugintypes + upsert de las 17 APIs.
 //   --grant    agrega al rol del SP los privilegios prv* para registrar plugins/APIs y sale.
 //   --package-only   solo (re)sube el package (sin tocar APIs).
 //   --interactive (o --user)   fuerza login interactivo (browser) en vez del SP.
@@ -90,7 +90,7 @@ if (packageOnly)
     return 0;
 }
 
-// ── 4. Upsert de las 4 Custom APIs ─────────────────────────────────────────
+// ── 4. Upsert de las 17 Custom APIs ────────────────────────────────────────
 foreach (var api in Catalogo.Apis)
 {
     Console.WriteLine($"[4] {api.UniqueName} ...");
