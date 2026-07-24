@@ -33,13 +33,13 @@ como **base64 por Custom API**. Toda escritura ocurre en los plugins, bajo conte
 | 00 | **[Índice](00-indice.md)** | Esta página: qué hay acá y panorama de las piezas | ✅ |
 | 01 | **[Arquitectura](01-arquitectura.md)** | Diagrama de piezas, ciclo de vida de una firma (estados + transiciones), modelo de confianza | ✅ |
 | 02 | **[Estructura y build](02-estructura-y-build.md)** | Árbol del repo, tabla de proyectos .NET, cómo buildear/correr/testear cada pieza, prerequisitos | ✅ |
-| 03 | **Backend / plugins** | El framework `SigilApiPlugin`, anatomía de un handler, el lock de fila, las 17 Custom APIs | ⏳ pendiente |
-| 04 | **Sellado y criptografía** | El worker asíncrono, doble hash, TSA RFC 3161, incrustación de PNG, hoja de cierre | ⏳ pendiente |
-| 05 | **Firma maestra** | Validación/normalización del PNG, versionado, contrato de coordenadas | ⏳ pendiente |
-| 06 | **Frontend** | El seam de datos (`SigilApi`), mock vs real, `PowerProvider`, navegación, pdf.js, i18n | ⏳ pendiente |
-| 07 | **Deploy y ALM** | La herramienta de despliegue, el pipeline de solución (sync/release), Releases y metadata | ⏳ pendiente |
-| 08 | **Testing y CI** | La pirámide de tests, el stub de `IOrganizationService`, conformidad, carrera de locks, los jobs de CI | ⏳ pendiente |
-| 09 | **Cómo extender** | Agregar una Custom API, agregar una pantalla, la regla de oro (backend decide, frontend orquesta) | ⏳ pendiente |
+| 03 | **[Backend / plugins](03-backend.md)** | El framework `SigilApiPlugin`, anatomía de un handler, el lock de fila, las 17 Custom APIs | ✅ |
+| 04 | **[Sellado y criptografía](04-sellado-y-cripto.md)** | El worker asíncrono, doble hash, TSA RFC 3161, incrustación de PNG, hoja de cierre | ✅ |
+| 05 | **[Firma maestra](05-firma-maestra.md)** | Validación/normalización del PNG, versionado, contrato de coordenadas | ✅ |
+| 06 | **[Frontend](06-frontend.md)** | El seam de datos (`SigilApi`), mock vs real, `PowerProvider`, navegación, pdf.js, i18n | ✅ |
+| 07 | **[Deploy y ALM](07-deploy-y-alm.md)** | La herramienta de despliegue, el pipeline de solución (sync/release), Releases y metadata | ✅ |
+| 08 | **[Testing y CI](08-testing-y-ci.md)** | La pirámide de tests, el stub de `IOrganizationService`, conformidad, carrera de locks, los jobs de CI | ✅ |
+| 09 | **[Cómo extender](09-como-extender.md)** | Agregar una Custom API, agregar una pantalla, la regla de oro (backend decide, frontend orquesta) | ✅ |
 
-> Los documentos 03–09 están planificados; hoy existen los que aparecen marcados ✅. Mientras tanto,
-> la [Guía del Desarrollador](../guias/04-guia-desarrollador.md) cubre esos temas a nivel panorámico.
+> Los diez documentos están completos (✅). Esta carpeta es el detalle; para el panorama de alto nivel,
+> la [Guía del Desarrollador](../guias/04-guia-desarrollador.md) sigue siendo la puerta de entrada.
