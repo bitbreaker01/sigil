@@ -83,7 +83,7 @@ function ok(result: { success: boolean; data: unknown; error?: unknown }): unkno
   return result.data;
 }
 
-// ── Schema (doc 12). Primary keys = logical name + "id"; lookups read as `_<attr>_value`. ──
+// ── Schema. Primary keys = logical name + "id"; lookups read as `_<attr>_value`. ──
 const COL = {
   txId: 'sanic_sigil_tbl_transactionid',
   partId: 'sanic_sigil_tbl_participantid',

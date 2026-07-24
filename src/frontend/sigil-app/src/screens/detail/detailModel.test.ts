@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { eventLabelKey, participantLabelKey, terminationReason, canCancel, canRetry, canDownloadFinal, isVerificationEvent } from './detailModel';
 import type { EventView } from '../../api/SigilApi';
 
-// Choice values (doc 12 Apéndice A) referenced only in this test.
+// Choice values referenced only in this test.
 const DRAFT = 159460000, PENDING = 159460001, PARTIAL = 159460002, SEALING = 159460003;
 const COMPLETED = 159460004, REJECTED = 159460005, EXPIRED = 159460006, SEAL_ERROR = 159460007, CANCELLED = 159460008;
 

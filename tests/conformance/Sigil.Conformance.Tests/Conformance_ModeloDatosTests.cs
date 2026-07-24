@@ -9,7 +9,7 @@ using Microsoft.Xrm.Sdk.Metadata;
 
 /// <summary>
 /// Conformidad del MODELO DE DATOS — CF-A16/A17/A18.
-/// CF-A16: valores de choices del ambiente == Apéndice A (docs/referencia/12-convenciones-nomenclatura.md) (lo que consumen los flows).
+/// CF-A16: valores de choices del ambiente == Apéndice A (docs/referencia/catalogo-de-choices.md) (lo que consumen los flows).
 /// CF-A17: cada columna existe con su tipo Y SU BINDING (a qué choice apunta cada Picklist,
 ///         a qué tabla cada Lookup — sin binding, el tipo solo es un falso verde).
 /// CF-A18: autonumber del ledger con el formato exacto.
@@ -94,7 +94,7 @@ public class Conformance_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper
     private static Dictionary<string, Dictionary<string, int>> LeerApendiceA()
     {
         var raiz = BuscarRaizDelRepo();
-        var ruta = Path.Combine(raiz, "docs", "referencia", "12-convenciones-nomenclatura.md");
+        var ruta = Path.Combine(raiz, "docs", "referencia", "catalogo-de-choices.md");
         Assert.True(File.Exists(ruta), $"No se encontró el Apéndice A en {ruta}.");
 
         var resultado = new Dictionary<string, Dictionary<string, int>>();

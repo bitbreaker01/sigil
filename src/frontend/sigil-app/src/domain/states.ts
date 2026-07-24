@@ -2,7 +2,7 @@
 // (159460xxx); the UI maps them to a stable logical name, and EVERY visible label comes from
 // i18n indexed by that name. Showing a formatted value directly is an i18n bug.
 //
-// The numeric values are those of Appendix A (doc 12) — the ONLY place they live in the
+// The numeric values are those of the Choices Catalog (docs/referencia/catalogo-de-choices.md) — the ONLY place they live in the
 // frontend, right here, verified against the backend. The rest of the code uses logical names.
 
 export type TransactionState =

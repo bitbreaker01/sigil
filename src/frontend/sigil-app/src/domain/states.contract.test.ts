@@ -2,13 +2,13 @@
 //
 // The numeric choice values live in exactly ONE place in the frontend: the maps in `states.ts`
 // (powerApps.ts and everything else derive from them). Those numbers mirror Appendix A in
-// docs/referencia/12-convenciones-nomenclatura.md — the same source the backend enums are tested
+// docs/referencia/catalogo-de-choices.md — the same source the backend enums are tested
 // against. This test imports that Appendix (Vite `?raw`) and asserts the value SETS match exactly,
 // so a change to the choices in Dataverse can't silently drift the UI (e.g. a "Sealing" tx rendering
 // as "Pending") without turning a test red.
 
 import { describe, it, expect } from 'vitest';
-import appendixMd from '../../../../../docs/referencia/12-convenciones-nomenclatura.md?raw';
+import appendixMd from '../../../../../docs/referencia/catalogo-de-choices.md?raw';
 import { TRANSACTION_STATE, PARTICIPANT_STATE, TSA_STATE, EVENT_TYPE, ROUTING_STATE } from './states';
 
 // Parse Appendix A → choice logical name → set of numeric values. Same table shape the backend parses.
@@ -34,7 +34,7 @@ function appendixA(): Map<string, Set<number>> {
 const appendix = appendixA();
 const asc = (s: Iterable<number>): number[] => [...s].sort((a, b) => a - b);
 
-describe('states.ts mirrors Appendix A (docs/referencia/12) — the frontend twin of ChoicesTests', () => {
+describe('states.ts mirrors the Choices Catalog — the frontend twin of ChoicesTests', () => {
   it('parsed the Appendix (the 5 global choices are present)', () => {
     expect([...appendix.keys()].sort()).toEqual([
       'sanic_sigil_choice_eventtype',

@@ -1,5 +1,5 @@
 // Los enums de Domain/ son el espejo en código del Apéndice A
-// (docs/referencia/12-convenciones-nomenclatura.md) (valores REALES
+// (docs/referencia/catalogo-de-choices.md) (valores REALES
 // del portal, prefijo 15946 — cotejados en el ambiente por CF-A16). Este test los mantiene
 // sincronizados con el Apéndice: si el Apéndice cambia, esto se pone rojo ANTES que un flow
 // compare contra un número viejo. Los estados se referencian por nombre lógico,
@@ -53,7 +53,7 @@ public class ChoicesTests
     [Fact]
     public void LosValores_UsanElOptionValuePrefixDelPublisher()
     {
-        // 15946 → 15946xxxx (Apéndice A, docs/referencia/12-convenciones-nomenclatura.md). Un valor fuera del prefijo = choice de otro publisher.
+        // 15946 → 15946xxxx (Apéndice A, docs/referencia/catalogo-de-choices.md). Un valor fuera del prefijo = choice de otro publisher.
         foreach (var enumType in Espejo.Values)
         foreach (var v in Enum.GetValues(enumType).Cast<object>())
             Assert.InRange(Convert.ToInt32(v), 159460000, 159469999);
@@ -87,7 +87,7 @@ public class ChoicesTests
 
     private static Dictionary<string, Dictionary<string, int>> LeerApendiceA()
     {
-        var ruta = Path.Combine(BuscarRaizDelRepo(), "docs", "referencia", "12-convenciones-nomenclatura.md");
+        var ruta = Path.Combine(BuscarRaizDelRepo(), "docs", "referencia", "catalogo-de-choices.md");
         Assert.True(File.Exists(ruta), $"No se encontró el Apéndice A en {ruta}.");
 
         var resultado = new Dictionary<string, Dictionary<string, int>>();

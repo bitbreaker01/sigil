@@ -1,4 +1,4 @@
-// Espejo en código del Apéndice A (docs/referencia/12-convenciones-nomenclatura.md) — valores REALES del portal (prefijo 15946).
+// Espejo en código del Catálogo de Choices (docs/referencia/catalogo-de-choices.md) — valores REALES del portal (prefijo 15946).
 // Sincronización garantizada por ChoicesTests (contra el doc) y CF-A16 (doc contra ambiente).
 // El resto del código referencia SIEMPRE estos nombres lógicos, jamás números.
 
