@@ -19,8 +19,14 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag del Release a procesar (ej. v1.1.0.4)"
+        description: "Tag del Release a procesar (ej. sol-v1.1.0.4)"
         required: true
+  workflow_call: # lo invoca solution-release (Nivel 2) después de crear el Release
+    inputs:
+      tag:
+        description: "Tag del Release a procesar"
+        required: true
+        type: string
 
 permissions:
   contents: write # commitea la metadata de vuelta a main

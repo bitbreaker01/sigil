@@ -1,0 +1,80 @@
+# ALM de la solución — NIVEL 2 (un botón).
+#
+# Manual (vos):     apretás "Run workflow" y ponés la versión (ej. 1.1.0.4).
+# Automático (esto): con el Service Principal, EXPORTA managed+unmanaged de Dev, crea el Release con
+#                   los dos zips, y llama al Nivel 1 (solution-sync) para el unpack + commit de metadata.
+#
+# Requiere los secretos del environment 'dev': SIGIL_DATAVERSE_URL, SIGIL_CLIENT_ID,
+# SIGIL_CLIENT_SECRET, SIGIL_TENANT_ID. El SP debe poder EXPORTAR la solución en Dev.
+name: solution-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión de la solución para el tag (ej. 1.1.0.4)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: solution-release
+  cancel-in-progress: false
+
+jobs:
+  export-and-release:
+    runs-on: ubuntu-latest
+    environment: dev # secretos del Service Principal
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup .NET 8 (runtime del pac CLI)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Instalar Power Platform CLI (pac)
+        run: |
+          dotnet tool install --global Microsoft.PowerApps.CLI.Tool
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Autenticar el Service Principal a Dev
+        env:
+          URL: ${{ secrets.SIGIL_DATAVERSE_URL }}
+          APPID: ${{ secrets.SIGIL_CLIENT_ID }}
+          SECRET: ${{ secrets.SIGIL_CLIENT_SECRET }}
+          TENANT: ${{ secrets.SIGIL_TENANT_ID }}
+        run: |
+          pac auth create --url "$URL" --applicationId "$APPID" --clientSecret "$SECRET" --tenant "$TENANT"
+
+      - name: Exportar la solución (managed + unmanaged)
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          pac solution export --path out/sigil_core_sigil_unmanaged.zip --name sigil_core_sigil --managed false --overwrite
+          pac solution export --path out/sigil_core_sigil_managed.zip   --name sigil_core_sigil --managed true  --overwrite
+          ls -1 out
+
+      - name: Crear el Release con los dos zips
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "sol-v$VERSION" \
+            out/sigil_core_sigil_unmanaged.zip out/sigil_core_sigil_managed.zip \
+            --title "Solucion sigil_core_sigil $VERSION" \
+            --notes "Export automático (managed + unmanaged) desde Dev vía Service Principal."
+
+  # Reusa el Nivel 1: unpack del unmanaged + prune + commit de la metadata en solutions/unpacked/.
+  sync:
+    needs: export-and-release
+    permissions:
+      contents: write
+    uses: ./.github/workflows/solution-sync.yml
+    with:
+      tag: sol-v${{ inputs.version }}
