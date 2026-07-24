@@ -1,6 +1,6 @@
 # Guías de Sigil — Índice
 
-**Qué es esto:** la documentación **orientada a quien usa y opera Sigil**, separada de la documentación de construcción (`docs/fase-0`, `fase-1`, `runbooks`, `alm`, que cuentan *cómo se construyó*). Acá está el *cómo se usa*.
+**Qué es esto:** la documentación **orientada a quien usa y opera Sigil** — cómo se usa, se administra, se audita y se extiende. Es la documentación viva y de referencia del proyecto.
 
 **Sigil** es la plataforma de **firma digital con evidencia criptográfica**: permite enviar documentos PDF a firmar, firmarlos, sellarlos con una marca de tiempo confiable, y **verificar** después que un documento es auténtico e íntegro.
 
