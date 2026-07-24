@@ -86,7 +86,7 @@ public class ChoicesTests
 
     private static Dictionary<string, Dictionary<string, int>> LeerApendiceA()
     {
-        var ruta = Path.Combine(BuscarRaizDelRepo(), "docs", "fase-0", "12-convenciones-nomenclatura.md");
+        var ruta = Path.Combine(BuscarRaizDelRepo(), "docs", "referencia", "12-convenciones-nomenclatura.md");
         Assert.True(File.Exists(ruta), $"No se encontró el doc 12 en {ruta}.");
 
         var resultado = new Dictionary<string, Dictionary<string, int>>();
