@@ -1,6 +1,6 @@
-// sanic_sigil_capi_DeleteDraft (doc 04 §3.1) — Bound. Borra un borrador.
-// Lock + autorización (creador + Borrador). Orden de borrado de T3 (doc 06 §2):
-// los EVENTOS primero (la relación transacción→evento es Delete Restrict — doc 03 §2:
+// sanic_sigil_capi_DeleteDraft — Bound. Borra un borrador.
+// Lock + autorización (creador + Borrador). Orden de borrado de T3:
+// los EVENTOS primero (la relación transacción→evento es Delete Restrict:
 // el historial no se borra en cascada), después la transacción (participantes y zonas
 // caen por cascada parental).
 
@@ -15,7 +15,7 @@ public class DeleteDraftPlugin : SigilApiPlugin
     protected override void Ejecutar(EntornoDeApi e)
     {
         var target = e.Target;
-        LockDeFila.Tomar(e.Servicio, target.Id); // SIEMPRE primero (doc 04 §5)
+        LockDeFila.Tomar(e.Servicio, target.Id); // SIEMPRE primero
 
         var (estado, creador) = Consultas.EstadoYCreador(e.Servicio, target.Id);
         var motivo = ReglasDeAutorizacion.MotivoParaRechazarEdicionDeBorrador(e.Llamante, creador, estado);

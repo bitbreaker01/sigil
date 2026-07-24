@@ -1,4 +1,4 @@
-// Read-only zone overlay for the Sign screen (doc 05 §4.3): the signer SEES where their signature
+// Read-only zone overlay for the Sign screen: the signer SEES where their signature
 // will land — and, when their Master Signature is available, the actual signature is rendered INSIDE
 // their zones (stretched to fill, exactly as the sealing engine embeds it), so "what you see is what
 // gets stamped". Other signers' zones are shown neutral. No interaction (this is consent).

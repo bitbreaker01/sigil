@@ -1,9 +1,9 @@
-// sanic_sigil_capi_ProcessReminders (RF-12, doc 04 §3.1) — job diario. Selecciona
+// sanic_sigil_capi_ProcessReminders — job diario. Selecciona
 // participantes en Turno Activo CUYA transacción está en Pendiente de Firma o Firmado
-// Parcialmente (FILTRO OBLIGATORIO — doc 06 §3: los participantes conservan Turno Activo
+// Parcialmente (FILTRO OBLIGATORIO: los participantes conservan Turno Activo
 // como verdad histórica en estados terminales; sin el filtro, el job recordaría muertas
 // eternamente), con recordatorio vencido por cadencia. Actualiza lastreminderon, crea
-// eventos tipo 5, y devuelve RemindersJson AUTOSUFICIENTE (doc 04 §4 / doc 08 W3: el
+// eventos tipo 5, y devuelve RemindersJson AUTOSUFICIENTE (el
 // flow NO hace lookups para componer la notificación).
 
 using System;
@@ -49,11 +49,11 @@ public class ProcessRemindersPlugin : SigilApiPlugin
                 transacciones[txId] = tx;
             }
 
-            // FILTRO OBLIGATORIO por estado de la transacción (doc 06 §3): los participantes
+            // FILTRO OBLIGATORIO por estado de la transacción: los participantes
             // conservan Turno Activo como verdad histórica en estados terminales — sin esto
             // recordaríamos muertas eternamente. LÍMITE de escala declarado (antagonista A2):
             // el filtro es en memoria, así que el job lee todos los Turno Activo históricos;
-            // aceptable para el volumen de Sigil (doc 03 §9). Si crece, empujar a SQL con un
+            // aceptable para el volumen de Sigil. Si crece, empujar a SQL con un
             // LinkEntity de estado.
             var estadoTx = (TransactionStatus)tx.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.Status).Value;
             if (estadoTx is not (TransactionStatus.PendienteDeFirma or TransactionStatus.FirmadoParcialmente))
@@ -90,7 +90,7 @@ public class ProcessRemindersPlugin : SigilApiPlugin
                 expiresOnUtc = tx.GetAttributeValue<DateTime?>(SchemaNames.Tx.ExpiresOn)?.ToString("o") ?? string.Empty,
             });
 
-            // lastreminderon evita duplicados del flow diario (doc 03 §4.2).
+            // lastreminderon evita duplicados del flow diario.
             var marca = new Entity(SchemaNames.Participante.Entidad, p.Id);
             marca[SchemaNames.Participante.LastReminderOn] = ahora;
             e.Servicio.Update(marca);
@@ -106,7 +106,7 @@ public class ProcessRemindersPlugin : SigilApiPlugin
             recordatorios.Count, activos.Count);
     }
 
-    /// <summary>uilanguageid de usersettings del firmante (RNF-06) — null si no está disponible.</summary>
+    /// <summary>uilanguageid de usersettings del firmante — null si no está disponible.</summary>
     private static int? LcidDe(EntornoDeApi e, Guid userId)
     {
         var q = new QueryExpression("usersettings") { ColumnSet = new ColumnSet("uilanguageid") };

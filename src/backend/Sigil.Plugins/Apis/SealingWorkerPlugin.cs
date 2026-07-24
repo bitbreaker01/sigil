@@ -1,7 +1,7 @@
-// WORKER DE SELLADO (ADR-011, doc 04 §7) — step ASÍNCRONO en Update de la transacción
+// WORKER DE SELLADO — step ASÍNCRONO en Update de la transacción
 // (filtering attribute: sanic_sigil_status, post-operation). El corazón probatorio.
 //
-// GUARDS (un guard mal puesto mata el pipeline; uno de menos lo corrompe — doc 04 §7):
+// GUARDS (un guard mal puesto mata el pipeline; uno de menos lo corrompe):
 //   - Depth > 8 → abortar con trace (anti-loop). JAMÁS `Depth > 1`: el worker corre
 //     legítimamente con Depth ≥ 2 (lo dispara el Update de SubmitSignature/RetrySealing).
 //   - Post-image con status == Sellando → candidato; otro valor → return (neutraliza el
@@ -12,7 +12,7 @@
 //     recomponer ni re-subir: el hash del ledger describe bytes que YA existen.
 //   - Final file existente SIN ledger → re-descargar ESOS bytes exactos, recalcular
 //     hash_final de lo durable, re-pedir TSA y crear el ledger — jamás subir un segundo
-//     archivo (la serialización PDF no es determinística — doc 04 §7 "Idempotencia").
+//     archivo (la serialización PDF no es determinística — "Idempotencia").
 //
 // FALLOS: transitorio (download/upload/BD) → InvalidPluginExecutionException con
 // OperationStatus.Retry (la plataforma reintenta hasta 4 — re-entra por el flujo
@@ -44,7 +44,7 @@ public class SealingWorkerPlugin : IPlugin
         var sellador = serviceProvider.GetService(typeof(ISelladorTsa)) as ISelladorTsa
                        ?? new SelladorTsaReal();
 
-        // ── Guard anti-loop (umbral ALTO — doc 04 §7: Depth>1 desactivaría el sellado) ──
+        // ── Guard anti-loop (umbral ALTO — Depth>1 desactivaría el sellado) ──
         if (contexto.Depth > 8)
         {
             trace.Trace("SealingWorker: Depth={0} > 8 — abortando (anti-loop).", contexto.Depth);
@@ -56,7 +56,7 @@ public class SealingWorkerPlugin : IPlugin
         // dejaría el sellado muerto para siempre). Status ≠ Sellando = auto-retrigger legítimo.
         if (!contexto.PostEntityImages.TryGetValue("PostImage", out var postImage))
             throw new InvalidPluginExecutionException(
-                "SealingWorker: el step no trae la post-image 'PostImage' — registro del step corrupto (Runbook D §CF-D09).");
+                "SealingWorker: el step no trae la post-image 'PostImage' — registro del step corrupto.");
         if (postImage.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.Status)?.Value
             != (int)TransactionStatus.Sellando)
         {
@@ -77,8 +77,8 @@ public class SealingWorkerPlugin : IPlugin
         catch (System.ServiceModel.FaultException<OrganizationServiceFault> ex)
         {
             // Fallo de PLATAFORMA (deadlock de BD, timeout, servicio ocupado): TRANSITORIO por
-            // contrato (doc 04 §7) — el reintento re-entra por el flujo idempotente. Un fault
-            // no-transitorio real agota los 4 retries y cae al saneamiento T14 (doc 06 R7).
+            // contrato — el reintento re-entra por el flujo idempotente. Un fault
+            // no-transitorio real agota los 4 retries y cae al saneamiento T14.
             trace.Trace("SealingWorker: fault de plataforma ({0}): {1}", ex.Detail?.ErrorCode, ex.Message);
             throw Transitorio($"fault de plataforma {ex.Detail?.ErrorCode}: {ex.Message}");
         }
@@ -96,7 +96,7 @@ public class SealingWorkerPlugin : IPlugin
     private static void Sellar(IOrganizationService servicio, IFileTransfer archivos,
         ISelladorTsa sellador, ITracingService trace, Guid txId)
     {
-        // ── Lock + re-lectura del estado ACTUAL (los guards del doc 04 §7) ──
+        // ── Lock + re-lectura del estado ACTUAL (los guards del worker) ──
         LockDeFila.Tomar(servicio, txId);
         var tx = servicio.Retrieve(SchemaNames.Tx.Entidad, txId, new ColumnSet(
             SchemaNames.Tx.Status, SchemaNames.Tx.ContentHash, SchemaNames.Tx.Name,
@@ -151,7 +151,7 @@ public class SealingWorkerPlugin : IPlugin
         }
 
         var datosFirmantes = CargarDatosDeFirmantes(servicio, participantes);
-        var env = new EnvVars(servicio); // UNA instancia: el caché por-ejecución no se parte (doc 04 §8)
+        var env = new EnvVars(servicio); // UNA instancia: el caché por-ejecución no se parte
 
         if (!finalYaSubido)
         {
@@ -226,7 +226,7 @@ public class SealingWorkerPlugin : IPlugin
                 tsa.Exitoso ? tsa.Endpoint : string.Join(" | ", tsa.Errores));
         }
 
-        // ── Paso 7: subir el final ANTES del ledger (orden mandatorio — idempotencia §7) ──
+        // ── Paso 7: subir el final ANTES del ledger (orden mandatorio — idempotencia) ──
         if (!finalYaSubido)
         {
             try
@@ -241,7 +241,7 @@ public class SealingWorkerPlugin : IPlugin
 
         // ── Paso 8: crear el ledger (el alternate key hace el insert idempotente) ──
         var ledger = new Entity(SchemaNames.Ledger.Entidad);
-        // JAMÁS pasar sanic_sigil_name: pisaría el autonumber (doc 03 §4.4)
+        // JAMÁS pasar sanic_sigil_name: pisaría el autonumber
         ledger[SchemaNames.Ledger.TransactionId] = txRef;
         ledger[SchemaNames.Ledger.ContentHash] = contentHashEsperado;
         ledger[SchemaNames.Ledger.FinalHash] = finalHash;
@@ -258,7 +258,7 @@ public class SealingWorkerPlugin : IPlugin
             ex.Detail?.ErrorCode is -2147088238 /* DuplicateRecordEntityKey (alternate key) */
                 or -2147220937 /* DuplicateRecord */)
         {
-            // Carrera de sellados: el alternate key la resolvió a nivel BD (doc 03 §4.4).
+            // Carrera de sellados: el alternate key la resolvió a nivel BD.
             // JAMÁS matchear por texto del mensaje: cambia por idioma (antagonista C1).
             trace.Trace("SealingWorker: ledger duplicado ({0}) — carrera perdida limpiamente, continúa el paso 9.",
                 ex.Detail.ErrorCode);
@@ -266,8 +266,8 @@ public class SealingWorkerPlugin : IPlugin
 
         // ── Verificación del ANCLA (antagonista C3): el worker es asíncrono y el lock no
         // sostiene la serialización entre ejecuciones — antes de completar, el archivo
-        // durable DEBE hashear al ledger. Un mismatch acá es el escenario prohibido del
-        // doc 04 §7: jamás se completa con evidencia inconsistente.
+        // durable DEBE hashear al ledger. Un mismatch acá es el escenario prohibido:
+        // jamás se completa con evidencia inconsistente.
         var ledgerFinal = LedgerDe(servicio, txId)
             ?? throw new InvalidOperationException("el ledger desapareció tras crearse.");
         VerificarAnclaOFallar(servicio, archivos, trace, txId, txRef, ledgerFinal);
@@ -313,7 +313,7 @@ public class SealingWorkerPlugin : IPlugin
     private static string SignerSummary(Entity tx, IReadOnlyList<DatosDeFirmante> firmantes,
         TsaStatus tsaStatus, ResultadoTsa? tsa)
     {
-        // Formato del doc 04 §4 (sanic_sigil_signersummary) — insumo de la pantalla de verificación.
+        // Formato de sanic_sigil_signersummary — insumo de la pantalla de verificación.
         var routing = (RoutingType)tx.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.RoutingType).Value;
         return System.Text.Json.JsonSerializer.Serialize(new
         {
@@ -356,9 +356,9 @@ public class SealingWorkerPlugin : IPlugin
     }
 
     /// <summary>
-    /// El ancla de ADR-011: el archivo final durable DEBE hashear al finalhash del ledger.
+    /// El ancla probatoria: el archivo final durable DEBE hashear al finalhash del ledger.
     /// Un mismatch significa interleaving de sellados concurrentes (el worker es asíncrono:
-    /// el lock no serializa entre ejecuciones) — JAMÁS se completa así (doc 04 §7).
+    /// el lock no serializa entre ejecuciones) — JAMÁS se completa así.
     /// </summary>
     private static void VerificarAnclaOFallar(IOrganizationService servicio, IFileTransfer archivos,
         ITracingService trace, Guid txId, EntityReference txRef, Entity ledger)
@@ -395,7 +395,7 @@ public class SealingWorkerPlugin : IPlugin
         try
         {
             // Revalidar el estado ACTUAL: jamás pisar un Completado ajeno ni reescribir un
-            // Error de Sellado ya puesto (doc 08 §7 — el status idéntico dispara los flows).
+            // Error de Sellado ya puesto (el status idéntico dispara los flows).
             var (estado, creador) = Consultas.EstadoYCreador(servicio, txId);
             if (estado is TransactionStatus.Completado or TransactionStatus.ErrorDeSellado)
             {

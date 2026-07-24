@@ -1,15 +1,15 @@
-// Motor de la Firma Maestra (ADR-009, RF-01/02): validación de los TRES parámetros por
+// Motor de la Firma Maestra: validación de los TRES parámetros por
 // cómputo local sobre píxeles (canal alfa por inspección directa, contraste RMS por
 // histograma, nitidez por varianza de Laplaciano) + normalización a las dimensiones
-// estándar con salida PNG RGBA 8-bit NO entrelazado (contrato del doc 04 §4 — el mismo
+// estándar con salida PNG RGBA 8-bit NO entrelazado (el mismo
 // formato que el spike validó contra el motor PDF).
 //
 // Semántica de las métricas (definición canónica — el frontend espeja los mensajes):
 //   - alphaRatio: fracción de píxeles TOTALMENTE transparentes (alfa == 0). Una foto de
-//     firma sobre papel es 100% opaca → 0.0 → rechazo (RF-02 exige fondo transparente).
+//     firma sobre papel es 100% opaca → 0.0 → rechazo (se exige fondo transparente).
 //   - rmsContrast: RMS del APARTAMIENTO de la tinta respecto del fondo blanco — sobre los
 //     píxeles NO transparentes: sqrt(mean(((255 − L)/255)²)) con L = luminancia BT.601
-//     compuesta. CALIBRACIÓN (2026-07-16, mandato del doc 04 §4 "calibrar en la
+//     compuesta. CALIBRACIÓN (2026-07-16, mandato de "calibrar en la
 //     implementación"): el RMS global de toda la imagen castiga a las firmas legítimas de
 //     trazo fino (5% de cobertura de tinta negra da ~0.21 global < 0.25) — la intención del
 //     umbral es "trazo suficientemente oscuro", no "mucha tinta". Tinta negra → ~1.0;
@@ -42,7 +42,7 @@ public sealed class ResultadoDeFirma
     public bool EsValida { get; }
     public IReadOnlyList<string> Motivos { get; }
 
-    /// <summary>JSON con las métricas medidas — va a validationdetails (auditoría, doc 03 §4.5).</summary>
+    /// <summary>JSON con las métricas medidas — va a validationdetails (auditoría).</summary>
     public string MetricsJson { get; }
 
     /// <summary>Solo cuando EsValida: el PNG normalizado que se persiste e incrusta.</summary>
@@ -73,7 +73,7 @@ public static class MotorDeFirmaMaestra
         if (info is null || formato is null)
             return Rechazo("La imagen no se pudo decodificar — subí un PNG válido.");
         if (!string.Equals(formato.Name, "PNG", StringComparison.OrdinalIgnoreCase))
-            return Rechazo($"El archivo debe ser PNG (recibido: {formato.Name}) — doc 04 §3.4.");
+            return Rechazo($"El archivo debe ser PNG (recibido: {formato.Name}).");
         if (info.Width > MaxDimensionPx || info.Height > MaxDimensionPx)
             return Rechazo($"La imagen es demasiado grande ({info.Width}×{info.Height} px; máximo {MaxDimensionPx}×{MaxDimensionPx}). Exportá la firma en menor resolución.");
 
@@ -121,7 +121,7 @@ public static class MotorDeFirmaMaestra
         }
     }
 
-    // ── métricas (ADR-009) ───────────────────────────────────────────────────
+    // ── métricas ─────────────────────────────────────────────────────────────
 
     private readonly struct Metricas(double alphaRatio, double rmsContrast, double laplacianVariance)
     {
@@ -181,7 +181,7 @@ public static class MotorDeFirmaMaestra
         return new Metricas((double)transparentes / (w * h), rms, lapVar);
     }
 
-    // ── normalización (Q-05 / ADR-009) ───────────────────────────────────────
+    // ── normalización ────────────────────────────────────────────────────────
 
     private static byte[] Normalizar(Image<Rgba32> original, SignatureSpec spec)
     {
@@ -200,7 +200,7 @@ public static class MotorDeFirmaMaestra
         using var ms = new MemoryStream();
         lienzo.Save(ms, new PngEncoder
         {
-            // Contrato del doc 04 §4: RGBA 8-bit NO entrelazado (lo que el motor PDF espera).
+            // Contrato: RGBA 8-bit NO entrelazado (lo que el motor PDF espera).
             ColorType = PngColorType.RgbWithAlpha,
             BitDepth = PngBitDepth.Bit8,
             InterlaceMethod = PngInterlaceMode.None,

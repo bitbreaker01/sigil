@@ -1,4 +1,4 @@
-// M5 — Sellado canónico (doc 11 §4, ADR-011): composición del documento final.
+// M5 — Sellado canónico: composición del documento final.
 // Asserts: incrustación en la página correcta (matriz en el content stream + /SMask),
 // hoja de cierre agregada, OVERFLOW con 12+ firmantes, QR presente, metadatos con el
 // hash y SIN número de ledger (corrección de diseño 2026-07-16 — el autonumber nace
@@ -49,7 +49,7 @@ public class ComposicionDeDocumentoTests
         Assert.Contains("306 0 0 198 61.2 435.6 cm", OpsDeContenido(doc.Pages[0]));
     }
 
-    [Fact] // ADR-011: overflow — 13 firmantes a 6 por hoja = 3 hojas de cierre
+    [Fact] // overflow — 13 firmantes a 6 por hoja = 3 hojas de cierre
     public void M5_ConTreceFirmantes_LaHojaDesborda_ATresPaginas()
     {
         var firmantes = Enumerable.Range(1, 13).Select(i => Firmante($"Firmante {i}")).ToList();
@@ -74,14 +74,14 @@ public class ComposicionDeDocumentoTests
         Assert.DoesNotContain("SIGIL-", doc.Info.Keywords); // el formato del autonumber no puede estar
     }
 
-    [Fact] // el QR codifica el deep link canónico (doc 04 §6.2): AppPlayUrl + screen=verify&txId
+    [Fact] // el QR codifica el deep link canónico: AppPlayUrl + screen=verify&txId
     public void M5_ElQr_CodificaElDeepLinkDeVerificacion()
     {
         var final = ComposicionDeDocumento.ComponerDocumentoFinal(
             PdfBase(1), [], [Firmante("A")], Hash, Url, TxId);
 
         // el QR es una imagen — verificamos la existencia del XObject del QR en la hoja;
-        // la decodificación visual del deep link queda para el gate manual (doc 09).
+        // la decodificación visual del deep link queda para el gate manual.
         using var doc = PdfReader.Open(new MemoryStream(final), PdfDocumentOpenMode.Import);
         Assert.Contains("SigQr0", NombresDeXObjects(doc.Pages[1]));
     }

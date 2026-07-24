@@ -1,7 +1,7 @@
-// sanic_sigil_capi_GetMasterSignatureHistory (doc 04 §3.1, doc 03 §4.5) — Unbound. Devuelve el
+// sanic_sigil_capi_GetMasterSignatureHistory — Unbound. Devuelve el
 // HISTORIAL de Firmas Maestras del llamante (versionado inmutable): cada versión con su PNG
-// normalizado, número, fecha de validación y si es la vigente. Solo el historial PROPIO
-// (doc 04 §3.3). Sin firmas: HistoryJson = "[]" (no es error). Salida como JSON (una Custom API
+// normalizado, número, fecha de validación y si es la vigente. Solo el historial PROPIO.
+// Sin firmas: HistoryJson = "[]" (no es error). Salida como JSON (una Custom API
 // no devuelve colecciones nativas — mismo patrón que VerifyDocument.MetadataJson).
 
 using System;
@@ -20,7 +20,7 @@ public class GetMasterSignatureHistoryPlugin : SigilApiPlugin
     {
         var versiones = Consultas.HistorialDeFirmaDe(e.Servicio, e.Llamante); // más nuevo primero
 
-        // Documentos firmados con cada versión (doc 03 §4.5): participante FIRMADO → su transacción,
+        // Documentos firmados con cada versión: participante FIRMADO → su transacción,
         // agrupado por la versión de firma usada. Batch: una query de firmas + una de nombres.
         var idsVersion = versiones.Select(v => v.Id).ToList();
         var firmas = Consultas.FirmasPorVersionDeFirma(e.Servicio, idsVersion);

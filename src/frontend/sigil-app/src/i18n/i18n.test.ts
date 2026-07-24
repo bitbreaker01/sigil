@@ -1,4 +1,4 @@
-// M11 (doc 11 §4) — completeness of i18n resources and consistency of states by logical name.
+// M11 — completeness of i18n resources and consistency of states by logical name.
 // The completeness test is defense in depth: `en satisfies Resources` already guarantees it
 // at compile time, but a nested object with missing keys could slip through — here we close that.
 

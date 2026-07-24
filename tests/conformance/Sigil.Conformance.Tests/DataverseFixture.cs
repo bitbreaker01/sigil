@@ -4,9 +4,9 @@ using Microsoft.PowerPlatform.Dataverse.Client;
 
 /// <summary>
 /// Conexión compartida de la suite de conformidad.
-/// Config por variables de entorno del runner (jamás en el repo — doc 07 §4):
+/// Config por variables de entorno del runner (jamás en el repo):
 ///   SIGIL_DATAVERSE_URL   — https://{org}.crm.dynamics.com
-///   SIGIL_CLIENT_ID       — app registration del Service Principal (doc 09 §7.4)
+///   SIGIL_CLIENT_ID       — app registration del Service Principal
 ///   SIGIL_CLIENT_SECRET   — para el runner de conformidad; la credencial productiva es certificado
 /// (El tenant se descubre desde la URL del org — `TenantId` NO es un parámetro del
 /// connection string de ServiceClient; verificado contra la referencia de XRM Tooling.)
@@ -23,7 +23,7 @@ public sealed class DataverseFixture : IDisposable
         var url = Environment.GetEnvironmentVariable("SIGIL_DATAVERSE_URL");
         if (string.IsNullOrWhiteSpace(url))
         {
-            SkipReason = "SIGIL_DATAVERSE_URL no configurada: aún no hay ambiente Dev (Runbook A pendiente).";
+            SkipReason = "SIGIL_DATAVERSE_URL no configurada: el ambiente Dev aún no está aprovisionado.";
             return;
         }
 

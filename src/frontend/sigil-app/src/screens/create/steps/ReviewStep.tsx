@@ -1,5 +1,5 @@
-// Step 4 (doc 05 §4.2): review → send or save draft. "Send" is blocked (with the who-is-missing
-// indicator) until every signer has a zone (RF-28); "Save draft" is allowed incomplete.
+// Step 4: review → send or save draft. "Send" is blocked (with the who-is-missing
+// indicator) until every signer has a zone; "Save draft" is allowed incomplete.
 
 import { makeStyles, tokens, Text, Button, MessageBar, MessageBarBody, Divider, Spinner } from '@fluentui/react-components';
 import { useT } from '../../../i18n/useT';

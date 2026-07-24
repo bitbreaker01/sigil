@@ -100,13 +100,13 @@ foreach (var api in Catalogo.Apis)
     Console.WriteLine($"[4]   OK ({api.RequestParams.Length} params, {api.ResponseProps.Length} response props).");
 }
 
-// ── 4b. Step ASÍNCRONO del worker de sellado (doc 04 §7) ────────────────────
+// ── 4b. Step ASÍNCRONO del worker de sellado ────────────────────
 RegistrarStepDelWorker(client, typePorNombre[Catalogo.WorkerPluginType]);
 
 // ── 5. Valores de env vars que el backend LEE (sin ellos las APIs no funcionan) ──
-// Solo los que el código desplegado consume hoy (doc 04 §3.4). El resto de la config
-// por-ambiente (TsaEndpoints, AppPlayUrl…) se setea cuando su consumidor se despliega
-// (doc 09 §6). En Test/Prod estos valores viajan/ajustan por el pipeline, no por acá.
+// Solo los que el código desplegado consume hoy. El resto de la config
+// por-ambiente (TsaEndpoints, AppPlayUrl…) se setea cuando su consumidor se despliega.
+// En Test/Prod estos valores viajan/ajustan por el pipeline, no por acá.
 foreach (var (schema, valor) in Catalogo.EnvValues)
     UpsertEnvValue(client, schema, valor);
 
@@ -158,7 +158,7 @@ static string LeerVersionDelNupkg(byte[] nupkg)
 }
 
 // Crea o actualiza un registro pasándolo por la solución sigil_core_sigil (SolutionUniqueName
-// hace que el componente quede DENTRO de la solución — clave para el pipeline ALM, doc 09 §4).
+// hace que el componente quede DENTRO de la solución — clave para el pipeline ALM).
 static Guid CrearEnSolucion(ServiceClient client, Entity e)
 {
     var req = new CreateRequest { Target = e };
@@ -234,9 +234,9 @@ static Guid UpsertCustomApi(ServiceClient client, CustomApiSpec api, Guid plugin
         client.Update(new Entity("customapi", id)
         {
             ["description"] = api.Description,
-            // false: los clientes tipados del frontend (doc 05 — power-apps add-dataverse-api) y el
+            // false: los clientes tipados del frontend (power-apps add-dataverse-api) y el
             // picker de "unbound action" de los cloud flows LEEN del $metadata, que IsPrivate=true
-            // oculta. Reconcilia doc 04 §3 (donde era true como "higiene de metadata"): IsPrivate NO
+            // oculta (donde era true como "higiene de metadata"): IsPrivate NO
             // es control de acceso — la seguridad real son Execute Privileges + autorización en el plugin.
             ["isprivate"] = false,
             ["executeprivilegename"] = api.PrivilegioEfectivo,
@@ -255,7 +255,7 @@ static Guid UpsertCustomApi(ServiceClient client, CustomApiSpec api, Guid plugin
         ["description"] = api.Description,
         ["bindingtype"] = new OptionSetValue(api.BindingType),
         ["isfunction"] = false,
-        ["isprivate"] = false, // ver nota en el update de arriba (reconciliación doc 04↔05: el frontend/flows leen del $metadata)
+        ["isprivate"] = false, // ver nota en el update de arriba (el frontend/flows leen del $metadata)
         ["executeprivilegename"] = api.PrivilegioEfectivo,
         ["allowedcustomprocessingsteptype"] = new OptionSetValue(0), // None
         ["plugintypeid"] = new EntityReference("plugintype", pluginTypeId),
@@ -294,7 +294,7 @@ static void ReemplazarRequestParams(ServiceClient client, Guid apiId, CustomApiS
         });
 }
 
-// Step ASÍNCRONO del worker (doc 04 §7): Update de sanic_sigil_tbl_transaction, filtering
+// Step ASÍNCRONO del worker: Update de sanic_sigil_tbl_transaction, filtering
 // attribute sanic_sigil_status, post-operation (40), modo async (1), con POST-IMAGE del
 // status (el guard del worker la exige). Idempotente por nombre.
 static void RegistrarStepDelWorker(ServiceClient client, Guid workerTypeId)
@@ -345,11 +345,11 @@ static void RegistrarStepDelWorker(ServiceClient client, Guid workerTypeId)
         ["sdkmessageid"] = new EntityReference("sdkmessage", updateMsg.Id),
         ["sdkmessagefilterid"] = new EntityReference("sdkmessagefilter", filter.Id),
         ["stage"] = new OptionSetValue(40),          // post-operation
-        ["mode"] = new OptionSetValue(1),            // ASÍNCRONO (doc 04 §7)
+        ["mode"] = new OptionSetValue(1),            // ASÍNCRONO
         ["rank"] = 1,
-        ["filteringattributes"] = "sanic_sigil_status", // jamás locktoken (doc 03 §4.1)
+        ["filteringattributes"] = "sanic_sigil_status", // jamás locktoken
         ["asyncautodelete"] = true,                  // higiene de system jobs exitosos
-        ["description"] = "Pipeline de sellado (ADR-011): compone, sella con TSA y crea el ledger.",
+        ["description"] = "Pipeline de sellado: compone, sella con TSA y crea el ledger.",
     };
     var stepId = CrearEnSolucion(client, step);
     Console.WriteLine($"[4b] step del worker creado: {stepId}");

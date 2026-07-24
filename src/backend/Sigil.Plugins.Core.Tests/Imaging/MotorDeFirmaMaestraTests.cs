@@ -1,4 +1,4 @@
-// M8 — Normalización de firma (doc 11 §4, ADR-009): umbrales de alfa / contraste RMS /
+// M8 — Normalización de firma: umbrales de alfa / contraste RMS /
 // varianza de Laplaciano con imágenes SINTÉTICAS límite; salida PNG RGBA 8-bit no
 // entrelazado. Las imágenes se fabrican en memoria (sin binarios en el repo), con el
 // mismo patrón de trazos del spike que validó ImageSharp en el sandbox.
@@ -15,7 +15,7 @@ public class MotorDeFirmaMaestraTests
     private static readonly SignatureSpec Spec = SignatureSpec.Parse(
         """{ "targetWidthPx": 600, "targetHeightPx": 200, "maxKB": 150, "minAlphaRatio": 0.15, "minRmsContrast": 0.25, "minLaplacianVar": 80 }""");
 
-    // ── el spec se parsea del env JSON (doc 04 §4) ───────────────────────────
+    // ── el spec se parsea del env JSON ───────────────────────────
 
     [Fact]
     public void Spec_SeParsea_DelJsonCanonicoDelDoc04()
@@ -34,7 +34,7 @@ public class MotorDeFirmaMaestraTests
         Assert.ThrowsAny<Exception>(() => SignatureSpec.Parse("no es json"));
     }
 
-    // ── M8: los tres umbrales de ADR-009 con imágenes límite ────────────────
+    // ── M8: los tres umbrales con imágenes límite ────────────────
 
     [Fact]
     public void M8_FirmaValida_PasaLosTresUmbrales()
@@ -46,7 +46,7 @@ public class MotorDeFirmaMaestraTests
         Assert.NotNull(r.MetricsJson);
     }
 
-    [Fact] // RF-02 — sin fondo transparente (foto de firma sobre papel) → rechazo con motivo
+    [Fact] // sin fondo transparente (foto de firma sobre papel) → rechazo con motivo
     public void M8_SinTransparencia_EsRechazada_PorAlfa()
     {
         var r = MotorDeFirmaMaestra.Procesar(FirmaOpacaSobreBlanco(), Spec);
@@ -75,7 +75,7 @@ public class MotorDeFirmaMaestraTests
                                         m.Contains("borrosa", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact] // no-PNG (JPEG) → rechazo por formato (doc 04 §3.4: PNG decodificable)
+    [Fact] // no-PNG (JPEG) → rechazo por formato (PNG decodificable)
     public void M8_FormatoNoPng_EsRechazado()
     {
         using var img = new Image<Rgba32>(100, 50);
@@ -149,7 +149,7 @@ public class MotorDeFirmaMaestraTests
             Assert.Contains(r.Motivos, m => m.Contains("transparen", StringComparison.OrdinalIgnoreCase));
     }
 
-    // ── normalización (Q-05 / ADR-009): contrato de salida exacto ────────────
+    // ── normalización (Q-05): contrato de salida exacto ────────────
 
     [Fact]
     public void M8_Normalizacion_EmiteExactamenteLasDimensionesEstandar_RgbaNoEntrelazado()
@@ -185,7 +185,7 @@ public class MotorDeFirmaMaestraTests
         Assert.Equal(0, n[594, 100].A);
     }
 
-    [Fact] // el MetricsJson es parseable y trae las tres métricas (auditoría — doc 03 §4.5)
+    [Fact] // el MetricsJson es parseable y trae las tres métricas (auditoría)
     public void M8_MetricsJson_TraeLasTresMetricas()
     {
         var r = MotorDeFirmaMaestra.Procesar(FirmaValida(), Spec);

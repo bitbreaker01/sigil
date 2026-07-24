@@ -1,9 +1,9 @@
-// Typed contracts for the 16 Custom APIs (EXACT mirror of doc 04 §3.1 and of what the
+// Typed contracts for the 16 Custom APIs (EXACT mirror of what the
 // backend actually returns). These types are the TS MIRROR of the clients that
 // `power-apps add-dataverse-api` generates in `generated/` — when the CLI runs, its types
-// must match these (a broken build = broken-contract alarm, doc 05 §10).
+// must match these (a broken build = broken-contract alarm).
 
-// ── JSON contracts (doc 04 §4) ──
+// ── JSON contracts ──
 export interface ParticipantInput {
   userId: string;
   order?: number; // sequential only
@@ -12,7 +12,7 @@ export interface ParticipantInput {
 export interface ZoneInput {
   userId: string;
   page: number;
-  x: number; // % of the visible area, origin top-left (doc 04 §6.1)
+  x: number; // % of the visible area, origin top-left
   y: number;
   w: number;
   h: number;
@@ -75,7 +75,7 @@ export interface GetMasterSignatureOutput {
   ValidatedOn?: string; // ISO UTC
 }
 
-// Two verification modes (doc 04 §3.1):
+// Two verification modes:
 //  - by TransactionId (arrived via QR / Detail): compare the file hash to THAT sealed record;
 //    without Sha256Hash ⇒ certificate only.
 //  - by Sha256Hash alone (drop any sealed PDF): ledger lookup by hash — the backend finds the
@@ -92,7 +92,7 @@ export interface VerifyDocumentOutput {
   TsaTokenBase64?: string;
 }
 
-// The metadata that VerifyDocument serializes (doc 04 §3.1 VerifyDocumentPlugin).
+// The metadata that VerifyDocument serializes (VerifyDocumentPlugin).
 export interface VerifyMetadata {
   found: boolean;
   ledgerNumber?: string;
@@ -106,7 +106,7 @@ export interface VerifyMetadata {
   verifiedOnUtc?: string;
 }
 
-// signersummary from the ledger (doc 04 §4) — shown in the certificate.
+// signersummary from the ledger — shown in the certificate.
 export interface SignerSummary {
   signers: { name: string; email: string; signedOnUtc: string | null }[];
   routing: 'sequential' | 'parallel';

@@ -5,14 +5,15 @@ using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
 
 /// <summary>
-/// Conformidad de los pasos fundacionales del Runbook A (doc 09 §7) — IDs CF-A*.
-/// Cada test es la PRUEBA DE EXISTENCIA de un paso manual (doc 11 §1 regla 5):
-/// rojo hasta que el paso se ejecuta; verde cuando quedó como el doc 03/12 especifica.
+/// Conformidad de los pasos fundacionales — IDs CF-A*.
+/// Cada test es la PRUEBA DE EXISTENCIA de un paso manual:
+/// rojo hasta que el paso se ejecuta; verde cuando quedó como el Apéndice A
+/// (docs/referencia/12-convenciones-nomenclatura.md) especifica.
 /// </summary>
 [Collection("dataverse")]
-public class RunbookA_FundacionesTests(DataverseFixture fx, ITestOutputHelper output)
+public class Conformance_FundacionesTests(DataverseFixture fx, ITestOutputHelper output)
 {
-    // ── Paso 2 del Runbook A: publisher ──────────────────────────────────────
+    // ── Paso 2: publisher ──────────────────────────────────────
 
     [SkippableFact] // CF-A01
     public void CF_A01_PublisherSanic_ExisteConPrefijoCorrecto()
@@ -27,13 +28,13 @@ public class RunbookA_FundacionesTests(DataverseFixture fx, ITestOutputHelper ou
         var publishers = client.RetrieveMultiple(query).Entities;
 
         Assert.True(publishers.Count == 1,
-            $"Debe existir exactamente un publisher con Name (nombre único) = 'Sistemas_Abiertos_Nicaragua' (doc 12 §2). {DiagnosticoPublishers(client)}");
+            $"Debe existir exactamente un publisher con Name (nombre único) = 'Sistemas_Abiertos_Nicaragua' (Apéndice A, docs/referencia/12-convenciones-nomenclatura.md). {DiagnosticoPublishers(client)}");
         Assert.Equal("sanic", publishers[0].GetAttributeValue<string>("customizationprefix"));
         Assert.Equal("Sistemas Abiertos Nicaragua", publishers[0].GetAttributeValue<string>("friendlyname"));
     }
 
     /// <summary>Cuando el publisher esperado no aparece, listar lo que SÍ hay — diagnóstico accionable:
-    /// distingue "el Name no coincide con la convención (doc 12 §2)" de "la URL apunta a otro ambiente".</summary>
+    /// distingue "el Name no coincide con la convención (Apéndice A, docs/referencia/12-convenciones-nomenclatura.md)" de "la URL apunta a otro ambiente".</summary>
     private static string DiagnosticoPublishers(Microsoft.PowerPlatform.Dataverse.Client.ServiceClient client)
     {
         var todos = client.RetrieveMultiple(new QueryExpression("publisher")
@@ -45,7 +46,7 @@ public class RunbookA_FundacionesTests(DataverseFixture fx, ITestOutputHelper ou
             $"Name='{p.GetAttributeValue<string>("uniquename")}' Prefix='{p.GetAttributeValue<string>("customizationprefix")}' Display='{p.GetAttributeValue<string>("friendlyname")}'"));
 
         return $"Publishers presentes en este ambiente ({todos.Count}): {lista}. " +
-               "Si tu publisher aparece con otro Name: el campo 'Name' quedó autogenerado — ver instrucciones del Runbook A §A2. " +
+               "Si tu publisher aparece con otro Name: el campo 'Name' quedó autogenerado. " +
                "Si solo ves los de sistema (Default, microsoft…): la SIGIL_DATAVERSE_URL apunta a OTRO ambiente.";
     }
 
@@ -68,8 +69,8 @@ public class RunbookA_FundacionesTests(DataverseFixture fx, ITestOutputHelper ou
         // LÍMITE HONESTO de este test: la plataforma restringe el valor a 10000–99999 y el maker
         // portal autogenera uno — lo único detectable acá es el 10000 del Default Publisher.
         // La garantía REAL del paso 4 del checklist es la tabla canónica de choices que este
-        // valor alimenta (apéndice del doc 12 — bloqueante para los flows, doc 08 §2).
-        output.WriteLine($"Option Value Prefix del publisher 'sanic': {optionValuePrefix} → registrar en el apéndice del doc 12.");
+        // valor alimenta (Apéndice A, docs/referencia/12-convenciones-nomenclatura.md — bloqueante para los flows).
+        output.WriteLine($"Option Value Prefix del publisher 'sanic': {optionValuePrefix} → registrar en el Apéndice A.");
         Assert.NotEqual(10000, optionValuePrefix);
     }
 
@@ -94,7 +95,7 @@ public class RunbookA_FundacionesTests(DataverseFixture fx, ITestOutputHelper ou
         Assert.Equal("Sistemas_Abiertos_Nicaragua", ((Microsoft.Xrm.Sdk.AliasedValue)solution["pub.uniquename"]).Value);
     }
 
-    // ── Paso "modelo de datos" (doc 03 — se construye en F1): las 6 tablas ───
+    // ── Paso "modelo de datos" (se construye en F1): las 6 tablas ───
 
     [SkippableTheory] // CF-A04
     [InlineData("sanic_sigil_tbl_transaction")]
@@ -118,12 +119,12 @@ public class RunbookA_FundacionesTests(DataverseFixture fx, ITestOutputHelper ou
         }
         catch (System.ServiceModel.FaultException)
         {
-            // Fallo LEGIBLE para quien ejecuta el Runbook, no un stack trace de plataforma.
-            Assert.Fail($"La tabla '{logicalName}' no existe todavía en el ambiente (doc 03 §4 — paso 7 del checklist F1).");
+            // Fallo LEGIBLE para quien ejecuta la suite, no un stack trace de plataforma.
+            Assert.Fail($"La tabla '{logicalName}' no existe todavía en el ambiente (paso 7 del checklist F1).");
         }
     }
 
-    // ── Ledger: ownership y alternate key ACTIVO (docs 03 §4.4, 04 §9, 07 §2) ─
+    // ── Ledger: ownership y alternate key ACTIVO ─
 
     [SkippableFact] // CF-A05
     public void CF_A05_Ledger_EsOrganizationOwned()
@@ -138,7 +139,7 @@ public class RunbookA_FundacionesTests(DataverseFixture fx, ITestOutputHelper ou
         Assert.Equal(OwnershipTypes.OrganizationOwned, response.EntityMetadata.OwnershipType);
     }
 
-    [SkippableFact] // CF-A06 — el gate 1 del Runbook B, como test
+    [SkippableFact] // CF-A06 — un gate post-import, como test
     public void CF_A06_Ledger_AlternateKeyDeTransaccion_EstaACTIVO()
     {
         var client = fx.RequireClient();
@@ -157,13 +158,13 @@ public class RunbookA_FundacionesTests(DataverseFixture fx, ITestOutputHelper ou
             k.KeyAttributes is { Length: 1 } attrs && attrs[0] == "sanic_sigil_transactionid");
 
         Assert.True(txKey is not null,
-            "Debe existir el alternate key sobre sanic_sigil_transactionid — la idempotencia del sellado depende de él (doc 04 §7).");
+            "Debe existir el alternate key sobre sanic_sigil_transactionid — la idempotencia del sellado depende de él.");
         Assert.True(string.Equals(txKey!.EntityKeyIndexStatus.ToString(), "Active", StringComparison.Ordinal),
             $"El índice del alternate key debe estar ACTIVE (estado actual: {txKey.EntityKeyIndexStatus}). " +
-            "Se crea asíncronamente al importar; ante Failed → ReactivateEntityKey (doc 09 gate 1).");
+            "Se crea asíncronamente al importar; ante Failed → ReactivateEntityKey (gate 1).");
     }
 
-    // ── Paso 4: roles y perfil de column security (docs 03 §5/§6, 12 §4) ─────
+    // ── Paso 4: roles y perfil de column security ─────
 
     [SkippableTheory] // CF-A07
     [InlineData("Sigil | SR | User")]
@@ -193,7 +194,7 @@ public class RunbookA_FundacionesTests(DataverseFixture fx, ITestOutputHelper ou
         Assert.NotEmpty(client.RetrieveMultiple(query).Entities);
     }
 
-    // ── Variables de entorno (doc 03 §8, nombres doc 12 §3) ──────────────────
+    // ── Variables de entorno (nombres del Apéndice A, docs/referencia/12-convenciones-nomenclatura.md) ──────────────────
 
     [SkippableTheory] // CF-A09
     [InlineData("sanic_sigil_env_TsaEnabled")]

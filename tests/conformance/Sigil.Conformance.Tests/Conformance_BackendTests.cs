@@ -1,8 +1,8 @@
 // CF-D — Despliegue del backend (F2): existencia y configuración del plugin package y de
-// las Custom APIs desplegadas (doc 04 §3.1/§3.2), más los smokes E2E (CF-D05..D08).
-// TDD de infraestructura (doc 11 §1 regla 5):
+// las Custom APIs desplegadas, más los smokes E2E (CF-D05..D08).
+// TDD de infraestructura:
 // estos tests nacen ROJOS contra Dev — se ponen verdes cuando el paquete se registre en F2
-// (pac plugin push / import de solución). El runbook D (despliegue backend) se redacta en F2;
+// (pac plugin push / import de solución). El despliegue backend se realiza en F2;
 // los IDs CF-D ya quedan reservados acá.
 //
 // Decisiones de contrato que estos tests fijan (registradas en el paso 13 de F1):
@@ -20,9 +20,9 @@ using Xunit;
 namespace Sigil.Conformance.Tests;
 
 [Collection("dataverse")]
-public class RunbookD_BackendTests(DataverseFixture fx)
+public class Conformance_BackendTests(DataverseFixture fx)
 {
-    private const string PrivilegioDeUsuario = "prvReadsanic_sigil_tbl_transaction";   // doc 04 §3.2
+    private const string PrivilegioDeUsuario = "prvReadsanic_sigil_tbl_transaction";
     private const string PrivilegioDeServicio = "prvWritesanic_sigil_tbl_ledgerentry"; // solo Sigil | SR | Service
 
     [SkippableFact] // CF-D01 — el plugin package de Sigil está registrado
@@ -53,13 +53,13 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         { "sanic_sigil_capi_GetMasterSignatureHistory", 0, null, PrivilegioDeUsuario },
         { "sanic_sigil_capi_RetrySealing", 1, "sanic_sigil_tbl_transaction", PrivilegioDeUsuario },
         { "sanic_sigil_capi_VerifyDocument", 0, null, PrivilegioDeUsuario },
-        // Jobs: privilegio de SERVICIO — un usuario común no puede invocarlos (doc 04 §3.2)
+        // Jobs: privilegio de SERVICIO — un usuario común no puede invocarlos
         { "sanic_sigil_capi_ExpireTransactions", 0, null, PrivilegioDeServicio },
         { "sanic_sigil_capi_ProcessReminders", 0, null, PrivilegioDeServicio },
         { "sanic_sigil_capi_ResealPending", 0, null, PrivilegioDeServicio },
     };
 
-    [SkippableTheory] // CF-D02 — cada Custom API existe con binding, tipo y privilegio del doc 04
+    [SkippableTheory] // CF-D02 — cada Custom API existe con binding, tipo y privilegio
     [MemberData(nameof(ApisEsperadas))]
     public void CF_D02_CustomApi_ExisteConBindingYPrivilegio(string uniqueName, int bindingEsperado, string? entidadEsperada, string privilegioEsperado)
     {
@@ -80,7 +80,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             $"{uniqueName} debe ser POST (IsFunction=false): tiene efectos o transporta binarios.");
         Assert.False(api.GetAttributeValue<bool>("isprivate"),
             $"{uniqueName} debe tener IsPrivate=false: el frontend genera clientes tipados y los cloud " +
-            "flows resuelven la acción desde el $metadata, que IsPrivate ocultaría (reconciliación doc 04↔05; " +
+            "flows resuelven la acción desde el $metadata, que IsPrivate ocultaría; " +
             "IsPrivate no es seguridad — el control real son Execute Privileges + autorización en el plugin).");
         Assert.Equal(privilegioEsperado, api.GetAttributeValue<string>("executeprivilegename"));
     }
@@ -174,7 +174,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         Assert.Equal(tipo, filas[0].GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("type").Value);
     }
 
-    // ── CF-D05: smoke E2E — la salida de F1 (doc 10) ─────────────────────────
+    // ── CF-D05: smoke E2E — la salida de F1 ─────────────────────────
     // No prueba REGISTRO sino FUNCIÓN real: invoca CreateTransaction con un PDF real,
     // lo recupera con GetDocumentContent y verifica el round-trip byte a byte. Crea y
     // borra su propio dato (cleanup en finally) — jamás deja basura en Dev.
@@ -218,7 +218,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             };
             var pdfDeVuelta = (string)client.Execute(leer).Results["PdfBase64"];
 
-            // Round-trip exacto: los bytes que subimos son los que bajan (doc 04 §3.1 GetDocumentContent).
+            // Round-trip exacto: los bytes que subimos son los que bajan (GetDocumentContent).
             Assert.Equal(pdfBase64, pdfDeVuelta);
         }
         finally
@@ -324,7 +324,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             evQuery.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
             foreach (var ev in client.RetrieveMultiple(evQuery).Entities)
                 client.Delete("sanic_sigil_tbl_event", ev.Id);
-            // el ledger también es Delete Restrict hacia la transacción (doc 03 §2)
+            // el ledger también es Delete Restrict hacia la transacción
             var lgQuery = new QueryExpression("sanic_sigil_tbl_ledgerentry") { ColumnSet = new ColumnSet(false) };
             lgQuery.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
             foreach (var lg in client.RetrieveMultiple(lgQuery).Entities)
@@ -337,7 +337,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         }
     }
 
-    // ── CF-D09: el step ASÍNCRONO del worker de sellado (doc 04 §7) ──────────
+    // ── CF-D09: el step ASÍNCRONO del worker de sellado ──────────
 
     [SkippableFact]
     public void CF_D09_StepDelWorker_RegistradoComoAsincronoConPostImage()
@@ -420,16 +420,16 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             Assert.Matches("^SIGIL-\\d{4}-", ledger.GetAttributeValue<string>("sanic_sigil_name")); // autonumber intacto
             Assert.Matches("^[0-9A-F]{64}$", ledger.GetAttributeValue<string>("sanic_sigil_finalhash"));
             // TSA: Sellado con TSA (con token) es lo esperado; Re-sellado pendiente es la
-            // degradación CORRECTA de ADR-005 si Sectigo tiene un mal día — no rompe el E2E.
+            // degradación CORRECTA si Sectigo tiene un mal día — no rompe el E2E.
             var tsaStatus = ledger.GetAttributeValue<Microsoft.Xrm.Sdk.OptionSetValue>("sanic_sigil_tsastatus").Value;
             Assert.True(tsaStatus is 159460000 or 159460002,
                 $"tsastatus inesperado: {tsaStatus} (ni Sellado con TSA ni Re-sellado pendiente).");
             if (tsaStatus == 159460000)
                 Assert.False(string.IsNullOrEmpty(ledger.GetAttributeValue<string>("sanic_sigil_tsatoken"))); // token REAL
             else
-                Console.Error.WriteLine("[CF-D10] AVISO: la TSA degradó a Re-sellado pendiente (ADR-005) — verificar red/Sectigo.");
+                Console.Error.WriteLine("[CF-D10] AVISO: la TSA degradó a Re-sellado pendiente — verificar red/Sectigo.");
 
-            // ancla de verificación (ADR-011): el final descargado hashea EXACTAMENTE al ledger
+            // ancla de verificación: el final descargado hashea EXACTAMENTE al ledger
             var final = Convert.FromBase64String((string)client.Execute(
                 new OrganizationRequest("sanic_sigil_capi_GetDocumentContent")
                 {
@@ -528,7 +528,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             Assert.True((bool)rojo["Found"]);
             Assert.False((bool)rojo["IsIntact"]);
 
-            // VERDE por HASH (RF-20/21): sin TransactionId, el ledger se encuentra por finalhash —
+            // VERDE por HASH: sin TransactionId, el ledger se encuentra por finalhash —
             // soltás cualquier PDF sellado y se verifica (como Adobe/DocuSign). Ancla su evento 11.
             var porHash = client.Execute(new OrganizationRequest("sanic_sigil_capi_VerifyDocument")
             {
@@ -545,7 +545,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             }).Results;
             Assert.False((bool)desconocido["Found"]);
 
-            // la verificación quedó registrada (evento 11, RNF-04)
+            // la verificación quedó registrada (evento 11)
             var evQ = new QueryExpression("sanic_sigil_tbl_event") { ColumnSet = new ColumnSet("sanic_sigil_type") };
             evQ.Criteria.AddCondition("sanic_sigil_transactionid", ConditionOperator.Equal, txId);
             var verificaciones = client.RetrieveMultiple(evQ).Entities.Count(ev =>
@@ -601,7 +601,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
         }
     }
 
-    // ── CF-D13: ProcessReminders real (RF-12) contra Dev ─────────────────────
+    // ── CF-D13: ProcessReminders real contra Dev ─────────────────────
 
     [SkippableFact]
     public void CF_D13_ProcessReminders_GeneraElRecordatorioAutosuficiente()
@@ -655,7 +655,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
     }
 
     // ── CF-D07: Firma Maestra — validar, versionar y leer de vuelta ─────────
-    // Ejercita ADR-009 real en el sandbox: el motor de Imaging valida/normaliza y el
+    // Ejercita la validación real en el sandbox: el motor de Imaging valida/normaliza y el
     // versionado crea la vigente. El roundtrip Get == Normalized cierra el contrato.
 
     [SkippableFact]
@@ -738,7 +738,7 @@ public class RunbookD_BackendTests(DataverseFixture fx)
             Assert.True(p.Contains("sanic_sigil_signedon"));
             Assert.NotNull(p.GetAttributeValue<EntityReference>("sanic_sigil_mastersignatureid"));
 
-            // el evento de firma trae el documenthash == contenthash (verificación cruzada, doc 03 §4.6)
+            // el evento de firma trae el documenthash == contenthash (verificación cruzada)
             var evQuery = new QueryExpression("sanic_sigil_tbl_event")
             {
                 ColumnSet = new ColumnSet("sanic_sigil_type", "sanic_sigil_documenthash"),

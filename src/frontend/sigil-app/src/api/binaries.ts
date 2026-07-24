@@ -1,8 +1,8 @@
-// Binary handling (doc 05 §5.2/§5.3): base64 ↔ Blob with STEPWISE decoding that yields
+// Binary handling: base64 ↔ Blob with STEPWISE decoding that yields
 // (await) so it doesn't freeze the main thread while processing 27 MB on mobile. They NEVER
 // go through the TanStack Query cache; they live in screen-local state and are freed on unmount.
 
-/** SHA-256 in the browser (Web Crypto, ADR-007) → 64-char uppercase hex (ledger format). */
+/** SHA-256 in the browser (Web Crypto) → 64-char uppercase hex (ledger format). */
 export async function sha256Hex(data: ArrayBuffer): Promise<string> {
   // Zero-cost view: passing a TypedArray (not the bare ArrayBuffer) makes digest agnostic
   // to the buffer's realm — irrelevant in the browser, needed when the buffer comes from

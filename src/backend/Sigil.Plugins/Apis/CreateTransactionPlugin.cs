@@ -1,8 +1,8 @@
-// sanic_sigil_capi_CreateTransaction (doc 04 §3.1) — Unbound. Crea el borrador (RF-25/26).
+// sanic_sigil_capi_CreateTransaction — Unbound. Crea el borrador.
 // In: Name, Message?, RoutingType ("sequential"|"parallel"), ExpirationDays?, PdfBase64,
 //     ParticipantsJson, ZonesJson?. Out: TransactionId.
-// Orden: TODA la validación primero (Core §3.4), después las escrituras. Sin lock: la fila
-// es nueva, nadie compite por ella (doc 04 §5 aplica a estado COMPARTIDO).
+// Orden: TODA la validación primero, después las escrituras. Sin lock: la fila
+// es nueva, nadie compite por ella (aplica a estado COMPARTIDO).
 
 using System;
 using System.Collections.Generic;
@@ -70,7 +70,7 @@ public class CreateTransactionPlugin : SigilApiPlugin
             zonas = rz.Valor!;
         }
 
-        // ── Escrituras (todo validado; ownerid explícito = creador — doc 03 §4) ──
+        // ── Escrituras (todo validado; ownerid explícito = creador) ──
         var owner = new EntityReference(SchemaNames.Usuario.Entidad, e.Llamante);
 
         var tx = new Entity(SchemaNames.Tx.Entidad);

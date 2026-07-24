@@ -1,4 +1,4 @@
-// Tests of the PURE wizard model: step gating, RF-28 zone completeness, and the CreateTransaction
+// Tests of the PURE wizard model: step gating, zone completeness, and the CreateTransaction
 // input construction. No React, no pdf.js — just the logic that decides what's valid and what ships.
 
 import { describe, it, expect } from 'vitest';
@@ -80,7 +80,7 @@ describe('participants step', () => {
   });
 });
 
-describe('zones step (RF-28)', () => {
+describe('zones step', () => {
   it('is complete when every participant has a zone', () => {
     expect(zonesStepErrors(fullDraft())).toEqual([]);
     expect(participantsMissingZone(fullDraft())).toEqual([]);

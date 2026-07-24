@@ -1,5 +1,5 @@
-// A transaction card for the dashboard lists (doc 05 §4.1): name, sender, state badge, optional
-// due-date urgency (RF-27), and a slot for the context's CTAs. Presentational — all labels via i18n.
+// A transaction card for the dashboard lists: name, sender, state badge, optional
+// due-date urgency, and a slot for the context's CTAs. Presentational — all labels via i18n.
 
 import { makeStyles, tokens, Card, Text, Badge, Link, type BadgeProps } from '@fluentui/react-components';
 import { useT } from '../../i18n/useT';

@@ -1,4 +1,4 @@
-// i18n configuration (doc 05 §7): es/en BUNDLED (no remote loading — CSP forbids fetch).
+// i18n configuration: es/en BUNDLED (no remote loading — CSP forbids fetch).
 // Initial language: navigator.language (default en, verified fact: getContext doesn't expose
 // language), toggle persisted in localStorage.
 

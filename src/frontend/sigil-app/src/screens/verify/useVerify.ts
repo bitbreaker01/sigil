@@ -1,4 +1,4 @@
-// Verify logic (doc 05 §4.5/§6.2, RF-20/21). The file NEVER leaves the browser:
+// Verify logic. The file NEVER leaves the browser:
 // it's hashed locally with Web Crypto and only the hash (64 hex) goes to VerifyDocument. Supports
 // two inputs: a file (drag&drop / picker) or a deep-link txId (certificate only).
 

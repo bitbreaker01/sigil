@@ -1,7 +1,7 @@
-// M4 — Idempotencia del worker (doc 11 §4 / doc 04 §7): los guards precisos, la
+// M4 — Idempotencia del worker: los guards precisos, la
 // re-entrada tras fallo en CADA punto crítico, y el reintento zombi que aborta sin
 // tocar el archivo. También el camino feliz completo (M5 a nivel orquestación) y la
-// degradación TSA (ADR-005).
+// degradación TSA.
 
 using System;
 using System.Linq;
@@ -76,14 +76,14 @@ public class SealingWorkerPluginTests
         Assert.Equal((int)TransactionStatus.Completado, tx.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.Status).Value);
         Assert.True(tx.Contains(SchemaNames.Tx.CompletedOn));
 
-        // el final subió ANTES de crear el ledger (orden mandatorio §7)
+        // el final subió ANTES de crear el ledger (orden mandatorio)
         var claveFinal = StubFileTransfer.Clave(new EntityReference(SchemaNames.Tx.Entidad, txId), SchemaNames.Tx.FinalFile);
         Assert.True(_arnes.Archivos.Archivos.ContainsKey(claveFinal));
 
         var ledger = Assert.Single(_arnes.Servicio.FilasDe(SchemaNames.Ledger.Entidad));
         Assert.False(ledger.Contains(SchemaNames.Ledger.Name)); // jamás pisar el autonumber
         Assert.Equal((int)TsaStatus.SinSelloTsa, ledger.GetAttributeValue<OptionSetValue>(SchemaNames.Ledger.TsaStatus).Value);
-        // hash_final == SHA-256 de los bytes EXACTOS subidos (ADR-011)
+        // hash_final == SHA-256 de los bytes EXACTOS subidos
         Assert.Equal(Sigil.Plugins.Core.Crypto.HashUtil.Sha256Hex(_arnes.Archivos.Archivos[claveFinal]),
             ledger.GetAttributeValue<string>(SchemaNames.Ledger.FinalHash));
         Assert.Contains("Beto Firmante", ledger.GetAttributeValue<string>(SchemaNames.Ledger.SignerSummary));
@@ -105,7 +105,7 @@ public class SealingWorkerPluginTests
         Assert.False(string.IsNullOrEmpty(ledger.GetAttributeValue<string>(SchemaNames.Ledger.TsaToken)));
     }
 
-    [Fact] // ADR-005: todos los endpoints fallan → Re-sellado pendiente, SIN token, pero COMPLETA
+    [Fact] // todos los endpoints fallan → Re-sellado pendiente, SIN token, pero COMPLETA
     public void ConTsaCaida_DegradaAReSelladoPendiente_YCompletaIgual()
     {
         _arnes.ConfigurarEnv(SchemaNames.EnvVars.TsaEnabled, "yes");
@@ -121,7 +121,7 @@ public class SealingWorkerPluginTests
         Assert.Equal((int)TransactionStatus.Completado, tx.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.Status).Value);
     }
 
-    // ── los guards del doc 04 §7 (M4) ────────────────────────────────────────
+    // ── los guards (M4) ────────────────────────────────────────
 
     [Fact] // guard de post-image: el paso 9 escribe Completado → re-disparo → sale SIN tocar nada
     public void Guard_PostImageNoSellando_EsNoOp()
@@ -169,7 +169,7 @@ public class SealingWorkerPluginTests
         Assert.Single(_arnes.Servicio.FilasDe(SchemaNames.Ledger.Entidad));
     }
 
-    // ── idempotencia por punto de fallo (M4 — doc 04 §7 "Idempotencia") ─────
+    // ── idempotencia por punto de fallo (M4 — "Idempotencia") ─────
 
     [Fact] // ledger YA existe → VERIFICA el ancla (el final durable debe coincidir con el ledger) y
            // solo completa (paso 9): ni recompone ni re-sube. La reentrada re-verifica por diseño —
@@ -220,7 +220,7 @@ public class SealingWorkerPluginTests
         _arnes.Servicio.Update(tx);
     }
 
-    // ── clasificación de fallos (semántica del doc 04 §7 — antagonista C1/C2/C4/A9) ──
+    // ── clasificación de fallos (antagonista C1/C2/C4/A9) ──
 
     [Fact] // fallo de descarga del contenido → TRANSITORIO (OperationStatus.Retry), jamás Error de Sellado
     public void FalloDeDescarga_EsTransitorio_ConRetry()
@@ -290,7 +290,7 @@ public class SealingWorkerPluginTests
         Assert.Contains("PostImage", ex.Message);
     }
 
-    [Fact] // LA propiedad de ADR-011: el digest sellado por TSA == SHA-256 de los bytes subidos
+    [Fact] // LA propiedad: el digest sellado por TSA == SHA-256 de los bytes subidos
     public void ElDigestSellado_EsElSha256DeLosBytesSubidos()
     {
         _arnes.ConfigurarEnv(SchemaNames.EnvVars.TsaEnabled, "yes");

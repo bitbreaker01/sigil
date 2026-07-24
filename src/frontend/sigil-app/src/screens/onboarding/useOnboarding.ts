@@ -1,5 +1,5 @@
 // Onboarding logic (container hook — testable without render): loads the current signature, and
-// runs the two-step replace flow (RF-02): upload → VALIDATE (preview, nothing persisted) → the user
+// runs the two-step replace flow: upload → VALIDATE (preview, nothing persisted) → the user
 // confirms → SAVE (creates the new active version, irreversible). The presentation (OnboardingScreen)
 // is dumb and receives this state.
 
@@ -28,7 +28,7 @@ export interface UseOnboarding {
   formatError: boolean;
 }
 
-/** FailureReasons: one reason per line (doc 04 §3.1); empty → generic. */
+/** FailureReasons: one reason per line; empty → generic. */
 function reasonsFrom(r: ValidateMasterSignatureOutput): string[] {
   const reasons = (r.FailureReasons ?? '').split('\n').map((m) => m.trim()).filter(Boolean);
   return reasons.length ? reasons : ['common.genericError'];

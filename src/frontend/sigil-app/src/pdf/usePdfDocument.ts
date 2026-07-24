@@ -1,5 +1,5 @@
 // Loads a PDF (from base64) into a pdf.js document and exposes its page count. The document is
-// destroyed on unmount / when the source changes — binaries never linger (doc 05 §5.2). The
+// destroyed on unmount / when the source changes — binaries never linger. The
 // base64 is decoded in chunks with yields (binaries.base64ToBytes) so a 27 MB PDF doesn't freeze
 // the main thread on mobile.
 

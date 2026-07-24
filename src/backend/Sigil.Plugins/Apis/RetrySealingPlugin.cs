@@ -1,7 +1,7 @@
-// sanic_sigil_capi_RetrySealing (T10, doc 04 §3.1): Error de Sellado → Sellando.
+// sanic_sigil_capi_RetrySealing (T10): Error de Sellado → Sellando.
 // Sin esta API el estado de error sería un callejón sin salida (nadie tiene Update
-// directo — doc 03 §6). El cambio de status re-dispara el worker (idempotente §7).
-// Autorización: el CREADOR y estado Error de Sellado (doc 04 §3.3).
+// directo). El cambio de status re-dispara el worker (idempotente).
+// Autorización: el CREADOR y estado Error de Sellado.
 
 using System.Linq;
 using Microsoft.Xrm.Sdk;

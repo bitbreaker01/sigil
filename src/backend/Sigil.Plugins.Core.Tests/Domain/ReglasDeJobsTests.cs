@@ -1,4 +1,4 @@
-// M10 — Jobs (doc 11 §4 / doc 04 §3.1 / doc 06 §3-§4): las reglas PURAS que los jobs
+// M10 — Jobs: las reglas PURAS que los jobs
 // consumen tras leer el ambiente. El filtro por estado de transacción es el corazón:
 // sin él, los jobs expirarían transacciones selladas o recordarían muertas eternamente.
 
@@ -35,7 +35,7 @@ public class ReglasDeJobsTests
         Assert.Equal(vencida, ReglasDeJobs.EstaVencida(Ahora.AddHours(horasDesdeAhora), Ahora));
     }
 
-    // ── T14: saneamiento de Sellando zombi a 24 h (doc 06 R7) ────────────────
+    // ── T14: saneamiento de Sellando zombi a 24 h ────────────────
 
     [Theory]
     [InlineData(-25, true)]   // 25 h sin actividad → sanear
@@ -45,7 +45,7 @@ public class ReglasDeJobsTests
         Assert.Equal(sanear, ReglasDeJobs.NecesitaSaneamiento(Ahora.AddHours(horasDeUltimaActividad), Ahora));
     }
 
-    // ── RF-12: recordatorio vencido (cadencia sobre turnactivatedon / lastreminderon) ──
+    // ── recordatorio vencido (cadencia sobre turnactivatedon / lastreminderon) ──
 
     [Fact] // sin recordatorio previo: cuenta desde la activación del turno
     public void M10_Recordatorio_SinPrevio_VenceDesdeLaActivacion()
@@ -65,7 +65,7 @@ public class ReglasDeJobsTests
             turnActivadoEn: Ahora.AddDays(-10), ultimoRecordatorio: Ahora.AddDays(-3), cadenciaDias: 2, ahora: Ahora));
     }
 
-    // ── RNF-06: idioma del destinatario por LCID, con fallback ───────────────
+    // ── idioma del destinatario por LCID, con fallback ───────────────
 
     [Theory]
     [InlineData(1033, "en")]  // en-US

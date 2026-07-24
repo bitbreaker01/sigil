@@ -1,11 +1,11 @@
-// Cliente RFC 3161 (doc 04 §6.4 — requisitos NO negociables):
+// Cliente RFC 3161 (requisitos NO negociables):
 //   - CertReq = true: el token DEBE traer el certificado del firmante de la TSA (sin él,
-//     la validación independiente de RF-16 puede volverse imposible años después).
+//     la validación independiente puede volverse imposible años después).
 //   - Nonce aleatorio (RandomNumberGenerator).
 //   - DOBLE validación antes de persistir: Response.Validate(request) (nonce/imprint/política)
 //     Y Token.Validate(cert embebido) (validez criptográfica de la firma del token).
-//     Límite honesto declarado (doc 04 §6.4): NO se valida la cadena hasta una raíz confiable.
-//   - Fallback en el orden de la config (ADR-005); rate limit por endpoint.
+//     Límite honesto declarado: NO se valida la cadena hasta una raíz confiable.
+//   - Fallback en el orden de la config; rate limit por endpoint.
 // Portado del spike que corrió DENTRO del sandbox real (Sectigo 200 OK, token validado).
 
 using System;
@@ -44,7 +44,7 @@ public sealed class ResultadoTsa
 
 public sealed class ClienteTsa
 {
-    // Rate limit por endpoint (proceso): última llamada por URL (ADR-005 / Sectigo ≥15 s).
+    // Rate limit por endpoint (proceso): última llamada por URL (Sectigo ≥15 s).
     private static readonly ConcurrentDictionary<string, DateTime> UltimaLlamada = new();
 
     private readonly HttpMessageHandler? _handler;
@@ -53,7 +53,7 @@ public sealed class ClienteTsa
 
     public ClienteTsa(HttpMessageHandler? handler = null, Func<DateTime>? ahora = null, Action<TimeSpan>? esperar = null)
     {
-        _handler = handler; // tests: stub de HttpMessageHandler (doc 11 §3 — sin servidor ni puertos)
+        _handler = handler; // tests: stub de HttpMessageHandler (sin servidor ni puertos)
         _ahora = ahora ?? (() => DateTime.UtcNow);
         _esperar = esperar ?? (ts => Thread.Sleep(ts));
     }
@@ -70,7 +70,7 @@ public sealed class ClienteTsa
                 RespetarIntervalo(endpoint);
 
                 var reqGen = new TimeStampRequestGenerator();
-                reqGen.SetCertReq(true); // NO negociable (doc 04 §6.4)
+                reqGen.SetCertReq(true); // NO negociable
                 var nonce = NonceAleatorio();
                 var request = reqGen.Generate(TspAlgorithms.Sha256, sha256Digest, nonce);
 
@@ -111,7 +111,7 @@ public sealed class ClienteTsa
                 var raiz = ex;
                 while (raiz.InnerException is not null) raiz = raiz.InnerException;
                 errores.Add($"{endpoint.Url} ({sw.ElapsedMilliseconds} ms): {raiz.GetType().Name}: {raiz.Message}");
-                // token inválido o endpoint caído → se descarta y se intenta el siguiente (doc 04 §6.4)
+                // token inválido o endpoint caído → se descarta y se intenta el siguiente
             }
         }
         return new ResultadoTsa(null, null, null, errores);

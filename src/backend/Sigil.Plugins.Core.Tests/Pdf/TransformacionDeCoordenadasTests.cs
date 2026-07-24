@@ -1,4 +1,4 @@
-// M9 — Coordenadas y zonas (doc 04 §6.1): el contrato es % del área VISIBLE (CropBox),
+// M9 — Coordenadas y zonas: el contrato es % del área VISIBLE (CropBox),
 // origen arriba-izquierda, orientación VISUAL. Evidencia del spike: XGraphics/PDF crudo
 // trabajan en orientación RAW y NO compensan /Rotate — la transformación manual es
 // obligatoria. Estos tests fijan la matriz cm EXACTA para las 4 rotaciones y CropBox.

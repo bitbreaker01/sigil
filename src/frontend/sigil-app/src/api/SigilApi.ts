@@ -1,4 +1,4 @@
-// The data SEAM (doc 05 §2): screens depend ONLY on this interface, never on the Power Apps
+// The data SEAM: screens depend ONLY on this interface, never on the Power Apps
 // SDK directly. Two implementations:
 //   - PowerAppsSigilApi (api/powerApps.ts): the real one, over @microsoft/power-apps + the
 //     typed clients that `power-apps add-dataverse-api` generates (generated/ folder).
@@ -102,14 +102,14 @@ export interface UserSummary {
   email?: string;
 }
 
-// A document signed with a given Master Signature version (doc 03 §4.5).
+// A document signed with a given Master Signature version.
 export interface SignedDocumentRef {
   id: string;
   name: string;
   status: number; // transaction state (choice value)
 }
 
-// One version of the user's Master Signature (immutable history, doc 03 §4.5).
+// One version of the user's Master Signature (immutable history).
 export interface MasterSignatureVersion {
   version: number;
   imageBase64: string;
@@ -137,22 +137,22 @@ export interface PendingPage {
 }
 
 export interface SigilApi {
-  // Identity (getContext) — never authoritative (doc 05 §9).
+  // Identity (getContext) — never authoritative.
   currentUser(): { id?: string; name?: string; upn?: string };
   // The caller's Dataverse systemuserid, resolved asynchronously (real mode maps the Entra objectId
   // from getContext() → systemuser). currentUser() is sync and can't carry it in real mode, so use
-  // this to match the caller against participant.userId. UI hint only — the backend enforces (§9).
+  // this to match the caller against participant.userId. UI hint only — the backend enforces.
   getCurrentUserId(): Promise<string | undefined>;
 
   // People picker (create wizard): search selectable signers.
   searchUsers(query: string): Promise<UserSummary[]>;
 
   // Master Signature — validate is a PREVIEW (no persist); save COMMITS a new active version.
-  // Splitting them lets the UI confirm before the irreversible replacement (RF-02).
+  // Splitting them lets the UI confirm before the irreversible replacement.
   validateMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput>;
   saveMasterSignature(imageBase64: string): Promise<ValidateMasterSignatureOutput>;
   getMasterSignature(): Promise<GetMasterSignatureOutput>;
-  // Immutable version history (doc 03 §4.5 — each upload is a new version). Backed by the
+  // Immutable version history (each upload is a new version). Backed by the
   // sanic_sigil_capi_GetMasterSignatureHistory Custom API (returns HistoryJson); mock serves it now.
   getMasterSignatureHistory(): Promise<MasterSignatureVersion[]>;
 
@@ -166,7 +166,7 @@ export interface SigilApi {
   cancelTransaction(input: CancelTransactionInput): Promise<void>;
   retrySealing(txId: string): Promise<void>;
 
-  // Binaries (base64 — outside the Query cache, doc 05 §5.2)
+  // Binaries (base64 — outside the Query cache)
   getDocumentContent(input: GetDocumentContentInput): Promise<string>; // → PdfBase64
 
   // Verification
@@ -176,7 +176,7 @@ export interface SigilApi {
   myPending(): Promise<{ tx: TransactionView; participant: ParticipantView }[]>;
   // Paged (recent-first) Pending for the dashboard's infinite scroll.
   myPendingPage(cookie?: string): Promise<PendingPage>;
-  // Paged (recent-first) variants for the dashboard's infinite-scroll lists (§5.1 — don't load all).
+  // Paged (recent-first) variants for the dashboard's infinite-scroll lists (don't load all).
   myRequestsPage(cookie?: string): Promise<TransactionPage>;
   // `status` (optional) filters server-side (e.g. completed-only). Pages by participation, so a page
   // may return fewer than the page size after the status filter — infinite scroll keeps loading.

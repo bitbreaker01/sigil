@@ -1,4 +1,4 @@
-// Validación de entrada de las Custom APIs (doc 04 §3.4) — funciones puras.
+// Validación de entrada de las Custom APIs — funciones puras.
 // Regla de oro: la longitud del string base64 se chequea ANTES de decodificar
 // (decodificar basura gigante regala memoria del sandbox). Lo que exige Dataverse
 // (usuarios existentes y habilitados) NO vive acá: es responsabilidad de la cáscara.
@@ -36,8 +36,8 @@ public static class ValidacionDeEntrada
     }
 
     /// <summary>
-    /// Name: ≤200 (doc 03 §4.1); obligatorio en Create, opcional (null = "sin cambio") en UpdateDraft.
-    /// ExpirationDays: null o positivo (RF-27). Message: ≤2.000 (doc 03 §4.1). Cada campo se valida
+    /// Name: ≤200; obligatorio en Create, opcional (null = "sin cambio") en UpdateDraft.
+    /// ExpirationDays: null o positivo. Message: ≤2.000. Cada campo se valida
     /// SOLO si vino — un null nunca se rechaza cuando el campo es opcional.
     /// </summary>
     public static IReadOnlyList<string> ValidarEncabezado(
@@ -120,7 +120,7 @@ public static class ValidacionDeEntrada
         }
         else if (lista.Any(p => p.Order is not null))
         {
-            errores.Add("El orden de firma solo aplica al enrutamiento secuencial (schema doc 04 §4).");
+            errores.Add("El orden de firma solo aplica al enrutamiento secuencial.");
         }
 
         return errores.Count > 0
@@ -145,7 +145,7 @@ public static class ValidacionDeEntrada
         }
 
         // Lista vacía es válida en borrador — la COMPLETITUD (todo participante con ≥1 zona)
-        // la exige SendTransaction, no Create/UpdateDraft (RF-28, doc 04 §3.4).
+        // la exige SendTransaction, no Create/UpdateDraft.
         lista ??= new List<ZoneInput>();
 
         var errores = new List<string>();
@@ -182,7 +182,7 @@ public static class ValidacionDeEntrada
         if (string.IsNullOrEmpty(base64))
             return ResultadoDe<PdfValidado>.Fallo("El documento PDF es obligatorio.");
 
-        // 1. TAMAÑO sobre el string, ANTES de decodificar (orden mandatorio — doc 04 §3).
+        // 1. TAMAÑO sobre el string, ANTES de decodificar (orden mandatorio).
         //    maxKb KB de binario = ceil(maxKb*1024/3)*4 chars de base64.
         var limiteDeChars = (long)(Math.Ceiling(maxKb * 1024 / 3.0) * 4);
         if (base64.Length > limiteDeChars)

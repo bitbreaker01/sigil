@@ -1,7 +1,7 @@
-// STUB PROPIO de IOrganizationService (decisión 2026-07-15, doc 11 §2 — FakeXrmEasy
+// STUB PROPIO de IOrganizationService (decisión 2026-07-15 — FakeXrmEasy
 // descartado por licenciamiento). Cubre exactamente lo que la capa Apis/ usa:
 // Create/Retrieve/RetrieveMultiple/Update/Delete/Execute + tracking de llamadas.
-// Límites DECLARADOS (doc 11 §3): sin locks SQL reales (script de carrera en Dev),
+// Límites DECLARADOS: sin locks SQL reales (script de carrera en Dev),
 // sin file blocks (seam IFileTransfer), ColumnSet ignorado (devuelve todo), sin cascadas
 // de plataforma (los tests siembran y verifican explícito).
 

@@ -1,5 +1,5 @@
-// sanic_sigil_capi_DeleteDraft — orquestación (doc 04 §3.1, doc 06 T3).
-// El assert central es el ORDEN de borrado: eventos primero (Delete Restrict — doc 03 §2),
+// sanic_sigil_capi_DeleteDraft — orquestación (T3).
+// El assert central es el ORDEN de borrado: eventos primero (Delete Restrict),
 // la transacción al final. M2 exige que ese orden sea verificable, no asumido.
 
 using System;
@@ -71,7 +71,7 @@ public class DeleteDraftPluginTests
         Assert.Equal(SchemaNames.Tx.Entidad, borrados[2].Entidad);
     }
 
-    [Fact] // doc 04 §5: también DeleteDraft toma el lock antes de decidir
+    [Fact] // también DeleteDraft toma el lock antes de decidir
     public void ElLock_EsLaPrimeraOperacion()
     {
         var txId = _arnes.SembrarTransaccion(_creador, TransactionStatus.Borrador);

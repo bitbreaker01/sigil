@@ -1,8 +1,8 @@
-// sanic_sigil_capi_ExpireTransactions (RF-27, T12 + saneamiento T14 — doc 04 §3.1) — job
+// sanic_sigil_capi_ExpireTransactions (T12 + saneamiento T14) — job
 // diario disparado por cloud flow bajo el Service Principal (ExecutePrivilegeName de
 // servicio). Dos responsabilidades:
 //   1. T12: expira vencidas — SOLO Pendiente de Firma / Firmado Parcialmente.
-//   2. T14 (doc 06 R7): Sellando > 24 h sin actividad del worker → Error de Sellado.
+//   2. T14: Sellando > 24 h sin actividad del worker → Error de Sellado.
 // Cada transición ocurre bajo lock + revalidación (R2): el job compite con firmas y
 // cancelaciones en vuelo, y las carreras pierden limpio. Out: ExpiredCount, SanitizedCount.
 
@@ -44,7 +44,7 @@ public class ExpireTransactionsPlugin : SigilApiPlugin
             e.Servicio.Update(cambio);
 
             CrearEventoDeJob(e, candidata.Id, creador, EventType.Expirada,
-                "Transacción expirada por vencimiento del plazo (RF-27).");
+                "Transacción expirada por vencimiento del plazo.");
             expiradas++;
         }
 
@@ -70,7 +70,7 @@ public class ExpireTransactionsPlugin : SigilApiPlugin
             e.Servicio.Update(cambio);
 
             CrearEventoDeJob(e, zombi.Id, creador, EventType.ErrorDeSellado,
-                "saneamiento: worker sin actividad"); // wording exacto de T14 (doc 06 §1.1)
+                "saneamiento: worker sin actividad"); // wording exacto de T14
             saneadas++;
         }
 

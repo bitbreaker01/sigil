@@ -1,6 +1,6 @@
 // Implementación real del seam de archivos: mensajes de file blocks del SDK
-// (InitializeFileBlocksUpload/Download + bloques de ≤4 MB — doc 03 §4.1, verificado).
-// Sin tests unitarios POR DISEÑO (doc 11 §3): se valida contra Dev en los gates.
+// (InitializeFileBlocksUpload/Download + bloques de ≤4 MB, verificado).
+// Sin tests unitarios POR DISEÑO: se valida contra Dev en los gates.
 
 using System;
 using System.Collections.Generic;

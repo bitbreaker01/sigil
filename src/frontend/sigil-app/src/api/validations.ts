@@ -1,4 +1,4 @@
-// Client-side validations (doc 05 §4.2, EXPLICIT MIRROR of doc 04 §3.4): everything cheap
+// Client-side validations: everything cheap
 // is validated BEFORE encoding and uploading 27 MB. The messages come from i18n in the caller;
 // here we return keys/structure. The ones only the backend can do (magic bytes, encrypted
 // PDF, prior signatures) are NOT here — their errors arrive from the backend and are shown as-is.
@@ -12,7 +12,7 @@ export interface ValidationResult {
 
 const ok: ValidationResult = { ok: true, errors: [] };
 
-/** PDF size and format BEFORE encoding (doc 04 §3.4: length before decoding). */
+/** PDF size and format BEFORE encoding (length before decoding). */
 export function validatePdf(file: File, maxKb: number): ValidationResult {
   const errors: string[] = [];
   if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf')
@@ -67,7 +67,7 @@ export function validateZones(
   return errors.length ? { ok: false, errors: [...new Set(errors)] } : ok;
 }
 
-/** Completeness RF-28: EVERY participant with ≥1 zone (blocks sending, listing who is missing one). */
+/** Completeness: EVERY participant with ≥1 zone (blocks sending, listing who is missing one). */
 export function participantsWithoutZone(
   participants: ParticipantInput[],
   zones: ZoneInput[],
@@ -76,7 +76,7 @@ export function participantsWithoutZone(
   return participants.filter((p) => !withZone.has(p.userId)).map((p) => p.userId);
 }
 
-/** Header: Name ≤200, Message ≤2000, ExpirationDays null or positive (doc 03 §4.1). */
+/** Header: Name ≤200, Message ≤2000, ExpirationDays null or positive. */
 export function validateHeader(name: string, message: string | undefined, expirationDays: number | undefined): ValidationResult {
   const errors: string[] = [];
   if (!name.trim()) errors.push('validation.titleRequired');

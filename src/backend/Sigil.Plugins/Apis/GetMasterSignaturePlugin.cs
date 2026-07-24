@@ -1,6 +1,6 @@
-// sanic_sigil_capi_GetMasterSignature (doc 04 §3.1) — Unbound. Devuelve el PNG
+// sanic_sigil_capi_GetMasterSignature — Unbound. Devuelve el PNG
 // normalizado PROPIO (preview en onboarding y editor de zonas). Solo la firma del
-// llamante (doc 04 §3.3). Sin firma vigente: outputs ausentes (el frontend ofrece
+// llamante. Sin firma vigente: outputs ausentes (el frontend ofrece
 // el onboarding), NO es un error.
 
 using System;

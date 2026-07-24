@@ -1,4 +1,4 @@
-// M10 — Jobs (doc 11 §4): expiración solo en estados elegibles, saneamiento T14 a 24 h,
+// M10 — Jobs: expiración solo en estados elegibles, saneamiento T14 a 24 h,
 // filtro de recordatorios por estado de transacción (jamás sobre muertas), ResealPending
 // con TSA off → Sin sello TSA. Más VerifyDocument (verificación cruzada del historial).
 
@@ -93,7 +93,7 @@ public class JobsPluginTests
             ev.GetAttributeValue<string>(SchemaNames.Evento.Details)?.Contains("saneamiento: worker sin actividad") == true);
     }
 
-    // ── ProcessReminders (RF-12) ─────────────────────────────────────────────
+    // ── ProcessReminders ─────────────────────────────────────────────
 
     private Guid SembrarTurnoActivo(TransactionStatus estadoTx, int diasDeEspera, DateTime? ultimoRecordatorio = null)
     {
@@ -106,7 +106,7 @@ public class JobsPluginTests
         return txId;
     }
 
-    [Fact] // el JSON es AUTOSUFICIENTE (doc 04 §4) y lastreminderon queda marcado
+    [Fact] // el JSON es AUTOSUFICIENTE y lastreminderon queda marcado
     public void M10_Reminders_TurnoVencido_GeneraElJsonAutosuficiente_YMarcaElUltimo()
     {
         SembrarTurnoActivo(TransactionStatus.PendienteDeFirma, diasDeEspera: 3);
@@ -129,7 +129,7 @@ public class JobsPluginTests
             ev.GetAttributeValue<OptionSetValue>(SchemaNames.Evento.Type).Value == (int)EventType.RecordatorioProgramado);
     }
 
-    [Theory] // EL filtro obligatorio (doc 06 §3): Turno Activo en tx muerta JAMÁS se recuerda
+    [Theory] // EL filtro obligatorio: Turno Activo en tx muerta JAMÁS se recuerda
     [InlineData(TransactionStatus.Rechazado)]
     [InlineData(TransactionStatus.Expirado)]
     [InlineData(TransactionStatus.Cancelado)]
@@ -156,7 +156,7 @@ public class JobsPluginTests
         Assert.Equal("[]", _arnes.Contexto.OutputParameters["RemindersJson"]);
     }
 
-    [Fact] // idioma del destinatario desde usersettings (RNF-06)
+    [Fact] // idioma del destinatario desde usersettings
     public void M10_Reminders_ConUsersettingsEnIngles_MandaEn()
     {
         var settings = new Entity("usersettings");
@@ -171,7 +171,7 @@ public class JobsPluginTests
         Assert.Equal("en", doc.RootElement[0].GetProperty("recipientLanguage").GetString());
     }
 
-    // ── ResealPending (ADR-005) ──────────────────────────────────────────────
+    // ── ResealPending ──────────────────────────────────────────────
 
     private Guid SembrarLedgerPendiente(byte[] finalBytes)
     {
@@ -261,7 +261,7 @@ public class JobsPluginTests
         Assert.Equal(2, _arnes.Contexto.OutputParameters["StillPendingCount"]);
     }
 
-    // ── VerifyDocument (RF-20/21) ────────────────────────────────────────────
+    // ── VerifyDocument ────────────────────────────────────────────
 
     private (Guid txId, string finalHash, string contentHash) SembrarSellada()
     {

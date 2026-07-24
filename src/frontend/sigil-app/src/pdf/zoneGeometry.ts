@@ -1,10 +1,10 @@
-// Pure geometry for the zone editor (doc 05 §6.3), testable without a browser. Everything is in
+// Pure geometry for the zone editor, testable without a browser. Everything is in
 // the shared %-coordinate contract (0–100, top-left origin).
 //
 // ASPECT-RATIO LOCK (critical, not cosmetic): the sealing engine embeds the Master Signature by
 // STRETCHING it to fill the zone — TransformacionDeCoordenadas.ParaZona builds cm(vw,0,0,vh,…),
 // scaling X by the zone width and Y by the zone height independently. The normalized Master
-// Signature is always a fixed 600×200 canvas (env_SignatureImageSpec, doc 04 §4) → 3:1. So a
+// Signature is always a fixed 600×200 canvas (env_SignatureImageSpec) → 3:1. So a
 // zone whose VISUAL aspect ratio isn't 3:1 would distort the signature. We therefore lock every
 // zone to 3:1 *in rendered pixels* (pdf.js renders the visual CropBox, so pixel ratio == the PDF
 // zone ratio). Zones vary in SIZE (one degree of freedom) but never in shape.
@@ -14,7 +14,7 @@ import { clamp, round, type RectPct } from '../api/coordinates';
 export const MIN_ZONE_PCT = 2; // a zone can't be narrower than 2% of the page
 
 /** The Master Signature aspect ratio (width/height). MUST match env_SignatureImageSpec
- *  (600×200 = 3, doc 04 §4). Single source of truth in the frontend, like domain/states. */
+ *  (600×200 = 3). Single source of truth in the frontend, like domain/states. */
 export const SIGNATURE_ASPECT = 3;
 
 export interface PageSize {
@@ -65,7 +65,7 @@ export function resizeZone(orig: RectPct, dxPct: number, dyPct: number, page: Pa
   return { x: orig.x, y: orig.y, w: round(w), h: round(heightPctForWidth(w, page, ratio)) };
 }
 
-/** Numeric inputs (accessibility, §6.3): x/y move; width resizes (height is derived, read-only). */
+/** Numeric inputs (accessibility): x/y move; width resizes (height is derived, read-only). */
 export function setZoneField(rect: RectPct, key: 'x' | 'y' | 'w', value: number, page: PageSize, ratio = SIGNATURE_ASPECT): RectPct {
   const v = Number.isFinite(value) ? value : 0;
   if (key === 'x') return { ...rect, x: round(clamp(v, 0, 100 - rect.w)) };

@@ -42,7 +42,7 @@ describe('terminationReason', () => {
   });
 });
 
-describe('action gating (doc 06 T10/T13)', () => {
+describe('action gating', () => {
   it('creator can cancel from Pending, Partially Signed and Sealing Error — NOT draft/sealing/terminals', () => {
     for (const st of [PENDING, PARTIAL, SEAL_ERROR]) expect(canCancel(true, st)).toBe(true);
     for (const st of [DRAFT, SEALING, COMPLETED, REJECTED, EXPIRED, CANCELLED]) expect(canCancel(true, st)).toBe(false);

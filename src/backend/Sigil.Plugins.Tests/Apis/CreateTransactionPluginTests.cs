@@ -1,4 +1,4 @@
-// sanic_sigil_capi_CreateTransaction — orquestación (doc 04 §3.1).
+// sanic_sigil_capi_CreateTransaction — orquestación.
 // El núcleo de las validaciones ya está cubierto en Core.Tests (M1/M7); acá se prueba
 // lo que SOLO la cáscara hace: usuarios existentes/habilitados, escrituras con ownerid
 // explícito, archivo al seam, evento de creación y el output del contrato.
@@ -46,7 +46,7 @@ public class CreateTransactionPluginTests
         Assert.Equal((int)TransactionStatus.Borrador, tx.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.Status).Value);
         Assert.Equal(creador, tx.GetAttributeValue<EntityReference>(SchemaNames.Tx.OwnerId).Id);
 
-        // Participantes: 2, Pendiente, ownerid explícito = creador (doc 03 §4)
+        // Participantes: 2, Pendiente, ownerid explícito = creador
         var participantes = _arnes.Servicio.FilasDe(SchemaNames.Participante.Entidad);
         Assert.Equal(2, participantes.Count);
         Assert.All(participantes, p =>
@@ -104,7 +104,7 @@ public class CreateTransactionPluginTests
         Assert.Empty(_arnes.Archivos.Subidas);
     }
 
-    [Fact] // la validación que SOLO Dataverse puede responder (doc 04 §3.4)
+    [Fact] // la validación que SOLO Dataverse puede responder
     public void M7_ConUsuarioInexistente_Rechaza_ListandoAlAusente()
     {
         var creador = _arnes.SembrarUsuario("Ana", "ana@bac.test");
@@ -138,7 +138,7 @@ public class CreateTransactionPluginTests
         Assert.Empty(_arnes.Servicio.FilasDe(SchemaNames.Tx.Entidad));
     }
 
-    [Fact] // los errores se juntan y se reportan TODOS (doc 04 §8: mensajes accionables)
+    [Fact] // los errores se juntan y se reportan TODOS (mensajes accionables)
     public void M7_ConVariosErrores_LosReportaJuntos()
     {
         var creador = _arnes.SembrarUsuario("Ana", "ana@bac.test");

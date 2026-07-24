@@ -1,8 +1,8 @@
-// Event timeline (doc 05 §4.4, RNF-04): the transaction's history from sanic_sigil_tbl_event,
+// Event timeline: the transaction's history from sanic_sigil_tbl_event,
 // chronological. Labels come from i18n by the event's logical name; free-text details (e.g. a
 // rejection reason) are shown as-is (they arrive already localized from the backend).
 //
-// Verification events (RF-13) are user audit READS, not steps of the document's lifecycle, so they
+// Verification events are user audit READS, not steps of the document's lifecycle, so they
 // render as a distinct, muted lane (hollow dot + shield icon + secondary text) — they must not be
 // confused with the process events (created/sent/signed/sealed).
 

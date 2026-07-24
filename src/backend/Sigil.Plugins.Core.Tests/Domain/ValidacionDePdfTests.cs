@@ -1,7 +1,7 @@
-// M7 — Validación de entrada (doc 11 §4 / doc 04 §3.4): PdfBase64.
+// M7 — Validación de entrada: PdfBase64.
 // El caso que prueba el ORDEN es el corazón de la suite: un string sobre el límite con
 // base64 inválido debe fallar por TAMAÑO, no por decodificación — decodificar basura
-// gigante para después medirla regala memoria del sandbox (doc 04 §3).
+// gigante para después medirla regala memoria del sandbox.
 
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.Advanced;
@@ -42,7 +42,7 @@ public class ValidacionDePdfTests
         Assert.Contains(r.Errores, e => e.Contains("base64", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact] // magic bytes %PDF- (doc 04 §3.4)
+    [Fact] // magic bytes %PDF-
     public void M7_Pdf_SinMagicBytes_EsRechazado()
     {
         var noPdf = Convert.ToBase64String("HOLA MUNDO, no soy un PDF"u8.ToArray());
@@ -59,7 +59,7 @@ public class ValidacionDePdfTests
         Assert.False(r.EsValido);
     }
 
-    [Fact] // documento cifrado/protegido → rechazo (doc 04 §3.4)
+    [Fact] // documento cifrado/protegido → rechazo
     public void M7_Pdf_Cifrado_EsRechazado_ConMensajeClaro()
     {
         var r = ValidacionDeEntrada.ValidarPdfBase64(Convert.ToBase64String(PdfCifrado()), MaxKb);

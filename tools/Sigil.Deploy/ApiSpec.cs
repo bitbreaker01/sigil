@@ -1,6 +1,6 @@
 // Especificación DECLARATIVA de las Custom APIs desplegadas (F2) — la fuente única de
-// verdad del despliegue y el espejo EXACTO de doc 04 §3.1/§3.2 y de las pruebas CF-D
-// (RunbookD_BackendTests). Si esto y CF-D divergen, CF-D queda rojo — por diseño.
+// verdad del despliegue y el espejo EXACTO de las pruebas CF-D
+// (Conformance_BackendTests). Si esto y CF-D divergen, CF-D queda rojo — por diseño.
 
 namespace Sigil.Deploy;
 
@@ -45,10 +45,10 @@ internal static class Catalogo
     public const string SolutionName = "sigil_core_sigil";
     public const string TxTable = "sanic_sigil_tbl_transaction";
 
-    // Privilegio de nivel usuario (doc 04 §3.2): lo tiene el rol Sigil | SR | User.
+    // Privilegio de nivel usuario: lo tiene el rol Sigil | SR | User.
     public const string UserPrivilege = "prvReadsanic_sigil_tbl_transaction";
 
-    // Privilegio de SERVICIO (doc 04 §3.2): solo el rol Sigil | SR | Service lo posee —
+    // Privilegio de SERVICIO: solo el rol Sigil | SR | Service lo posee —
     // un usuario común NO puede invocar los jobs aunque conozca su firma.
     public const string ServicePrivilege = "prvWritesanic_sigil_tbl_ledgerentry";
 
@@ -56,10 +56,10 @@ internal static class Catalogo
     public const string WorkerPluginType = "Sigil.Plugins.Apis.SealingWorkerPlugin";
     public const string WorkerStepName = "Sigil | Step | SealingWorker on Update of transaction";
 
-    // Valores de env vars que el CÓDIGO DESPLEGADO HOY lee (doc 04 §3.4). Derivados de los docs:
-    //   MaxPdfSizeKB 20480 = 20 MB (doc 04 §7 dimensiona PDFs de ~20 MB);
-    //   MaxParticipants 20 (doc 04 §3.4, default);
-    //   ExpirationDefaultDays 7 = valor de DEV (doc 09 §6 manda plazos CORTOS en Dev para
+    // Valores de env vars que el CÓDIGO DESPLEGADO HOY lee. Derivados de los docs:
+    //   MaxPdfSizeKB 20480 = 20 MB (PDFs dimensionados de ~20 MB);
+    //   MaxParticipants 20 (default);
+    //   ExpirationDefaultDays 7 = valor de DEV (plazos CORTOS en Dev para
     //   probar expiración rápido; el valor de negocio de Test/Prod se fija por ambiente).
     //   El resto de la config por-ambiente se setea cuando su consumidor se despliega.
     public static readonly (string Schema, string Valor)[] EnvValues =
@@ -67,11 +67,11 @@ internal static class Catalogo
         ("sanic_sigil_env_MaxPdfSizeKB", "20480"),
         ("sanic_sigil_env_MaxParticipants", "20"),
         ("sanic_sigil_env_ExpirationDefaultDays", "7"),
-        // JSON canónico del doc 04 §4 (umbrales iniciales de ADR-009 — calibrables por ambiente)
+        // JSON canónico (umbrales iniciales — calibrables por ambiente)
         ("sanic_sigil_env_SignatureImageSpec",
             """{ "targetWidthPx": 600, "targetHeightPx": 200, "maxKB": 150, "minAlphaRatio": 0.15, "minRmsContrast": 0.25, "minLaplacianVar": 80 }"""),
         // TSA en Dev: HABILITADA con Sectigo primero (el spike probó que DigiCert está
-        // bloqueada desde la red del sandbox — orden por ambiente, ADR-005). En Prod el
+        // bloqueada desde la red del sandbox — orden por ambiente). En Prod el
         // orden de negocio se fija por ambiente.
         ("sanic_sigil_env_TsaEnabled", "yes"),
         ("sanic_sigil_env_TsaEndpoints",
@@ -84,7 +84,7 @@ internal static class Catalogo
         ("sanic_sigil_env_AppPlayUrl",
             Environment.GetEnvironmentVariable("SIGIL_APP_PLAY_URL")
             ?? "https://apps.powerapps.com/play/e/dev-pendiente/a/dev-pendiente"),
-        // Dev: cadencia CORTA para probar recordatorios rápido (doc 09 §6); Test/Prod = negocio.
+        // Dev: cadencia CORTA para probar recordatorios rápido; Test/Prod = negocio.
         ("sanic_sigil_env_ReminderCadenceDays", "2"),
         ("sanic_sigil_env_DefaultLanguage", "es"),
     };
@@ -94,7 +94,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_CreateTransaction",
             DisplayName: "Sigil | CAPI | CreateTransaction",
-            Description: "Crea el borrador de una transacción de firma (RF-25/26).",
+            Description: "Crea el borrador de una transacción de firma.",
             BindingType: Binding.Global,
             BoundEntityLogicalName: null,
             PluginTypeName: "Sigil.Plugins.Apis.CreateTransactionPlugin",
@@ -132,7 +132,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_DeleteDraft",
             DisplayName: "Sigil | CAPI | DeleteDraft",
-            Description: "Borra un borrador (eventos primero — T3).",
+            Description: "Borra un borrador (eventos primero).",
             BindingType: Binding.Entity,
             BoundEntityLogicalName: TxTable,
             PluginTypeName: "Sigil.Plugins.Apis.DeleteDraftPlugin",
@@ -142,7 +142,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_GetDocumentContent",
             DisplayName: "Sigil | CAPI | GetDocumentContent",
-            Description: "Devuelve el PDF de contenido o final en base64 (RF-03/05/24).",
+            Description: "Devuelve el PDF de contenido o final en base64.",
             BindingType: Binding.Entity,
             BoundEntityLogicalName: TxTable,
             PluginTypeName: "Sigil.Plugins.Apis.GetDocumentContentPlugin",
@@ -152,7 +152,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_SendTransaction",
             DisplayName: "Sigil | CAPI | SendTransaction",
-            Description: "Borrador → Pendiente de Firma (T4): valida zonas RF-28, ancla contenthash, comparte y activa turnos.",
+            Description: "Borrador → Pendiente de Firma: valida zonas, ancla contenthash, comparte y activa turnos.",
             BindingType: Binding.Entity,
             BoundEntityLogicalName: TxTable,
             PluginTypeName: "Sigil.Plugins.Apis.SendTransactionPlugin",
@@ -162,7 +162,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_SubmitSignature",
             DisplayName: "Sigil | CAPI | SubmitSignature",
-            Description: "Registra la intención de firma (RF-04) con snapshot de la Firma Maestra vigente.",
+            Description: "Registra la intención de firma con snapshot de la Firma Maestra vigente.",
             BindingType: Binding.Entity,
             BoundEntityLogicalName: TxTable,
             PluginTypeName: "Sigil.Plugins.Apis.SubmitSignaturePlugin",
@@ -172,7 +172,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_RejectTransaction",
             DisplayName: "Sigil | CAPI | RejectTransaction",
-            Description: "Rechazo por un participante en Turno Activo (RF-13) — motivo obligatorio.",
+            Description: "Rechazo por un participante en Turno Activo — motivo obligatorio.",
             BindingType: Binding.Entity,
             BoundEntityLogicalName: TxTable,
             PluginTypeName: "Sigil.Plugins.Apis.RejectTransactionPlugin",
@@ -182,7 +182,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_CancelTransaction",
             DisplayName: "Sigil | CAPI | CancelTransaction",
-            Description: "Cancelación por el creador (RF-30) — Pendiente de Firma, Firmado Parcialmente o Error de Sellado.",
+            Description: "Cancelación por el creador — Pendiente de Firma, Firmado Parcialmente o Error de Sellado.",
             BindingType: Binding.Entity,
             BoundEntityLogicalName: TxTable,
             PluginTypeName: "Sigil.Plugins.Apis.CancelTransactionPlugin",
@@ -192,7 +192,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_ValidateMasterSignature",
             DisplayName: "Sigil | CAPI | ValidateMasterSignature",
-            Description: "Valida (ADR-009: alfa/contraste/nitidez, cómputo local) y normaliza la Firma Maestra. Con Persist=true crea la nueva versión vigente; sin él solo valida (preview antes de confirmar).",
+            Description: "Valida (alfa/contraste/nitidez, cómputo local) y normaliza la Firma Maestra. Con Persist=true crea la nueva versión vigente; sin él solo valida (preview antes de confirmar).",
             BindingType: Binding.Global,
             BoundEntityLogicalName: null,
             PluginTypeName: "Sigil.Plugins.Apis.ValidateMasterSignaturePlugin",
@@ -212,7 +212,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_RetrySealing",
             DisplayName: "Sigil | CAPI | RetrySealing",
-            Description: "Error de Sellado → Sellando (T10): re-dispara el worker idempotente.",
+            Description: "Error de Sellado → Sellando: re-dispara el worker idempotente.",
             BindingType: Binding.Entity,
             BoundEntityLogicalName: TxTable,
             PluginTypeName: "Sigil.Plugins.Apis.RetrySealingPlugin",
@@ -222,7 +222,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_GetMasterSignature",
             DisplayName: "Sigil | CAPI | GetMasterSignature",
-            Description: "Devuelve el PNG normalizado de la Firma Maestra vigente del llamante (RF-01).",
+            Description: "Devuelve el PNG normalizado de la Firma Maestra vigente del llamante.",
             BindingType: Binding.Global,
             BoundEntityLogicalName: null,
             PluginTypeName: "Sigil.Plugins.Apis.GetMasterSignaturePlugin",
@@ -236,7 +236,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_GetMasterSignatureHistory",
             DisplayName: "Sigil | CAPI | GetMasterSignatureHistory",
-            Description: "Historial de versiones de la Firma Maestra del llamante (versionado inmutable, doc 03 §4.5). Out: HistoryJson.",
+            Description: "Historial de versiones de la Firma Maestra del llamante (versionado inmutable). Out: HistoryJson.",
             BindingType: Binding.Global,
             BoundEntityLogicalName: null,
             PluginTypeName: "Sigil.Plugins.Apis.GetMasterSignatureHistoryPlugin",
@@ -274,14 +274,14 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_VerifyDocument",
             DisplayName: "Sigil | CAPI | VerifyDocument",
-            Description: "Verificación (RF-20/21, ADR-007): constancia + veredicto contra finalhash + verificación cruzada del historial.",
+            Description: "Verificación: constancia + veredicto contra finalhash + verificación cruzada del historial.",
             BindingType: Binding.Global,
             BoundEntityLogicalName: null,
             PluginTypeName: "Sigil.Plugins.Apis.VerifyDocumentPlugin",
             RequestParams: new[]
             {
                 // Ambos opcionales, pero al menos uno es obligatorio (lo valida el plugin): TransactionId
-                // (QR / Detail) o Sha256Hash solo (búsqueda por hash en el ledger — RF-20/21).
+                // (QR / Detail) o Sha256Hash solo (búsqueda por hash en el ledger).
                 new RequestParam("TransactionId", ParamType.Guid, Optional: true),
                 new RequestParam("Sha256Hash", ParamType.String, Optional: true),
             },
@@ -296,7 +296,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_ExpireTransactions",
             DisplayName: "Sigil | CAPI | ExpireTransactions",
-            Description: "Job diario (RF-27): expira vencidas (T12) + saneamiento de Sellando zombi (T14).",
+            Description: "Job diario: expira vencidas + saneamiento de Sellando zombi.",
             BindingType: Binding.Global,
             BoundEntityLogicalName: null,
             PluginTypeName: "Sigil.Plugins.Apis.ExpireTransactionsPlugin",
@@ -311,7 +311,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_ProcessReminders",
             DisplayName: "Sigil | CAPI | ProcessReminders",
-            Description: "Job diario (RF-12): recordatorios por cadencia — RemindersJson autosuficiente para el flow.",
+            Description: "Job diario: recordatorios por cadencia — RemindersJson autosuficiente para el flow.",
             BindingType: Binding.Global,
             BoundEntityLogicalName: null,
             PluginTypeName: "Sigil.Plugins.Apis.ProcessRemindersPlugin",
@@ -322,7 +322,7 @@ internal static class Catalogo
         new(
             UniqueName: "sanic_sigil_capi_ResealPending",
             DisplayName: "Sigil | CAPI | ResealPending",
-            Description: "Job diario (ADR-005): reintenta TSA sobre ledgers pendientes; con TSA off los mueve a Sin sello.",
+            Description: "Job diario: reintenta TSA sobre ledgers pendientes; con TSA off los mueve a Sin sello.",
             BindingType: Binding.Global,
             BoundEntityLogicalName: null,
             PluginTypeName: "Sigil.Plugins.Apis.ResealPendingPlugin",

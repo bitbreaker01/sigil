@@ -1,4 +1,4 @@
-// Step 2 (doc 05 §4.2): signers + routing. Routing decides whether the list order matters
+// Step 2: signers + routing. Routing decides whether the list order matters
 // (sequential = signing order, auto-derived by position). The people picker searches the seam
 // (mock: fake directory; real: Dataverse systemuser). Duplicates are prevented by the hook.
 

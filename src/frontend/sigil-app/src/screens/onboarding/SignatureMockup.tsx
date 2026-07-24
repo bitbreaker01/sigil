@@ -1,4 +1,4 @@
-// "How it looks on a document" mockups for onboarding (RF-01). Renders the signature inside a 3:1
+// "How it looks on a document" mockups for onboarding. Renders the signature inside a 3:1
 // zone (the normalized ratio) over a few DIFFERENT fake document layouts, so the user can judge
 // whether their signature reads well across contexts — without needing real PDFs.
 

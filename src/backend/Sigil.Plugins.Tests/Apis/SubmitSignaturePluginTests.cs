@@ -1,8 +1,8 @@
-// sanic_sigil_capi_SubmitSignature — la API crítica en concurrencia (docs 04 §5, 06 T5/T6/T7).
+// sanic_sigil_capi_SubmitSignature — la API crítica en concurrencia (T5/T6/T7).
 // Los asserts que el diseño EXIGE (M2/M3): idempotencia ANTES del guard de estado (doble
 // click del último firmante con la tx ya en Sellando), decisión "último" post-lock,
-// activación del siguiente turno (P2'), status jamás reescrito con valor idéntico
-// (doc 08 §7), snapshot de la firma vigente + lookup a la versión exacta.
+// activación del siguiente turno (P2'), status jamás reescrito con valor idéntico,
+// snapshot de la firma vigente + lookup a la versión exacta.
 
 using System;
 using System.Linq;
@@ -68,7 +68,7 @@ public class SubmitSignaturePluginTests
         Assert.Contains("turno", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact] // sin Firma Maestra vigente no se firma (RF-01)
+    [Fact] // sin Firma Maestra vigente no se firma
     public void SinFirmaMaestraVigente_EsRechazado_ConMensajeAccionable()
     {
         var txId = _arnes.SembrarTransaccion(_creador, TransactionStatus.PendienteDeFirma, RoutingType.Paralelo);
@@ -96,7 +96,7 @@ public class SubmitSignaturePluginTests
         Assert.True(p1.Contains(SchemaNames.Participante.SignedOn));
         Assert.Equal("Beto Uno", p1.GetAttributeValue<string>(SchemaNames.Participante.SignerName));
         Assert.Equal("beto@bac.test", p1.GetAttributeValue<string>(SchemaNames.Participante.SignerEmail));
-        // lookup a la versión EXACTA usada (doc 03 §4.2)
+        // lookup a la versión EXACTA usada
         Assert.NotNull(p1.GetAttributeValue<EntityReference>(SchemaNames.Participante.MasterSignatureId));
 
         // snapshot de bytes congelado en el participante
@@ -106,7 +106,7 @@ public class SubmitSignaturePluginTests
         var tx = _arnes.Servicio.FilasDe(SchemaNames.Tx.Entidad).Single();
         Assert.Equal((int)TransactionStatus.FirmadoParcialmente, tx.GetAttributeValue<OptionSetValue>(SchemaNames.Tx.Status).Value);
 
-        // evento 3 con documenthash del contenido servido (doc 03 §4.6)
+        // evento 3 con documenthash del contenido servido
         var evento = Assert.Single(_arnes.Servicio.FilasDe(SchemaNames.Evento.Entidad));
         Assert.Equal((int)EventType.FirmaRegistrada, evento.GetAttributeValue<OptionSetValue>(SchemaNames.Evento.Type).Value);
         Assert.Equal(HashUtil.Sha256Hex(pdf), evento.GetAttributeValue<string>(SchemaNames.Evento.DocumentHash));
@@ -119,7 +119,7 @@ public class SubmitSignaturePluginTests
             new EntityReference(SchemaNames.Participante.Entidad, pid1), SchemaNames.Participante.SignatureSnapshot)]);
     }
 
-    [Fact] // doc 04 §5 / S4 — el lock precede a todo, también en Submit
+    [Fact] // S4 — el lock precede a todo, también en Submit
     public void ElLock_EsLaPrimeraOperacion()
     {
         var (txId, _, _) = SembrarEnviadaParalelo();
@@ -206,7 +206,7 @@ public class SubmitSignaturePluginTests
         Assert.True(p2.Contains(SchemaNames.Participante.TurnActivatedOn));
     }
 
-    [Fact] // doc 08 §7 — segunda firma no-última con tx YA en FirmadoParcialmente: status NO se reescribe
+    [Fact] // segunda firma no-última con tx YA en FirmadoParcialmente: status NO se reescribe
     public void ConTxYaEnFirmadoParcialmente_UnaFirmaNoUltima_NoReescribeElStatus()
     {
         var txId = _arnes.SembrarTransaccion(_creador, TransactionStatus.FirmadoParcialmente, RoutingType.Paralelo);
@@ -225,6 +225,6 @@ public class SubmitSignaturePluginTests
         var updatesDeTx = _arnes.Servicio.Operaciones
             .Where(o => o.Tipo == "Update" && o.Entidad == SchemaNames.Tx.Entidad).ToList();
         Assert.All(updatesDeTx, u => Assert.False(u.Datos!.Contains(SchemaNames.Tx.Status),
-            "el status idéntico jamás se reescribe — dispararía los flows (doc 08 §7)"));
+            "el status idéntico jamás se reescribe — dispararía los flows"));
     }
 }

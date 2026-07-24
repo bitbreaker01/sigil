@@ -1,11 +1,11 @@
-// sanic_sigil_capi_SubmitSignature (T5/T6/T7 + P3/P2', doc 04 §3.1/§5): registra la
+// sanic_sigil_capi_SubmitSignature (T5/T6/T7 + P3/P2'): registra la
 // intención de firma. LA API críticа en concurrencia:
 //   1. Lock de fila PRIMERO; re-leer TODO después (las carreras quedan serializadas).
 //   2. IDEMPOTENCIA ANTES del guard de estado (M3): re-submit sobre Firmado = éxito sin
 //      efectos — el doble click del último firmante llega con la tx ya en Sellando y
 //      el guard de estado la rechazaría; la idempotencia tiene precedencia.
 //   3. La decisión "último" se toma DESPUÉS del lock, contando sobre la lectura serializada.
-//   4. El status solo se escribe si CAMBIA (doc 08 §7: los triggers disparan aunque el
+//   4. El status solo se escribe si CAMBIA (los triggers disparan aunque el
 //      valor sea idéntico — reescribir FirmadoParcialmente duplicaría notificaciones).
 // Efectos P3: snapshot del PNG vigente + lookup a la versión exacta, snapshots de identidad
 // (del contexto, jamás del cliente), evento 3 con documenthash. Out: IsLastSigner.
@@ -55,7 +55,7 @@ public class SubmitSignaturePlugin : SigilApiPlugin
         if (motivo is not null)
             throw new InvalidPluginExecutionException(motivo);
 
-        // ── Firma Maestra vigente (obligatoria para firmar — RF-01) ──
+        // ── Firma Maestra vigente (obligatoria para firmar) ──
         var firmaMaestra = Consultas.FirmaMaestraVigenteDe(e.Servicio, e.Llamante)
             ?? throw new InvalidPluginExecutionException(
                 "No tenés una Firma Maestra validada — cargala desde tu perfil antes de firmar.");
@@ -63,7 +63,7 @@ public class SubmitSignaturePlugin : SigilApiPlugin
         var firmaRef = new EntityReference(SchemaNames.FirmaMaestra.Entidad, firmaMaestra.Id);
         var pngVigente = e.Archivos.Descargar(firmaRef, SchemaNames.FirmaMaestra.SignatureFile);
 
-        // documenthash: SHA-256 del documento de contenido AL MOMENTO del evento (doc 03 §4.6)
+        // documenthash: SHA-256 del documento de contenido AL MOMENTO del evento
         var documentHash = HashUtil.Sha256Hex(e.Archivos.Descargar(target, SchemaNames.Tx.ContentFile));
 
         // Snapshots de identidad — SIEMPRE del contexto de ejecución, jamás del cliente.
@@ -113,7 +113,7 @@ public class SubmitSignaturePlugin : SigilApiPlugin
             e.Servicio.Update(turno);
         }
 
-        // Transición de la transacción — el status SOLO se escribe si cambia (doc 08 §7).
+        // Transición de la transacción — el status SOLO se escribe si cambia.
         var estadoNuevo = decision.EsUltimo ? TransactionStatus.Sellando : TransactionStatus.FirmadoParcialmente;
         if (estadoNuevo != estadoTx)
         {

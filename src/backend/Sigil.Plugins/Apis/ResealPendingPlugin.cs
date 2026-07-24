@@ -1,10 +1,10 @@
-// sanic_sigil_capi_ResealPending (ADR-005, doc 04 §3.1) — job diario. Reintenta el sello
+// sanic_sigil_capi_ResealPending — job diario. Reintenta el sello
 // TSA sobre ledgers en Re-sellado pendiente. Con TsaEnabled=false los transiciona a
 // Sin sello TSA (evita huérfanos eternos bajo una etiqueta que promete un reintento que
 // no va a ocurrir). El rate limit por endpoint lo respeta el ClienteTsa (Sectigo ≥15 s
 // entre requests automatizados — crítico procesando lotes).
 // sealedon NO se toca en el re-sellado: el token prueba existencia a SU genTime, no antes
-// (doc 04 §4 — el nivel de evidencia muestra AMBAS fechas).
+// (el nivel de evidencia muestra AMBAS fechas).
 // Out: ResealedCount, MovedToNoTsaCount, StillPendingCount.
 //
 // Evento del movimiento a Sin sello TSA: tipo "TSA abandonada" (159460012 — agregado por
@@ -26,7 +26,7 @@ public class ResealPendingPlugin : SigilApiPlugin
     // descarga (~2-6 s) + TSA (~1-10 s) + rate limit de Sectigo (15 s) ≈ 20-30 s. Sin cap,
     // el 5º-8º ledger cruza el límite DURO de 2 minutos y el rollback transaccional revierte
     // TODO (tokens ya pedidos = requests quemados) → el job quedaría rojo para siempre con
-    // backlog. El job es diario e idempotente: drenar de a 3 es correcto (ADR-005).
+    // backlog. El job es diario e idempotente: drenar de a 3 es correcto.
     public const int MaxResellosPorCorrida = 3;
 
     protected override void Ejecutar(EntornoDeApi e)

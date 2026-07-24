@@ -7,7 +7,7 @@ namespace Sigil.Plugins.Core.Domain;
 
 public static class SchemaNames
 {
-    /// <summary>sanic_sigil_tbl_transaction (doc 03 §4.1).</summary>
+    /// <summary>sanic_sigil_tbl_transaction.</summary>
     public static class Tx
     {
         public const string Entidad = "sanic_sigil_tbl_transaction";
@@ -26,7 +26,7 @@ public static class SchemaNames
         public const string OwnerId = "ownerid";
     }
 
-    /// <summary>sanic_sigil_tbl_participant (doc 03 §4.2).</summary>
+    /// <summary>sanic_sigil_tbl_participant.</summary>
     public static class Participante
     {
         public const string Entidad = "sanic_sigil_tbl_participant";
@@ -47,7 +47,7 @@ public static class SchemaNames
         public const string OwnerId = "ownerid";
     }
 
-    /// <summary>sanic_sigil_tbl_mastersignature (doc 03 §4.5 — versionada).</summary>
+    /// <summary>sanic_sigil_tbl_mastersignature (versionada).</summary>
     public static class FirmaMaestra
     {
         public const string Entidad = "sanic_sigil_tbl_mastersignature";
@@ -61,7 +61,7 @@ public static class SchemaNames
         public const string OwnerId = "ownerid";
     }
 
-    /// <summary>sanic_sigil_tbl_signaturezone (doc 03 §4.3).</summary>
+    /// <summary>sanic_sigil_tbl_signaturezone.</summary>
     public static class Zona
     {
         public const string Entidad = "sanic_sigil_tbl_signaturezone";
@@ -75,7 +75,7 @@ public static class SchemaNames
         public const string OwnerId = "ownerid";
     }
 
-    /// <summary>sanic_sigil_tbl_event (doc 03 §4.6).</summary>
+    /// <summary>sanic_sigil_tbl_event.</summary>
     public static class Evento
     {
         public const string Entidad = "sanic_sigil_tbl_event";
@@ -91,7 +91,7 @@ public static class SchemaNames
         public const string OwnerId = "ownerid";
     }
 
-    /// <summary>sanic_sigil_tbl_ledgerentry (doc 03 §4.4).</summary>
+    /// <summary>sanic_sigil_tbl_ledgerentry.</summary>
     public static class Ledger
     {
         public const string Entidad = "sanic_sigil_tbl_ledgerentry";
@@ -105,7 +105,7 @@ public static class SchemaNames
         public const string SignerSummary = "sanic_sigil_signersummary";
     }
 
-    /// <summary>systemuser — columnas que Sigil consulta para snapshots (doc 03 §4.2).</summary>
+    /// <summary>systemuser — columnas que Sigil consulta para snapshots.</summary>
     public static class Usuario
     {
         public const string Entidad = "systemuser";
@@ -117,7 +117,7 @@ public static class SchemaNames
         public const string IsDisabled = "isdisabled";
     }
 
-    /// <summary>Custom APIs (doc 04 §3.1 / doc 12 §3).</summary>
+    /// <summary>Custom APIs (doc 12 §3).</summary>
     public static class Apis
     {
         public const string CreateTransaction = "sanic_sigil_capi_CreateTransaction";
@@ -139,7 +139,7 @@ public static class SchemaNames
         public const string ResealPending = "sanic_sigil_capi_ResealPending";
     }
 
-    /// <summary>Variables de entorno (doc 03 §8).</summary>
+    /// <summary>Variables de entorno.</summary>
     public static class EnvVars
     {
         public const string MaxPdfSizeKB = "sanic_sigil_env_MaxPdfSizeKB";

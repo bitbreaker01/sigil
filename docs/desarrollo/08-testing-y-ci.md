@@ -99,7 +99,7 @@ numéricos reales** — copiados del portal, nunca calculados (los flujos compar
 un **contrato vivo** que **dos** suites parsean:
 
 - `ChoicesTests` (§2.1) — lo contrasta contra los enums de `Choices.cs` (sin ambiente).
-- `RunbookA_ModeloDatosTests` (§5) — lo contrasta contra los option sets de **Dataverse real**.
+- `Conformance_ModeloDatosTests` (§5) — lo contrasta contra los option sets de **Dataverse real**.
 
 Los 5 choices y su cardinalidad: `transactionstatus` (9), `participantstatus` (4), `routingtype` (2),
 `tsastatus` (3), `eventtype` (13) — 31 opciones en total. Si el apéndice y el código (o el ambiente) divergen,
@@ -117,8 +117,8 @@ alternate keys, choices, roles, perfil de seguridad de columna, env vars, Custom
   `SIGIL_DATAVERSE_URL`/`SIGIL_CLIENT_ID`/`SIGIL_CLIENT_SECRET`. **Sin `SIGIL_DATAVERSE_URL`**, los tests se
   **auto-omiten** con motivo (`Skippable`/`Skip.If`) — jamás fingen verde. Con URL pero error de conexión,
   fallan **ruidoso** (no se enmascara un ambiente roto).
-- **Nombres `CF-*`**, agrupados por área en clases como `RunbookA_ModeloDatosTests` (modelo de datos), `RunbookA_FundacionesTests`
-  (tablas, relaciones, forms), `RunbookA_SeguridadOperacionTests` (privilegios, FLS), `RunbookD_BackendTests`.
+- **Nombres `CF-*`**, agrupados por área en clases como `Conformance_ModeloDatosTests` (modelo de datos), `Conformance_FundacionesTests`
+  (tablas, relaciones, forms), `Conformance_SeguridadOperacionTests` (privilegios, FLS), `Conformance_BackendTests`.
 - **Ejemplos verificados:** `CF-A16` lee el Apéndice A **antes** de requerir el cliente (una regresión del
   documento se ve sin conectarse) y luego contrasta cada choice contra `RetrieveOptionSetRequest`; `CF-A17`
   verifica que cada columna tenga el **tipo Y el binding** correctos (un Picklist atado al choice equivocado o

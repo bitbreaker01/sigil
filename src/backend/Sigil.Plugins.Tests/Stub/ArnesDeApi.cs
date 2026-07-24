@@ -1,5 +1,5 @@
 // Arnés de pruebas de la capa Apis/: contexto de plugin + stub + seam de archivos en
-// memoria + siembras del modelo de datos (doc 03). Patrón del proyecto (doc 11 §2):
+// memoria + siembras del modelo de datos. Patrón del proyecto:
 // datos semilla explícitos, verificación de efectos consultando el stub — jamás mocks.
 
 using System;
@@ -123,7 +123,7 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
         plugin.Execute(this);
     }
 
-    // ── siembras del modelo (doc 03) ─────────────────────────────────────────
+    // ── siembras del modelo ─────────────────────────────────────────
 
     public Guid SembrarUsuario(string nombre, string email, bool deshabilitado = false)
     {
@@ -180,7 +180,7 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
         => Archivos.Archivos[StubFileTransfer.Clave(
             new EntityReference(SchemaNames.Tx.Entidad, transactionId), columna)] = bytes;
 
-    /// <summary>Firma Maestra VIGENTE del usuario, con su PNG en el seam de archivos (doc 03 §4.5).</summary>
+    /// <summary>Firma Maestra VIGENTE del usuario, con su PNG en el seam de archivos.</summary>
     public Guid SembrarFirmaMaestra(Guid userId, byte[] png, int version = 1, bool vigente = true)
     {
         var fm = new Entity(SchemaNames.FirmaMaestra.Entidad);
@@ -203,7 +203,7 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
         return ms.ToArray();
     }
 
-    /// <summary>PNG sintético que PASA los tres umbrales de ADR-009 (trazos negros sobre transparente).</summary>
+    /// <summary>PNG sintético que PASA los tres umbrales (trazos negros sobre transparente).</summary>
     public static byte[] PngDeFirmaQueValida()
     {
         using var img = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(600, 200);
@@ -234,7 +234,7 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
 
     // ── plumbing ─────────────────────────────────────────────────────────────
 
-    /// <summary>Seam de TSA para el worker (doc 11 §3) — null usa el real (jamás en tests).</summary>
+    /// <summary>Seam de TSA para el worker — null usa el real (jamás en tests).</summary>
     public ISelladorTsa? SelladorTsa { get; set; }
 
     object? IServiceProvider.GetService(Type serviceType)
@@ -242,7 +242,7 @@ public sealed class ArnesDeApi : IServiceProvider, IOrganizationServiceFactory
         if (serviceType == typeof(IPluginExecutionContext)) return Contexto;
         if (serviceType == typeof(ITracingService)) return Trace;
         if (serviceType == typeof(IOrganizationServiceFactory)) return this;
-        if (serviceType == typeof(IFileTransfer)) return Archivos; // seam (doc 11 §2)
+        if (serviceType == typeof(IFileTransfer)) return Archivos; // seam
         if (serviceType == typeof(ISelladorTsa)) return SelladorTsa;
         return null;
     }

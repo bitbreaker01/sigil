@@ -1,7 +1,7 @@
-// PowerProvider (doc 05 §9): resolves the Power Apps context ONCE at startup
+// PowerProvider: resolves the Power Apps context ONCE at startup
 // (getContext is async), exposes identity + query params via React context. In dev (without the
 // runtime) it falls back to the browser URL and a mock identity. Identity is NEVER
-// authoritative — the real authorization is the backend's (doc 04 §3.3); the UI only hides what
+// authoritative — the real authorization is the backend's; the UI only hides what
 // the backend would reject anyway.
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';

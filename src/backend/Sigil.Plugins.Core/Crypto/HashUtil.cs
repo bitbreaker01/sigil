@@ -1,5 +1,5 @@
 // SHA-256 en hex mayúsculas sin separadores — el formato de sanic_sigil_contenthash
-// (Texto 64, doc 03 §4.1) y de sanic_sigil_documenthash de los eventos (doc 03 §4.6).
+// (Texto 64) y de sanic_sigil_documenthash de los eventos.
 
 using System.Security.Cryptography;
 using System.Text;

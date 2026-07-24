@@ -1,6 +1,6 @@
-// sanic_sigil_capi_RejectTransaction (T11 + P4, doc 04 §3.1): rechazo por un participante
+// sanic_sigil_capi_RejectTransaction (T11 + P4): rechazo por un participante
 // en Turno Activo, motivo OBLIGATORIO. Un solo rechazo mata la transacción completa en
-// ambos enrutamientos (decisión explícita, doc 06 §3) — los que no firmaron quedan como estén.
+// ambos enrutamientos (decisión explícita) — los que no firmaron quedan como estén.
 
 using System.Linq;
 using Microsoft.Xrm.Sdk;

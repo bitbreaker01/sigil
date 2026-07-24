@@ -1,7 +1,7 @@
-// M1/M2/M3/M9 — reglas puras del ciclo de vida (docs 04 §3.3, 06 §1.1/§2/§3):
-// completitud de zonas (RF-28), activación de turnos (P2/P2'), decisión del último
+// M1/M2/M3/M9 — reglas puras del ciclo de vida:
+// completitud de zonas, activación de turnos (P2/P2'), decisión del último
 // firmante DESPUÉS del lock (T5/T6/T7), autorización de Cancel (T13) y de acciones
-// de firmante (Submit/Reject). El doc 06 §3 es la autoridad del enrutamiento.
+// de firmante (Submit/Reject).
 
 using Sigil.Plugins.Core.Domain;
 
@@ -14,7 +14,7 @@ public class ReglasDeCicloDeVidaTests
     private static readonly Guid U2 = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000002");
     private static readonly Guid U3 = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000003");
 
-    // ── RF-28: completitud de zonas al enviar (M9) ───────────────────────────
+    // ── completitud de zonas al enviar (M9) ───────────────────────────
 
     [Fact]
     public void M9_Completitud_TodosConZona_Pasa()
@@ -25,7 +25,7 @@ public class ReglasDeCicloDeVidaTests
         Assert.Empty(faltantes);
     }
 
-    [Fact] // el error debe LISTAR a quiénes les falta (doc 04 §3.4)
+    [Fact] // el error debe LISTAR a quiénes les falta
     public void M9_Completitud_UnoSinZona_LoLista()
     {
         var faltantes = ReglasDeEnvio.ParticipantesSinZona(
@@ -34,7 +34,7 @@ public class ReglasDeCicloDeVidaTests
         Assert.Equal([U2], faltantes);
     }
 
-    // ── P2: activación inicial al enviar (doc 06 §3) ─────────────────────────
+    // ── P2: activación inicial al enviar ─────────────────────────
 
     [Fact]
     public void M2_ActivacionInicial_Secuencial_SoloElOrden1()
@@ -59,7 +59,7 @@ public class ReglasDeCicloDeVidaTests
         Assert.Equal(new[] { U1, U2 }, activar);
     }
 
-    // ── T5/T6/T7 + P2': decisión post-lock del último firmante (doc 06 §3) ───
+    // ── T5/T6/T7 + P2': decisión post-lock del último firmante ───
     // El estado que entra acá es el YA re-leído tras el lock, con el firmante
     // actual todavía en Turno Activo (la regla lo marca Firmado en su cálculo).
 
@@ -96,10 +96,10 @@ public class ReglasDeCicloDeVidaTests
             (U2, null, ParticipantStatus.TurnoActivo),
         ]);
         Assert.False(d.EsUltimo);
-        Assert.Null(d.SiguienteAActivar); // en paralelo no hay "siguiente" (doc 06 §3)
+        Assert.Null(d.SiguienteAActivar); // en paralelo no hay "siguiente"
     }
 
-    [Fact] // "exactamente uno verá cero pendientes" (doc 04 §5) — acá, el que cierra
+    [Fact] // "exactamente uno verá cero pendientes" — acá, el que cierra
     public void M2_Paralelo_ElUltimoQueFalta_EsUltimo()
     {
         var d = ReglasDeFirma.Decidir(RoutingType.Paralelo, firmante: U2,
@@ -118,7 +118,7 @@ public class ReglasDeCicloDeVidaTests
         Assert.True(d.EsUltimo);
     }
 
-    // ── T13: autorización de Cancel (doc 04 §3.3 / doc 06) ───────────────────
+    // ── T13: autorización de Cancel ───────────────────
 
     [Theory]
     [InlineData(TransactionStatus.PendienteDeFirma)]
@@ -129,7 +129,7 @@ public class ReglasDeCicloDeVidaTests
         Assert.Null(ReglasDeAutorizacion.MotivoParaRechazarCancelacion(Creador, Creador, estado));
     }
 
-    [Theory] // jamás Sellando (doc 04 §3.1); Borrador se borra, no se cancela; terminales no
+    [Theory] // jamás Sellando; Borrador se borra, no se cancela; terminales no
     [InlineData(TransactionStatus.Borrador)]
     [InlineData(TransactionStatus.Sellando)]
     [InlineData(TransactionStatus.Completado)]
@@ -150,7 +150,7 @@ public class ReglasDeCicloDeVidaTests
         Assert.Contains("creador", motivo, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── Submit/Reject: participante con Turno Activo (doc 04 §3.3) ───────────
+    // ── Submit/Reject: participante con Turno Activo ───────────
 
     [Theory]
     [InlineData(TransactionStatus.PendienteDeFirma)]

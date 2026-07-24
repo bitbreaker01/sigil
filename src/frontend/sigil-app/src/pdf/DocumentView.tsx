@@ -1,6 +1,6 @@
 // Read-only inline document viewer. Fetches the PDF DIRECTLY through the seam and keeps it in
-// screen-local state (freed on unmount) — never in the Query cache (doc 05 §5.2). Used to review a
-// transaction's document from the detail screen (RF-24) without leaving the app.
+// screen-local state (freed on unmount) — never in the Query cache. Used to review a
+// transaction's document from the detail screen without leaving the app.
 
 import { useEffect, useRef, useState } from 'react';
 import { Spinner, MessageBar, MessageBarBody } from '@fluentui/react-components';

@@ -4,7 +4,7 @@ import { webcrypto } from 'node:crypto';
 
 // jsdom implements neither WebCrypto nor Blob.arrayBuffer(), which DO exist in the real browser
 // and in the Power Apps runtime. We polyfill them only for the test environment — the production
-// code uses the native APIs as-is (doc 05 §5.2/§6.2: local hash with Web Crypto).
+// code uses the native APIs as-is (local hash with Web Crypto).
 
 if (!globalThis.crypto?.subtle) {
   Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });

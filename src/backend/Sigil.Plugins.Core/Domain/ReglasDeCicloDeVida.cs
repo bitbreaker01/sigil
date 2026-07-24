@@ -1,6 +1,5 @@
-// Reglas puras del ciclo de vida (docs 04 §5, 06 §1.1/§2/§3) — la cáscara re-lee el
-// estado DESPUÉS del lock de fila y delega acá las decisiones. Doc 06 §3 es la
-// autoridad de la semántica de enrutamiento.
+// Reglas puras del ciclo de vida — la cáscara re-lee el
+// estado DESPUÉS del lock de fila y delega acá las decisiones.
 
 using System;
 using System.Collections.Generic;
@@ -11,16 +10,16 @@ namespace Sigil.Plugins.Core.Domain;
 public static class ReglasDeEnvio
 {
     /// <summary>
-    /// RF-28: participantes sin NINGUNA zona de firma — el envío se bloquea listándolos
-    /// (doc 04 §3.4). Devuelve los userIds faltantes en el orden de la lista de participantes.
+    /// Participantes sin NINGUNA zona de firma — el envío se bloquea listándolos.
+    /// Devuelve los userIds faltantes en el orden de la lista de participantes.
     /// </summary>
     public static IReadOnlyList<Guid> ParticipantesSinZona(
         IReadOnlyList<Guid> participantes, IReadOnlyCollection<Guid> userIdsConZona)
         => participantes.Where(p => !userIdsConZona.Contains(p)).ToList();
 
     /// <summary>
-    /// P2 — activación inicial al enviar (doc 06 §3): secuencial → solo el orden 1;
-    /// paralelo → todos (el dashboard "pendientes por mi firma" queda plano, doc 03 §3).
+    /// P2 — activación inicial al enviar: secuencial → solo el orden 1;
+    /// paralelo → todos (el dashboard "pendientes por mi firma" queda plano).
     /// </summary>
     public static IReadOnlyList<Guid> ActivacionInicial(
         RoutingType routing, IReadOnlyList<(Guid UserId, int? Order)> participantes)
@@ -52,7 +51,7 @@ public static class ReglasDeFirma
     }
 
     /// <summary>
-    /// Decisión post-lock de T5/T6/T7 (doc 04 §5): el estado recibido es el re-leído tras
+    /// Decisión post-lock de T5/T6/T7: el estado recibido es el re-leído tras
     /// el lock, con el firmante actual aún en Turno Activo — la regla lo cuenta como Firmado.
     /// "Último" = nadie más queda sin firmar; en secuencial, el siguiente Pendiente por orden
     /// se activa (P2'). Exactamente una ejecución serializada verá cero pendientes.

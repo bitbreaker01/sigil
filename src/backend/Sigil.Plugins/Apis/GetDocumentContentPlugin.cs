@@ -1,8 +1,8 @@
-// sanic_sigil_capi_GetDocumentContent (doc 04 §3.1) — Bound. La operación más frecuente
-// del sistema: devuelve PdfBase64 del documento de contenido (RF-03) o del final (RF-05/24).
-// In: DocumentType ("content"|"final"). Autorización doc 04 §3.3: creador O participante;
+// sanic_sigil_capi_GetDocumentContent — Bound. La operación más frecuente
+// del sistema: devuelve PdfBase64 del documento de contenido o del final.
+// In: DocumentType ("content"|"final"). Autorización: creador O participante;
 // final solo en Completado; content para participantes solo desde Pendiente de Firma.
-// Solo lectura: sin lock (doc 04 §5 aplica a quien DECIDE sobre estado compartido).
+// Solo lectura: sin lock (aplica a quien DECIDE sobre estado compartido).
 
 using System;
 using Microsoft.Xrm.Sdk;

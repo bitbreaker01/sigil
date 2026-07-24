@@ -49,7 +49,7 @@ setup('authenticate', async ({ page }) => {
       if (hit) {
         throw new Error(
           `El login pidió MFA/registro (pantalla: "${sign}"). La cuenta de prueba todavía tiene ` +
-          `un requerimiento de segundo factor activo — revisá per-user MFA y políticas de CA (doc fase-3/01 §2).`,
+          `un requerimiento de segundo factor activo — revisá per-user MFA y políticas de CA.`,
         );
       }
     }

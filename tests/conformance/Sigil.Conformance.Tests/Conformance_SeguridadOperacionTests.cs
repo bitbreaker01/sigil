@@ -3,16 +3,16 @@ namespace Sigil.Conformance.Tests;
 using Microsoft.Xrm.Sdk.Query;
 
 /// <summary>
-/// Conformidad de seguridad y operación del Runbook A — CF-A10/A11/A13/A14/A15.
-/// Escritos ANTES de ejecutar los pasos que prueban (doc 11 §1 regla 5):
+/// Conformidad de seguridad y operación — CF-A10/A11/A13/A14/A15.
+/// Escritos ANTES de ejecutar los pasos que prueban:
 /// están en rojo hasta que el paso correspondiente se completa.
 /// (CF-A12 — CSP — no tiene test: el setting se lee con la Power Platform API, una auth
-///  distinta a la de esta suite; su verificación es el gate 5 del Runbook B. Límite documentado.)
+///  distinta a la de esta suite; su verificación es un gate posterior. Límite documentado.)
 /// </summary>
 [Collection("dataverse")]
-public class RunbookA_SeguridadOperacionTests(DataverseFixture fx)
+public class Conformance_SeguridadOperacionTests(DataverseFixture fx)
 {
-    [SkippableFact] // CF-A10 — Runbook A §A4c (ejecutable después de A7)
+    [SkippableFact] // CF-A10 (ejecutable después de A7)
     public void CF_A10_ElAppUser_EsMiembroDelPerfil_EvidenceWriter()
     {
         var client = fx.RequireClient();
@@ -35,7 +35,7 @@ public class RunbookA_SeguridadOperacionTests(DataverseFixture fx)
         // consulta al segundo intersect como fallback y registrar el hallazgo.
         Assert.True(client.RetrieveMultiple(query).Entities.Count > 0,
             "El application user del Service Principal NO figura como miembro del perfil 'Sigil | FLS | Evidence Writer' " +
-            "vía el intersect systemuserprofiles (Runbook A §A4c — la membresía NO viaja en soluciones). " +
+            "vía el intersect systemuserprofiles (la membresía NO viaja en soluciones). " +
             "Si la membresía SE VE en PPAC: probable intersect alternativo applicationuserprofile — ver nota en el test.");
     }
 
@@ -65,7 +65,7 @@ public class RunbookA_SeguridadOperacionTests(DataverseFixture fx)
             $"Connection references SIN conexión asociada (los flows llegarían apagados — gate 3): [{string.Join(", ", sinConexion)}]");
     }
 
-    [SkippableFact] // CF-A13 — Runbook A §A8
+    [SkippableFact] // CF-A13
     public void CF_A13_Auditoria_HabilitadaANivelOrganizacion()
     {
         var client = fx.RequireClient();
@@ -75,10 +75,10 @@ public class RunbookA_SeguridadOperacionTests(DataverseFixture fx)
         }).Entities);
 
         Assert.True(org.GetAttributeValue<bool>("isauditenabled"),
-            "La auditoría org-level está APAGADA (Runbook A §A8 — sin ella no hay registro forense; doc 07 capa de auditabilidad).");
+            "La auditoría org-level está APAGADA (sin ella no hay registro forense; capa de auditabilidad).");
     }
 
-    [SkippableFact] // CF-A14 — Runbook A §A10
+    [SkippableFact] // CF-A14
     public void CF_A14_ExisteTeamDeGrupoEntra_ConElRol_User()
     {
         var client = fx.RequireClient();
@@ -90,8 +90,8 @@ public class RunbookA_SeguridadOperacionTests(DataverseFixture fx)
                 Conditions =
                 {
                     new ConditionExpression("azureactivedirectoryobjectid", ConditionOperator.NotNull),
-                    // teamtype 2 = Entra ID Security Group (lo que manda el Runbook §A10 —
-                    // un Office group con el rol no cuenta como el paso bien hecho)
+                    // teamtype 2 = Entra ID Security Group —
+                    // un Office group con el rol no cuenta como el paso bien hecho
                     new ConditionExpression("teamtype", ConditionOperator.Equal, 2),
                 },
             },
@@ -102,10 +102,10 @@ public class RunbookA_SeguridadOperacionTests(DataverseFixture fx)
 
         Assert.True(client.RetrieveMultiple(query).Entities.Count > 0,
             "Ningún team vinculado a un grupo de Entra tiene el rol 'Sigil | SR | User' " +
-            "(Runbook A §A10 — los usuarios finales entran por grupo, jamás uno a uno).");
+            "(los usuarios finales entran por grupo, jamás uno a uno).");
     }
 
-    [SkippableFact] // CF-A15 — Runbook A §A12 (datos semilla)
+    [SkippableFact] // CF-A15 (datos semilla)
     public void CF_A15_UsuariosSemilla_ExistenYHabilitados()
     {
         var client = fx.RequireClient();
@@ -122,7 +122,7 @@ public class RunbookA_SeguridadOperacionTests(DataverseFixture fx)
             };
             var usuarios = client.RetrieveMultiple(query).Entities;
 
-            Assert.True(usuarios.Count > 0, $"El usuario semilla '{upn}' no existe en el ambiente (Runbook A §A12).");
+            Assert.True(usuarios.Count > 0, $"El usuario semilla '{upn}' no existe en el ambiente.");
             Assert.True(usuarios.Count == 1,
                 $"Hay {usuarios.Count} registros de systemuser con UPN '{upn}' — duplicado (¿usuario deshabilitado y recreado?): resolver antes de usarlo como semilla.");
             Assert.False(usuarios[0].GetAttributeValue<bool>("isdisabled"), $"El usuario semilla '{upn}' está deshabilitado.");

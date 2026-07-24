@@ -1,4 +1,4 @@
-// sanic_sigil_capi_UpdateDraft — orquestación (doc 04 §3.1/§3.3/§5).
+// sanic_sigil_capi_UpdateDraft — orquestación.
 // Acá viven los asserts de la MECÁNICA: el lock va primero, la revalidación de zonas
 // al reemplazar el PDF no borra nada en silencio, y el reemplazo de participantes.
 
@@ -52,7 +52,7 @@ public class UpdateDraftPluginTests
         Assert.Contains("borrador", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact] // doc 04 §5: el lock de fila es la PRIMERA operación, sobre locktoken — jamás status
+    [Fact] // el lock de fila es la PRIMERA operación, sobre locktoken — jamás status
     public void ElLock_EsLaPrimeraOperacion_YUsaSoloLaColumnaTecnica()
     {
         var txId = _arnes.SembrarTransaccion(_creador, TransactionStatus.Borrador);
@@ -62,7 +62,7 @@ public class UpdateDraftPluginTests
 
         // El lock precede a TODA operación — el stub registra también las LECTURAS, así que
         // First() siendo el lock descarta que alguna lectura de estado no serializado ocurra
-        // antes (la carrera que el lock previene, doc 04 §5).
+        // antes (la carrera que el lock previene).
         Assert.Contains(_arnes.Servicio.Operaciones, o => o.Tipo == "Read"); // hubo lecturas...
         var primera = _arnes.Servicio.Operaciones.First();                    // ...pero ninguna primero
         Assert.Equal("Update", primera.Tipo);
@@ -82,11 +82,11 @@ public class UpdateDraftPluginTests
 
         var tx = _arnes.Servicio.FilasDe(SchemaNames.Tx.Entidad).Single();
         Assert.Equal("Título nuevo", tx.GetAttributeValue<string>(SchemaNames.Tx.Name));
-        // sin evento: UpdateDraft no transiciona estado (doc 04 §8)
+        // sin evento: UpdateDraft no transiciona estado
         Assert.Empty(_arnes.Servicio.FilasDe(SchemaNames.Evento.Entidad));
     }
 
-    [Fact] // doc 04 §3.1: PDF nuevo con zonas que quedan fuera → error EXPLÍCITO, jamás borrado silencioso
+    [Fact] // PDF nuevo con zonas que quedan fuera → error EXPLÍCITO, jamás borrado silencioso
     public void ConPdfNuevo_YZonasQueQuedanFuera_Rechaza_ListandoLasZonas_YSinTocarNada()
     {
         var firmante = _arnes.SembrarUsuario("Beto", "beto@bac.test");
@@ -226,7 +226,7 @@ public class UpdateDraftPluginTests
         Assert.Throws<InvalidPluginExecutionException>(() => Ejecutar(txId, _creador));
     }
 
-    [Fact] // cambiar el routing sin reenviar participantes es ambiguo — se rechaza (decisión doc 04 §3.4)
+    [Fact] // cambiar el routing sin reenviar participantes es ambiguo — se rechaza (decisión)
     public void CambiarElRouting_SinReenviarParticipantes_EsRechazado()
     {
         var txId = _arnes.SembrarTransaccion(_creador, TransactionStatus.Borrador, RoutingType.Paralelo);

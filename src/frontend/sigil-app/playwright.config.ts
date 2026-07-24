@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// E2E contra la app REAL hosteada en Dev (doc fase-3/01-playwright-e2e.md).
+// E2E contra la app REAL hosteada en Dev.
 // Corre por CI (workflow_dispatch), NUNCA en el CI de PR: necesita secrets + login a Entra.
 // La autenticación se hace una sola vez (proyecto `setup`) y se reusa vía storageState.
 export default defineConfig({

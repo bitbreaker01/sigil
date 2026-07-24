@@ -1,6 +1,6 @@
 // Renders ONE PDF page to a canvas at a target CSS width. pdf.js applies /Rotate and uses the
 // CropBox in its viewport, so the canvas shows the VISUAL orientation — exactly the coordinate
-// contract the zone editor and backend share (doc 04 §6.1 / doc 05 §6.1). Reports the rendered
+// contract the zone editor and backend share. Reports the rendered
 // pixel size so an overlay can map the shared %-coordinates to on-screen pixels.
 
 import { useEffect, useRef } from 'react';

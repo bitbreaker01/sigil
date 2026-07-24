@@ -1,5 +1,5 @@
-// Sign screen (doc 05 §4.3, RF-03/04/13/28): full PDF viewer with the signer's zones highlighted,
-// "Approve & sign" gated on a successful render (RF-03), "Reject" with a mandatory reason, and a
+// Sign screen: full PDF viewer with the signer's zones highlighted,
+// "Approve & sign" gated on a successful render, "Reject" with a mandatory reason, and a
 // hard gate to onboarding when there's no Master Signature. On success a differentiated toast
 // (by IsLastSigner) is shown and the user is routed to the detail screen.
 
