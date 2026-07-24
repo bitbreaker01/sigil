@@ -94,7 +94,7 @@ public class RunbookA_ModeloDatosTests(DataverseFixture fx, ITestOutputHelper ou
     private static Dictionary<string, Dictionary<string, int>> LeerApendiceA()
     {
         var raiz = BuscarRaizDelRepo();
-        var ruta = Path.Combine(raiz, "docs", "fase-0", "12-convenciones-nomenclatura.md");
+        var ruta = Path.Combine(raiz, "docs", "referencia", "12-convenciones-nomenclatura.md");
         Assert.True(File.Exists(ruta), $"No se encontró el doc 12 en {ruta}.");
 
         var resultado = new Dictionary<string, Dictionary<string, int>>();

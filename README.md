@@ -17,6 +17,7 @@ sigil/
 │   └── unpacked/           #   metadata NO-código, versionada y diffeable (tablas, flows, roles…)
 ├── docs/
 │   ├── guias/              # 📖 Documentación viva (usuario, operador, cumplimiento, desarrollador)
+│   ├── referencia/         #   Contratos vivos que los tests corroboran (ej. Apéndice A de choices)
 │   └── desarrollo/         #   Documentación técnica del código (en construcción)
 ├── _andamio/               # Andamio de construcción — descartable, NO se mantiene
 └── .github/workflows/      # CI
