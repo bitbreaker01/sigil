@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FieldSecurityProfiles xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <FieldSecurityProfile name="Sigil | FLS | Evidence Writer" fieldsecurityprofileid="{7cb3ad1e-0580-f111-ab0e-70a8a59a720a}">
+    <FieldPermissions>
+      <FieldPermission>
+        <EntityName>sanic_sigil_tbl_ledgerentry</EntityName>
+        <AttributeName>sanic_sigil_sealedon</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>4</CanUpdate>
+        <CanCreate>4</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+      <FieldPermission>
+        <EntityName>sanic_sigil_tbl_ledgerentry</EntityName>
+        <AttributeName>sanic_sigil_tsatoken</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>4</CanUpdate>
+        <CanCreate>4</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+      <FieldPermission>
+        <EntityName>sanic_sigil_tbl_ledgerentry</EntityName>
+        <AttributeName>sanic_sigil_finalhash</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>4</CanUpdate>
+        <CanCreate>4</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+      <FieldPermission>
+        <EntityName>sanic_sigil_tbl_ledgerentry</EntityName>
+        <AttributeName>sanic_sigil_contenthash</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>4</CanUpdate>
+        <CanCreate>4</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+    </FieldPermissions>
+  </FieldSecurityProfile>
+</FieldSecurityProfiles>

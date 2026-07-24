@@ -1,0 +1,173 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_SigilConnDataverseSP"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      },
+      "shared_teams": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_sigil_conn_teams"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      },
+      "shared_office365_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_sigil_conn_outlook"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)": {
+          "defaultValue": "https://apps.powerapps.com/play/e/9c8994b8-b1bc-ee23-9184-2f6346502613/app/14bfecc2-325e-4f10-a4b5-5735c5bc4c84",
+          "type": "String",
+          "metadata": {
+            "schemaName": "sanic_sigil_env_AppPlayUrl"
+          }
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "703d1644-223e-4b48-81eb-b9824cd9d4d7"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/message": 3,
+              "subscriptionRequest/entityname": "sanic_sigil_tbl_participant",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filteringattributes": "sanic_sigil_status",
+              "subscriptionRequest/filterexpression": "sanic_sigil_status eq 159460001"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Obtener_transaccion": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "75c76e73-19fc-40f0-9f38-9704034b1b7a"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "GetItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "sanic_sigil_tbl_transactions",
+              "recordId": "@triggerOutputs()?['body/_sanic_sigil_transactionid_value']"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Post_card_in_a_chat_or_channel": {
+          "runAfter": {
+            "Obtener_Usuario": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "96d1b405-b3d7-4e1d-b0d8-84708c8b8f53"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_teams",
+              "operationId": "PostCardToConversation",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+            },
+            "parameters": {
+              "poster": "Flow bot",
+              "location": "Chat with Flow bot",
+              "body/recipient": "@{outputs('Obtener_Usuario')?['body/internalemailaddress']};",
+              "body/messageBody": "{\n  \"type\": \"AdaptiveCard\",\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"version\": \"1.4\",\n  \"body\": [\n{ \"type\": \"TextBlock\", \"text\": \"Sigil — Tu turno de firma\", \"weight\": \"Bolder\", \"size\": \"Medium\", \"wrap\": true },\n    { \"type\": \"TextBlock\", \"text\": \"@{outputs('Obtener_Transaccion')?['body/sanic_sigil_name']}\", \"weight\": \"Bolder\", \"wrap\": true, \"spacing\": \"None\" },\n    { \"type\": \"FactSet\", \"facts\": [\n{ \"title\": \"Envía:\", \"value\": \"@{outputs('Obtener_transaccion')?['body/_ownerid_value@OData.Community.Display.V1.FormattedValue']}\" },\n      { \"title\": \"Vence:\", \"value\": \"@{if(empty(outputs('Obtener_transaccion')?['body/sanic_sigil_expireson']), 'Sin vencimiento', convertTimeZone(outputs('Obtener_transaccion')?['body/sanic_sigil_expireson'], 'UTC', 'Central America Standard Time', 'dd/MM/yyyy HH:mm'))}\" }\n    ]},\n    { \"type\": \"TextBlock\", \"text\": \"@{outputs('Obtener_Transaccion')?['body/sanic_sigil_message']}\", \"wrap\": true, \"isSubtle\": true }\n  ],\n  \"actions\": [\n    { \"type\": \"Action.OpenUrl\", \"title\": \"Revisar y firmar\", \"url\": \"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=sign&txId=@{triggerOutputs()?['body/_sanic_sigil_transactionid_value']}\" }\n  ]\n}"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Send_an_email_(V2)": {
+          "runAfter": {
+            "Post_card_in_a_chat_or_channel": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bfa28fe6-0c47-479f-9735-3804636207d8"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_office365_1",
+              "operationId": "SendEmailV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+            },
+            "parameters": {
+              "emailMessage/To": "@outputs('Obtener_Usuario')?['body/internalemailaddress']",
+              "emailMessage/Subject": "[Sigil] Tu turno de firma: @{outputs('Obtener_Transaccion')?['body/sanic_sigil_name']}",
+              "emailMessage/Body": "<p>Hola @{outputs('Obtener_Usuario')?['body/firstname']}, </p>\n<p><b>@{outputs('Obtener_transaccion')?['body/_ownerid_value@OData.Community.Display.V1.FormattedValue']}</b> te envió el documento <b>«@{outputs('Obtener_Transaccion')?['body/sanic_sigil_name']}»</b> para firmar.</p>\n<p><i>Mensaje del solicitante:</i> @{outputs('Obtener_Transaccion')?['body/sanic_sigil_message']}</p>\n<p>Vence el <b>@{if(empty(outputs('Obtener_transaccion')?['body/sanic_sigil_expireson']), 'Sin vencimiento', convertTimeZone(outputs('Obtener_transaccion')?['body/sanic_sigil_expireson'], 'UTC', 'Central America Standard Time', 'dd/MM/yyyy HH:mm'))}</b></p>\n<p><a href=\"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=sign&txId=@{triggerOutputs()?['body/_sanic_sigil_transactionid_value']}\">Revisar y firmar</a></p>\n<p style=\"color:#666\">El documento se abre y firma dentro de Sigil; este correo no lleva adjuntos.</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Obtener_Usuario": {
+          "runAfter": {
+            "Obtener_transaccion": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8c50463b-b48f-4704-af52-9038d7c019bd"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "GetItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "systemusers",
+              "recordId": "@triggerOutputs()?['body/_sanic_sigil_userid_value']"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

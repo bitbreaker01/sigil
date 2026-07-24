@@ -1,0 +1,10 @@
+<environmentvariabledefinition schemaname="sanic_sigil_env_AppPlayUrl">
+  <displayname default="Sigil | ENV | URL de la App">
+    <label description="Sigil | ENV | URL de la App" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.0.0.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

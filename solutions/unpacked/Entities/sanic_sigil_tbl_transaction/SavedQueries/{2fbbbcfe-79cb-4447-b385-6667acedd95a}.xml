@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{2fbbbcfe-79cb-4447-b385-6667acedd95a}</savedqueryid>
+    <layoutxml>
+      <grid name="sanic_sigil_tbl_transactions" jump="sanic_sigil_name" select="1" icon="1" preview="1">
+        <row name="sanic_sigil_tbl_transaction" id="sanic_sigil_tbl_transactionid">
+          <cell name="sanic_sigil_name" width="300" />
+          <cell name="createdon" width="125" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>2</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="sanic_sigil_tbl_transaction">
+          <attribute name="sanic_sigil_tbl_transactionid" />
+          <attribute name="sanic_sigil_name" />
+          <attribute name="createdon" />
+          <order attribute="sanic_sigil_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Sigil | TBL | Transacción de Firma Associated View" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

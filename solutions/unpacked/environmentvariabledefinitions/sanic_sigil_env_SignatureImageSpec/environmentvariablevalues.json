@@ -1,0 +1,8 @@
+{
+  "environmentvariablevalues": {
+    "environmentvariablevalue": {
+      "iscustomizable": "1",
+      "value": "{ \"targetWidthPx\": 600, \"targetHeightPx\": 200, \"maxKB\": 150, \"minAlphaRatio\": 0.15, \"minRmsContrast\": 0.25, \"minLaplacianVar\": 80 }"
+    }
+  }
+}

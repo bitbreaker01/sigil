@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26072.132" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26072.00132">
+  <Entities />
+  <Roles />
+  <Workflows />
+  <FieldSecurityProfiles />
+  <Templates />
+  <EntityMaps />
+  <EntityRelationships />
+  <OrganizationSettings />
+  <optionsets />
+  <CustomControls />
+  <SdkMessageProcessingSteps />
+  <EntityDataProviders />
+  <CanvasApps />
+  <connectionreferences>
+    <connectionreference connectionreferencelogicalname="sanic_sigil_conn_outlook">
+      <connectionreferencedisplayname>Sigil | Conn | Outlook</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_office365</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="sanic_sigil_conn_teams">
+      <connectionreferencedisplayname>Sigil | Conn | Teams</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_teams</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="sanic_SigilConnDataverseSP">
+      <connectionreferencedisplayname>Sigil | Conn | Dataverse (SP)</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+  </connectionreferences>
+  <Languages>
+    <Language>1033</Language>
+  </Languages>
+</ImportExportXml>

@@ -1,0 +1,298 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_SigilConnDataverseSP"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      },
+      "shared_office365_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_sigil_conn_outlook"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_teams": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_sigil_conn_teams"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)": {
+          "defaultValue": "https://apps.powerapps.com/play/e/9c8994b8-b1bc-ee23-9184-2f6346502613/app/14bfecc2-325e-4f10-a4b5-5735c5bc4c84",
+          "type": "String",
+          "metadata": {
+            "schemaName": "sanic_sigil_env_AppPlayUrl"
+          }
+        },
+        "Sigil | ENV | Email del Operador (sanic_sigil_env_emailoperador)": {
+          "defaultValue": "admin@55xljh.onmicrosoft.com",
+          "type": "String",
+          "metadata": {
+            "schemaName": "sanic_sigil_env_emailoperador"
+          }
+        }
+      },
+      "triggers": {
+        "Recurrence": {
+          "recurrence": {
+            "frequency": "Day",
+            "interval": 1,
+            "timeZone": "Central America Standard Time",
+            "schedule": {
+              "hours": [
+                "5"
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "4c8ccbd0-e135-4091-8b92-b0097fb68074"
+          },
+          "type": "Recurrence"
+        }
+      },
+      "actions": {
+        "Expirar": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "14d0532b-d8e8-48dc-a915-3f614a8bc5d1"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "PerformUnboundAction",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "actionName": "sanic_sigil_capi_ExpireTransactions"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Recordatorios": {
+          "runAfter": {
+            "Expirar": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e78e2b48-db6b-4868-aa76-df59d6acbe57"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "PerformUnboundAction",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "actionName": "sanic_sigil_capi_ProcessReminders"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Resellar": {
+          "runAfter": {
+            "Recordatorios": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e44efa54-b379-43c1-aff0-660b3e5c159a"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "PerformUnboundAction",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "actionName": "sanic_sigil_capi_ResealPending"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Parsear_recordatorios": {
+          "runAfter": {
+            "Resellar": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e28aeab4-2fd3-4656-a5c2-717b0ea4d61d"
+          },
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@outputs('Recordatorios')?['body/RemindersJson']",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "participantId": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "string"
+                  },
+                  "transactionId": {
+                    "type": "string"
+                  },
+                  "transactionName": {
+                    "type": "string"
+                  },
+                  "daysWaiting": {
+                    "type": "integer"
+                  },
+                  "recipientEmail": {
+                    "type": "string"
+                  },
+                  "recipientName": {
+                    "type": "string"
+                  },
+                  "recipientLanguage": {
+                    "type": "string"
+                  },
+                  "senderName": {
+                    "type": "string"
+                  },
+                  "creatorMessage": {
+                    "type": "string"
+                  },
+                  "expiresOnUtc": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Recorrer_recordatorios": {
+          "foreach": "@body('Parsear_recordatorios')",
+          "actions": {
+            "NombreJSON_rec": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "60b1e87f-64b7-41de-9c53-320e77cf7cd5"
+              },
+              "type": "Compose",
+              "inputs": "@replace(replace(items('Recorrer_recordatorios')?['transactionName'], '\\', '\\\\'), '\"', '\\\"')"
+            },
+            "Send_an_email_(V2)": {
+              "runAfter": {
+                "NombreJSON_rec": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "bac8f539-3546-4911-87f7-8a543d0b6318"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_office365_1",
+                  "operationId": "SendEmailV2",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                },
+                "parameters": {
+                  "emailMessage/To": "@items('Recorrer_recordatorios')?['recipientEmail']",
+                  "emailMessage/Subject": "[Sigil] Recordatorio de firma: @{items('Recorrer_recordatorios')?['transactionName']}",
+                  "emailMessage/Body": "<p>Hola <b>@{items('Recorrer_recordatorios')?['recipientName']}</b>, seguimos esperando tu firma en <b>@{items('Recorrer_recordatorios')?['transactionName']}</b> (enviado por @{items('Recorrer_recordatorios')?['senderName']}).</p>\n<p>Esperando hace <b>@{items('Recorrer_recordatorios')?['daysWaiting']}</b> días.</p>\n<p><a href=\"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=sign&txId=@{items('Recorrer_recordatorios')?['transactionId']}\">Firmar ahora</a></p>\n<hr>",
+                  "emailMessage/Importance": "Normal"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Post_card_in_a_chat_or_channel": {
+              "runAfter": {
+                "Send_an_email_(V2)": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e3edf2bc-c232-452c-90cb-8f1e8d936974"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_teams",
+                  "operationId": "PostCardToConversation",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+                },
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Chat with Flow bot",
+                  "body/recipient": "@{items('Recorrer_recordatorios')?['recipientEmail']};",
+                  "body/messageBody": "{\n  \"type\": \"AdaptiveCard\",\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"version\": \"1.4\",\n  \"body\": [\n    { \"type\": \"TextBlock\", \"text\": \"Sigil — Recordatorio de firma / Signature reminder\", \"weight\": \"Bolder\", \"size\": \"Medium\", \"wrap\": true },\n    { \"type\": \"TextBlock\", \"text\": \"@{outputs('NombreJSON_rec')}\", \"weight\": \"Bolder\", \"wrap\": true, \"spacing\": \"None\" },\n    { \"type\": \"FactSet\", \"facts\": [\n      { \"title\": \"Esperando / Waiting:\", \"value\": \"@{items('Recorrer_recordatorios')?['daysWaiting']} días / days\" }\n    ]}\n  ],\n  \"actions\": [\n    { \"type\": \"Action.OpenUrl\", \"title\": \"Firmar ahora / Sign now\", \"url\": \"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=sign&txId=@{items('Recorrer_recordatorios')?['transactionId']}\" }\n  ]\n}"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Parsear_recordatorios": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "68eea3cf-952f-4f0e-af05-7fbe5201f0b2"
+          },
+          "type": "Foreach"
+        },
+        "Heartbeat": {
+          "runAfter": {
+            "Recorrer_recordatorios": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7d2f9498-9067-45d3-bd0a-898c3db8ec5d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_office365_1",
+              "operationId": "SendEmailV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+            },
+            "parameters": {
+              "emailMessage/To": "@parameters('Sigil | ENV | Email del Operador (sanic_sigil_env_emailoperador)')",
+              "emailMessage/Subject": "[Sigil] Heartbeat del job diario: OK",
+              "emailMessage/Body": "<p>El job diario se ejecutó <b>OK</b>.</p>\n<ul>\n  <li>Expiradas: <b>@{outputs('Expirar')?['body/ExpiredCount']}</b> (saneadas: @{outputs('Expirar')?['body/SanitizedCount']})</li>\n  <li>Recordatorios enviados: <b>@{length(body('Parsear_recordatorios'))}</b></li>\n  <li>Re-sellados: <b>@{outputs('Resellar')?['body/ResealedCount']}</b> · Movidas a \"Sin sello TSA\": @{outputs('Resellar')?['body/MovedToNoTsaCount']} · Aún pendientes: @{outputs('Resellar')?['body/StillPendingCount']} · <b>Anclas rotas: @{outputs('Resellar')?['body/AnchorMismatchCount']}</b></li>\n</ul>\n<p style=\"color:#a00\">Si mañana no llega este correo, el canal de notificaciones está caído.</p>",
+              "emailMessage/Importance": "Normal"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

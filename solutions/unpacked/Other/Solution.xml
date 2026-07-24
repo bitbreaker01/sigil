@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml version="9.2.26072.132" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26072.132" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26072.00132">
+  <SolutionManifest>
+    <UniqueName>sigil_core_sigil</UniqueName>
+    <LocalizedNames>
+      <LocalizedName description="Sigil | Core | Sigil" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions />
+    <Version>1.1.0.6</Version>
+    <Managed>0</Managed>
+    <Publisher>
+      <UniqueName>Sistemas_Abiertos_Nicaragua</UniqueName>
+      <LocalizedNames>
+        <LocalizedName description="Sistemas Abiertos Nicaragua" languagecode="1033" />
+      </LocalizedNames>
+      <Descriptions>
+        <Description description="Sistemas Abiertos - BacCredomatic NIC" languagecode="1033" />
+      </Descriptions>
+      <EMailAddress>hjiron@baccredomatic.ni</EMailAddress>
+      <SupportingWebsiteUrl xsi:nil="true"></SupportingWebsiteUrl>
+      <CustomizationPrefix>sanic</CustomizationPrefix>
+      <CustomizationOptionValuePrefix>15946</CustomizationOptionValuePrefix>
+      <Addresses>
+        <Address>
+          <AddressNumber>1</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+        <Address>
+          <AddressNumber>2</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+      </Addresses>
+    </Publisher>
+    <RootComponents>
+      <RootComponent type="1" schemaName="sanic_sigil_tbl_event" behavior="0" />
+      <RootComponent type="1" schemaName="sanic_sigil_tbl_ledgerentry" behavior="0" />
+      <RootComponent type="1" schemaName="sanic_sigil_tbl_mastersignature" behavior="0" />
+      <RootComponent type="1" schemaName="sanic_sigil_tbl_participant" behavior="0" />
+      <RootComponent type="1" schemaName="sanic_sigil_tbl_signaturezone" behavior="0" />
+      <RootComponent type="1" schemaName="sanic_sigil_tbl_transaction" behavior="0" />
+      <RootComponent type="20" id="{2602e7e1-1080-f111-ab0e-70a8a59a720a}" behavior="0" />
+      <RootComponent type="20" id="{5fb7cb90-1180-f111-ab0e-70a8a59a720a}" behavior="0" />
+      <RootComponent type="20" id="{68ef8536-1180-f111-ab0e-70a8a59a720a}" behavior="0" />
+      <RootComponent type="29" id="{9ba76fa1-9285-f111-8075-70a8a5af5a32}" behavior="0" />
+      <RootComponent type="29" id="{a8f1c97b-2085-f111-8075-70a8a5af5a32}" behavior="0" />
+      <RootComponent type="29" id="{d4961e4b-1a85-f111-8075-70a8a5af5a32}" behavior="0" />
+      <RootComponent type="300" schemaName="sanic_sigil_6155b" behavior="0" />
+      <RootComponent type="70" id="{7cb3ad1e-0580-f111-ab0e-70a8a59a720a}" behavior="0" />
+      <RootComponent type="9" schemaName="sanic_sigil_choice_eventtype" behavior="0" />
+      <RootComponent type="9" schemaName="sanic_sigil_choice_participantstatus" behavior="0" />
+      <RootComponent type="9" schemaName="sanic_sigil_choice_routingtype" behavior="0" />
+      <RootComponent type="9" schemaName="sanic_sigil_choice_transactionstatus" behavior="0" />
+      <RootComponent type="9" schemaName="sanic_sigil_choice_tsastatus" behavior="0" />
+      <RootComponent type="91" id="{0c249ee5-ce80-f111-ab0e-70a8a59a720a}" schemaName="Sigil.Plugins, Version=1.0.18.0, Culture=neutral, PublicKeyToken=null" behavior="0" />
+      <RootComponent type="92" id="{d677b8ab-2c81-f111-ab0e-70a8a59a720a}" behavior="0" />
+    </RootComponents>
+    <MissingDependencies />
+  </SolutionManifest>
+</ImportExportXml>

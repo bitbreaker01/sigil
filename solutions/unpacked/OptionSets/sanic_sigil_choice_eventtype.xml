@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<optionset Name="sanic_sigil_choice_eventtype" localizedName="Sigil | Choice | Tipo de evento" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionSetType>picklist</OptionSetType>
+  <IsGlobal>1</IsGlobal>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <ExternalTypeName></ExternalTypeName>
+  <displaynames>
+    <displayname description="Sigil | Choice | Tipo de evento" languagecode="1033" />
+  </displaynames>
+  <Descriptions>
+    <Description description="" languagecode="1033" />
+  </Descriptions>
+  <options>
+    <option value="159460000" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Transacción creada" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460001" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Enviada a firma" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460002" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Firma registrada" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460003" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Rechazada" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460004" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Recordatorio programado" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460005" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Sellado iniciado" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460006" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Sellado completado" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460007" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Error de sellado" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460008" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Re-sellado TSA obtenido" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460009" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Expirada" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460010" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Verificación realizada" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460011" ExternalValue="" IsHidden="0">
+      <labels>
+        <label description="Cancelada por el creador" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+    <option value="159460012" IsHidden="0">
+      <labels>
+        <label description="TSA abandonada" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
+  </options>
+</optionset>

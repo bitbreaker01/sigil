@@ -1,0 +1,8 @@
+{
+  "environmentvariablevalues": {
+    "environmentvariablevalue": {
+      "iscustomizable": "1",
+      "value": "{ \"endpoints\": [ { \"url\": \"https://timestamp.sectigo.com\", \"timeoutSeconds\": 10, \"minIntervalSeconds\": 15 }, { \"url\": \"https://timestamp.digicert.com\", \"timeoutSeconds\": 10, \"minIntervalSeconds\": 0 } ] }"
+    }
+  }
+}

@@ -1,0 +1,659 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_sigil_conn_outlook"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_teams": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_sigil_conn_teams"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      },
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_SigilConnDataverseSP"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)": {
+          "defaultValue": "https://apps.powerapps.com/play/e/9c8994b8-b1bc-ee23-9184-2f6346502613/app/14bfecc2-325e-4f10-a4b5-5735c5bc4c84",
+          "type": "String",
+          "metadata": {
+            "schemaName": "sanic_sigil_env_AppPlayUrl"
+          }
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "eae8f803-d334-4ca0-8268-65405d660fb7"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/message": 3,
+              "subscriptionRequest/entityname": "sanic_sigil_tbl_transaction",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filteringattributes": "sanic_sigil_status",
+              "subscriptionRequest/filterexpression": "sanic_sigil_status eq 159460004 or sanic_sigil_status eq 159460005 or sanic_sigil_status eq 159460006 or sanic_sigil_status eq 159460007 or sanic_sigil_status eq 159460008"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Switch": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          },
+          "cases": {
+            "Completado": {
+              "case": 159460004,
+              "actions": {
+                "Select_emails": {
+                  "runAfter": {
+                    "NombreJSON": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "6e134da6-a20a-448f-aed3-0929e2d5aca5"
+                  },
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@variables('arrParticipantes')",
+                    "select": "@item()?['email']"
+                  }
+                },
+                "NombreJSON": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "43fda248-66e7-4cc9-aa17-8649719b867f"
+                  },
+                  "type": "Compose",
+                  "inputs": "@replace(replace(outputs('Obtener_transaccion')?['body/sanic_sigil_name'], '\\', '\\\\'), '\"', '\\\"')"
+                },
+                "Send_an_email_(V2)": {
+                  "runAfter": {
+                    "Select_emails": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "479fa71c-6b32-4d4a-8815-52cde72cc960"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365_1",
+                      "operationId": "SendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/To": "@join(union(array(outputs('Obtener_creador')?['body/internalemailaddress']), body('Select_emails')), ';')",
+                      "emailMessage/Subject": "[Sigil] Documento sellado: @{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}",
+                      "emailMessage/Body": "<p><b>@{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}</b> fue firmado por todos y quedó <b>sellado</b>. Ya está disponible.</p>\n<p><a href=\"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=detail&txId=@{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']}\">Ver documento</a></p>\n<hr>",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Teams_por_destinatario": {
+                  "foreach": "@union(array(outputs('Obtener_creador')?['body/internalemailaddress']), body('Select_emails'))",
+                  "actions": {
+                    "Post_card_in_a_chat_or_channel": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "c36446df-4b41-464b-af8e-ecfc65500a84"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_teams",
+                          "operationId": "PostCardToConversation",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+                        },
+                        "parameters": {
+                          "poster": "Flow bot",
+                          "location": "Chat with Flow bot",
+                          "body/recipient": "@{item()};",
+                          "body/messageBody": "{\n  \"type\": \"AdaptiveCard\",\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"version\": \"1.4\",\n  \"body\": [\n    { \"type\": \"TextBlock\", \"text\": \"Sigil — Documento sellado\", \"weight\": \"Bolder\", \"size\": \"Medium\", \"wrap\": true },\n    { \"type\": \"TextBlock\", \"text\": \"@{outputs('NombreJSON')}\", \"weight\": \"Bolder\", \"wrap\": true, \"spacing\": \"None\" },\n    { \"type\": \"TextBlock\", \"text\": \"Firmado por todos y sellado.\", \"wrap\": true, \"isSubtle\": true }\n  ],\n  \"actions\": [\n    { \"type\": \"Action.OpenUrl\", \"title\": \"Ver documento\", \"url\": \"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=detail&txId=@{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']}\" }\n  ]\n}"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Send_an_email_(V2)": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "ad00da39-05d9-4e7e-9cfd-6cec61e0a7b4"
+                  },
+                  "type": "Foreach"
+                }
+              }
+            },
+            "Rechazado": {
+              "case": 159460005,
+              "actions": {
+                "NombreJSON_2": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "7fb6f87a-f40d-4506-858d-04fe15e3d0e4"
+                  },
+                  "type": "Compose",
+                  "inputs": "@replace(replace(outputs('Obtener_transaccion')?['body/sanic_sigil_name'], '\\', '\\\\'), '\"', '\\\"')"
+                },
+                "Filtrar_no_rechazante": {
+                  "runAfter": {
+                    "MotivoJSON": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "234ca1f7-ddd4-4b00-b7f0-2fe859097f87"
+                  },
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@variables('arrParticipantes')",
+                    "where": "@not(equals(item()?['status'], 159460003))"
+                  }
+                },
+                "Send_an_email_(V2)_2": {
+                  "runAfter": {
+                    "Select_emails_rech": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "bfd1de1c-8c5b-44b9-a7e4-da92afa8333e"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365_1",
+                      "operationId": "SendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/To": "@join(union(array(outputs('Obtener_creador')?['body/internalemailaddress']), body('Select_emails_rech')), ';')",
+                      "emailMessage/Subject": "[Sigil] Firma rechazada: @{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}",
+                      "emailMessage/Body": "<p><b>@{outputs('Rechazante')?['_sanic_sigil_userid_value@OData.Community.Display.V1.FormattedValue']}</b> rechazó <b>@{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}</b>.</p>\n<p><i>Motivo:</i> @{outputs('Rechazante')?['sanic_sigil_rejectionreason']}</p>\n<p><a href=\"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=detail&txId=@{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']}\">Ver detalle</a></p>\n<hr>",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Teams_por_destinatario_2": {
+                  "foreach": "@union(array(outputs('Obtener_creador')?['body/internalemailaddress']), body('Select_emails_rech'))",
+                  "actions": {
+                    "Post_message_in_a_chat_or_channel": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "5b21a380-9de7-456f-9fbf-748f0fbf76f0"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_teams",
+                          "operationId": "PostMessageToConversation",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+                        },
+                        "parameters": {
+                          "poster": "Flow bot",
+                          "location": "Chat with Flow bot",
+                          "body/recipient": "@{item()};",
+                          "body/messageBody": "<p>{<br>\n&nbsp;\"type\": \"AdaptiveCard\",<br>\n&nbsp;\"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",<br>\n&nbsp;\"version\": \"1.4\",<br>\n&nbsp;\"body\": [<br>\n&nbsp;&nbsp;&nbsp;{ \"type\": \"TextBlock\", \"text\": \"Sigil — Firma rechazada\", \"weight\": \"Bolder\", \"size\": \"Medium\", \"wrap\": true },<br>\n&nbsp;&nbsp;&nbsp;{ \"type\": \"TextBlock\", \"text\": \"@{outputs('NombreJSON_2')}\", \"weight\": \"Bolder\", \"wrap\": true, \"spacing\": \"None\" },<br>\n&nbsp;&nbsp;&nbsp;{ \"type\": \"FactSet\", \"facts\": [<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ \"title\": \"Rechazó:\", \"value\": \"@{outputs('Rechazante')?['_sanic_sigil_userid_value@OData.Community.Display.V1.FormattedValue']}\" },<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ \"title\": \"Motivo:\", \"value\": \"@{outputs('MotivoJSON')}\" }<br>\n&nbsp;&nbsp;&nbsp;]}<br>\n&nbsp;],<br>\n&nbsp;\"actions\": [<br>\n&nbsp;&nbsp;&nbsp;{ \"type\": \"Action.OpenUrl\", \"title\": \"Ver detalle\", \"url\": \"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=detail&amp;txId=@{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']}\" }<br>\n&nbsp;]<br>\n}</p>"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Send_an_email_(V2)_2": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "8a83a117-4471-494e-a1a8-cc1fc121e873"
+                  },
+                  "type": "Foreach"
+                },
+                "Obtener_rechazante": {
+                  "runAfter": {
+                    "NombreJSON_2": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "4aa40313-4610-4e8f-a42e-c216eca53da8"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "ListRecords",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "sanic_sigil_tbl_participants",
+                      "$select": "sanic_sigil_userid,sanic_sigil_rejectionreason",
+                      "$filter": "_sanic_sigil_transactionid_value eq @{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']} and sanic_sigil_status eq 159460003"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Rechazante": {
+                  "runAfter": {
+                    "Obtener_rechazante": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "7d66c2a4-5daa-49de-9a1d-d7228273e9e9"
+                  },
+                  "type": "Compose",
+                  "inputs": "@first(outputs('Obtener_rechazante')?['body/value'])"
+                },
+                "MotivoJSON": {
+                  "runAfter": {
+                    "Rechazante": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "596549e6-5fcb-4b75-b401-824f69dba4ae"
+                  },
+                  "type": "Compose",
+                  "inputs": "@replace(replace(outputs('Rechazante')?['sanic_sigil_rejectionreason'], '\\', '\\\\'), '\"', '\\\"')"
+                },
+                "Select_emails_rech": {
+                  "runAfter": {
+                    "Filtrar_no_rechazante": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "5d005d3e-545c-486c-a80e-79c66fd83e11"
+                  },
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@body('Filtrar_no_rechazante')",
+                    "select": "@item()?['email']"
+                  }
+                }
+              }
+            },
+            "Cancelado": {
+              "case": 159460008,
+              "actions": {
+                "Select_emails_canc": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "575d81d5-cbd5-48f3-ac45-3d27efae47a1"
+                  },
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@variables('arrParticipantes')",
+                    "select": "@item()?['email']"
+                  }
+                },
+                "Obtener_cancelacion": {
+                  "runAfter": {
+                    "Select_emails_canc": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "837487d0-0368-4130-9937-033dfbf1266f"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "ListRecords",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "sanic_sigil_tbl_participants",
+                      "$select": "sanic_sigil_details",
+                      "$filter": "_sanic_sigil_transactionid_value eq @{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']} and sanic_sigil_type eq 159460011",
+                      "$orderby": "createdon desc",
+                      "$top": 1
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Send_an_email_(V2)_3": {
+                  "runAfter": {
+                    "Obtener_cancelacion": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "d17b1e11-4b2f-4615-927a-2c5a4a617c60"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365_1",
+                      "operationId": "SendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/To": "@join(body('Select_emails_canc'), ';')",
+                      "emailMessage/Subject": "[Sigil] Solicitud cancelada: @{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}",
+                      "emailMessage/Body": "<p><b>@{outputs('Obtener_transaccion')?['body/_ownerid_value@OData.Community.Display.V1.FormattedValue']}</b> canceló la solicitud <b>@{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}</b>.</p>\n<p><i>Motivo:</i> @{first(outputs('Obtener_cancelacion')?['body/value'])?['sanic_sigil_details']}</p>\n<p><a href=\"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=detail&txId=@{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']}\">Ver detalle</a></p>\n<hr>",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              }
+            },
+            "Expirado": {
+              "case": 159460006,
+              "actions": {
+                "Filtrar_turno_activo": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "e8c1e8ba-8d04-4a16-80f2-ed48e71de9e9"
+                  },
+                  "type": "Query",
+                  "inputs": {
+                    "from": "@variables('arrParticipantes')",
+                    "where": "@equals(item()?['status'], 159460001)"
+                  }
+                },
+                "Select_emails_exp": {
+                  "runAfter": {
+                    "Filtrar_turno_activo": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "12cf4519-285a-4751-8ce8-d9e0ee0b4b71"
+                  },
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@body('Filtrar_turno_activo')",
+                    "select": "@item()?['email']"
+                  }
+                },
+                "Send_an_email_(V2)_4": {
+                  "runAfter": {
+                    "Select_emails_exp": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "be1459f5-d6c4-48fe-9731-e0b1fac6762d"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365_1",
+                      "operationId": "SendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/To": "@join(union(array(outputs('Obtener_creador')?['body/internalemailaddress']), body('Select_emails_exp')), ';')",
+                      "emailMessage/Subject": "[Sigil] Solicitud expirada: @{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}",
+                      "emailMessage/Body": "<p>La solicitud <b>@{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}</b> <b>venció</b> sin completarse.</p>\n<p><a href=\"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=detail&txId=@{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']}\">Ver detalle</a></p>\n<hr>",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              }
+            },
+            "Error_de_Sellado": {
+              "case": 159460007,
+              "actions": {
+                "NombreJSON3": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "654cd265-0a0f-483a-b0f4-f72b23654da9"
+                  },
+                  "type": "Compose",
+                  "inputs": "@replace(replace(outputs('Obtener_transaccion')?['body/sanic_sigil_name'], '\\', '\\\\'), '\"', '\\\"')"
+                },
+                "Send_an_email_(V2)_5": {
+                  "runAfter": {
+                    "NombreJSON3": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "168d00eb-317e-47fc-aabf-e17d43876d07"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_office365_1",
+                      "operationId": "SendEmailV2",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+                    },
+                    "parameters": {
+                      "emailMessage/To": "@outputs('Obtener_creador')?['body/internalemailaddress']",
+                      "emailMessage/Subject": "[Sigil] Acción requerida — error de sellado: @{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}",
+                      "emailMessage/Body": "<p>El <b>sellado</b> de <b>@{outputs('Obtener_transaccion')?['body/sanic_sigil_name']}</b> <b>falló</b> y requiere tu acción.</p>\n<p>Reintentá el sellado desde el detalle del documento.</p>\n<p><a href=\"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=detail&txId=@{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']}\">Ver detalle y reintentar</a></p>\n<hr>",
+                      "emailMessage/Importance": "Normal"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Post_card_in_a_chat_or_channel_2": {
+                  "runAfter": {
+                    "Send_an_email_(V2)_5": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "259d7fa7-fbb3-4af4-b443-825d25be3f3e"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_teams",
+                      "operationId": "PostCardToConversation",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+                    },
+                    "parameters": {
+                      "poster": "Flow bot",
+                      "location": "Chat with Flow bot",
+                      "body/recipient": "@{outputs('Obtener_creador')?['body/internalemailaddress']};",
+                      "body/messageBody": "{\n  \"type\": \"AdaptiveCard\",\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n  \"version\": \"1.4\",\n  \"body\": [\n    { \"type\": \"TextBlock\", \"text\": \"Sigil — Acción requerida\", \"weight\": \"Bolder\", \"size\": \"Medium\", \"wrap\": true },\n    { \"type\": \"TextBlock\", \"text\": \"@{outputs('NombreJSON3')}\", \"weight\": \"Bolder\", \"wrap\": true, \"spacing\": \"None\" },\n    { \"type\": \"TextBlock\", \"text\": \"El sellado falló. Reintentá desde el detalle.\", \"wrap\": true, \"isSubtle\": true }\n  ],\n  \"actions\": [\n    { \"type\": \"Action.OpenUrl\", \"title\": \"Ver detalle\", \"url\": \"@{parameters('Sigil | ENV | URL de la App (sanic_sigil_env_AppPlayUrl)')}?screen=detail&txId=@{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']}\" }\n  ]\n}"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "actions": {}
+          },
+          "expression": "@triggerOutputs()?['body/sanic_sigil_status']",
+          "metadata": {
+            "operationMetadataId": "9f6162d4-8085-458a-86d1-b92b564aab2a"
+          },
+          "type": "Switch"
+        },
+        "Obtener_transaccion": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "62297618-d05e-43cb-b349-50083afad42c"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "GetItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "sanic_sigil_tbl_transactions",
+              "recordId": "@triggerOutputs()?['body/sanic_sigil_tbl_transactionid']"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Listar_participantes": {
+          "runAfter": {
+            "Obtener_transaccion": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "22c2f09c-b0b5-4b01-baf7-974c3560f8bb"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "sanic_sigil_tbl_participants",
+              "$filter": "_sanic_sigil_transactionid_value eq @{triggerOutputs()?['body/sanic_sigil_tbl_transactionid']}"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Obtener_creador": {
+          "runAfter": {
+            "Listar_participantes": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "26d0f7aa-c7b3-42f5-b9e5-a7f6b69da101"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "GetItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "systemusers",
+              "recordId": "@outputs('Obtener_transaccion')?['body/_ownerid_value']"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Initialize_variable": {
+          "runAfter": {
+            "Obtener_creador": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6e008b4f-0e89-4f21-ab2a-8eddc6815001"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "arrParticipantes",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('Listar_participantes')?['body/value']",
+          "actions": {
+            "Obtener_firmante": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "46de5d6d-b468-46c2-887d-5e6f52420c2e"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "systemusers",
+                  "recordId": "@items('Apply_to_each')?['_sanic_sigil_userid_value']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Append_to_array_variable": {
+              "runAfter": {
+                "Obtener_firmante": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "ed6e2e1a-b40f-4bf8-b323-2dcb9879afde"
+              },
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "arrParticipantes",
+                "value": {
+                  "email": "@{outputs('Obtener_firmante')?['body/internalemailaddress']}",
+                  "userId": "@{items('Apply_to_each')?['_sanic_sigil_userid_value']}",
+                  "status": "@items('Apply_to_each')?['sanic_sigil_status']"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "fadf53d5-5edf-453b-aeae-6d43c7a3375b"
+          },
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}
