@@ -48,7 +48,7 @@ src/
     sigil-app/                 # Code App (React + TS + Vite)
       src/
         api/                   #   El seam de datos: SigilApi (interfaz), powerApps.ts, mock.ts
-        screens/               #   Las 6 pantallas
+        screens/               #   Las 7 pantallas
         pdf/                   #   Visor pdf.js + editor de zonas
         i18n/                  #   es.ts / en.ts
       e2e/                     #   Playwright (contra Dev)
@@ -294,7 +294,7 @@ La pantalla nunca sabe cuál está usando. Se elige en `api/index.ts`.
 
 ### 4.3 Binarios fuera del caché (política dura)
 
-Regla: **los base64 de documentos jamás entran al caché de TanStack Query.** Un PDF de 27 MB en base64 es ~54 MB de string UTF-16 + el `Uint8Array` + buffers de pdf.js — inaceptable en móvil, y el `gcTime` de 5 min lo retendría. Por eso los binarios se piden con el wrapper directo, viven en **estado local de la pantalla**, y se liberan al desmontar. Nunca en `localStorage`/`IndexedDB`. El decode base64 se hace **en pasos con yields** (`await`) para no congelar el hilo principal en móvil.
+Regla: **los base64 de documentos jamás entran al caché de TanStack Query.** Un PDF de 18 MB en base64 es ~36 MB de string UTF-16 + el `Uint8Array` + buffers de pdf.js — inaceptable en móvil, y el `gcTime` de 5 min lo retendría. Por eso los binarios se piden con el wrapper directo, viven en **estado local de la pantalla**, y se liberan al desmontar. Nunca en `localStorage`/`IndexedDB`. El decode base64 se hace **en pasos con yields** (`await`) para no congelar el hilo principal en móvil.
 
 ### 4.4 pdf.js con worker inline (la historia de la CSP)
 
@@ -309,7 +309,7 @@ Esto requiere que la CSP del ambiente permita `worker-src 'self' blob:`, **`chil
 
 ### 4.5 Navegación y pantallas
 
-Navegación **por estado** (no router de URL): un `Route { screen, txId?, ... }` en el shell (`App.tsx`), con `parseRoute(queryParams)` para el arranque. Las 6 pantallas: dashboard (3 pestañas), crear (wizard 4 pasos), firmar, detalle, verificar, onboarding (firma maestra).
+Navegación **por estado** (no router de URL): un `Route { screen, txId?, ... }` en el shell (`App.tsx`), con `parseRoute(queryParams)` para el arranque. Las 7 pantallas: dashboard (3 pestañas), crear (wizard 4 pasos), firmar, detalle, verificar, onboarding (firma maestra), documentos.
 
 > **Gotcha de deep link:** el player hosteado entrega los query params (`screen`/`txId`) vía `getContext()` **después** del primer render. El deep link se aplica en un effect **cuando el contexto está listo** (`ready`), no en el render inicial — si no, un enlace a la pantalla de firma abriría el dashboard.
 
