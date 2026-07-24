@@ -65,10 +65,17 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          gh release create "sol-v$VERSION" \
-            out/sigil_core_sigil_unmanaged.zip out/sigil_core_sigil_managed.zip \
-            --title "Solucion sigil_core_sigil $VERSION" \
-            --notes "Export automático (managed + unmanaged) desde Dev vía Service Principal."
+          TAG="sol-v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG ya existe — actualizo los assets (--clobber)."
+            gh release upload "$TAG" \
+              out/sigil_core_sigil_unmanaged.zip out/sigil_core_sigil_managed.zip --clobber
+          else
+            gh release create "$TAG" \
+              out/sigil_core_sigil_unmanaged.zip out/sigil_core_sigil_managed.zip \
+              --title "Solucion sigil_core_sigil $VERSION" \
+              --notes "Export automático (managed + unmanaged) desde Dev vía Service Principal."
+          fi
 
   # Reusa el Nivel 1: unpack del unmanaged + prune + commit de la metadata en solutions/unpacked/.
   sync:
