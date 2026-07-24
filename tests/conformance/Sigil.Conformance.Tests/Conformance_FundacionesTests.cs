@@ -8,7 +8,7 @@ using Microsoft.Xrm.Sdk.Query;
 /// Conformidad de los pasos fundacionales — IDs CF-A*.
 /// Cada test es la PRUEBA DE EXISTENCIA de un paso manual:
 /// rojo hasta que el paso se ejecuta; verde cuando quedó como el Apéndice A
-/// (docs/referencia/12-convenciones-nomenclatura.md) especifica.
+/// (docs/referencia/convenciones-nomenclatura.md) especifica.
 /// </summary>
 [Collection("dataverse")]
 public class Conformance_FundacionesTests(DataverseFixture fx, ITestOutputHelper output)
@@ -28,13 +28,13 @@ public class Conformance_FundacionesTests(DataverseFixture fx, ITestOutputHelper
         var publishers = client.RetrieveMultiple(query).Entities;
 
         Assert.True(publishers.Count == 1,
-            $"Debe existir exactamente un publisher con Name (nombre único) = 'Sistemas_Abiertos_Nicaragua' (Apéndice A, docs/referencia/12-convenciones-nomenclatura.md). {DiagnosticoPublishers(client)}");
+            $"Debe existir exactamente un publisher con Name (nombre único) = 'Sistemas_Abiertos_Nicaragua' (Apéndice A, docs/referencia/convenciones-nomenclatura.md). {DiagnosticoPublishers(client)}");
         Assert.Equal("sanic", publishers[0].GetAttributeValue<string>("customizationprefix"));
         Assert.Equal("Sistemas Abiertos Nicaragua", publishers[0].GetAttributeValue<string>("friendlyname"));
     }
 
     /// <summary>Cuando el publisher esperado no aparece, listar lo que SÍ hay — diagnóstico accionable:
-    /// distingue "el Name no coincide con la convención (Apéndice A, docs/referencia/12-convenciones-nomenclatura.md)" de "la URL apunta a otro ambiente".</summary>
+    /// distingue "el Name no coincide con la convención (Apéndice A, docs/referencia/convenciones-nomenclatura.md)" de "la URL apunta a otro ambiente".</summary>
     private static string DiagnosticoPublishers(Microsoft.PowerPlatform.Dataverse.Client.ServiceClient client)
     {
         var todos = client.RetrieveMultiple(new QueryExpression("publisher")
@@ -69,7 +69,7 @@ public class Conformance_FundacionesTests(DataverseFixture fx, ITestOutputHelper
         // LÍMITE HONESTO de este test: la plataforma restringe el valor a 10000–99999 y el maker
         // portal autogenera uno — lo único detectable acá es el 10000 del Default Publisher.
         // La garantía REAL del paso 4 del checklist es la tabla canónica de choices que este
-        // valor alimenta (Apéndice A, docs/referencia/12-convenciones-nomenclatura.md — bloqueante para los flows).
+        // valor alimenta (Apéndice A, docs/referencia/convenciones-nomenclatura.md — bloqueante para los flows).
         output.WriteLine($"Option Value Prefix del publisher 'sanic': {optionValuePrefix} → registrar en el Apéndice A.");
         Assert.NotEqual(10000, optionValuePrefix);
     }
@@ -194,7 +194,7 @@ public class Conformance_FundacionesTests(DataverseFixture fx, ITestOutputHelper
         Assert.NotEmpty(client.RetrieveMultiple(query).Entities);
     }
 
-    // ── Variables de entorno (nombres del Apéndice A, docs/referencia/12-convenciones-nomenclatura.md) ──────────────────
+    // ── Variables de entorno (nombres del Apéndice A, docs/referencia/convenciones-nomenclatura.md) ──────────────────
 
     [SkippableTheory] // CF-A09
     [InlineData("sanic_sigil_env_TsaEnabled")]

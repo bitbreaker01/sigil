@@ -1,4 +1,4 @@
-// Nombres de schema de Dataverse (doc 12 §5: las constantes viven en Domain/ y usan los
+// Nombres de schema de Dataverse (las constantes viven en Domain/ y usan los
 // nombres completos sanic_sigil_*). La EXISTENCIA de cada artefacto la garantiza la suite
 // de conformidad (CF-A04/A16/A17) — acá solo se centraliza el string para que un typo sea
 // un error de compilación y no un bug silencioso.
@@ -117,7 +117,7 @@ public static class SchemaNames
         public const string IsDisabled = "isdisabled";
     }
 
-    /// <summary>Custom APIs (doc 12 §3).</summary>
+    /// <summary>Custom APIs.</summary>
     public static class Apis
     {
         public const string CreateTransaction = "sanic_sigil_capi_CreateTransaction";

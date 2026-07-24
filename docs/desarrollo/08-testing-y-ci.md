@@ -45,7 +45,7 @@ Tests xUnit sobre las clases puras del núcleo, sin dependencia de Dataverse. Cu
 ### 2.1 `ChoicesTests` — el enum contra el Apéndice A
 
 `Domain/ChoicesTests.cs` es un test de **contrato**: garantiza que los enums de `Choices.cs` sean el espejo
-exacto del **Apéndice A** del [contrato de convenciones de nomenclatura](../referencia/12-convenciones-nomenclatura.md).
+exacto del [**Catálogo de Choices**](../referencia/catalogo-de-choices.md).
 Lee ese markdown, lo parsea con un regex que extrae `(choice, etiqueta, valor)` de la tabla, convierte la
 etiqueta al **nombre lógico** del enum (quita diacríticos con `NormalizationForm.FormD`, capitaliza: "Pendiente
 de Firma" → `PendienteDeFirma`), y verifica, para los 5 choices globales, que **cada miembro exista con su
@@ -91,19 +91,19 @@ firma maestra, la primera firma de dos (`IsLastSigner=false`), etc.
 
 ---
 
-## 4. El contrato del Apéndice A
+## 4. El contrato del Catálogo de Choices
 
-El [documento de convenciones de nomenclatura](../referencia/12-convenciones-nomenclatura.md) no es solo
-prosa: su **Apéndice A** es una tabla markdown con los 5 choices globales, sus etiquetas y **sus valores
-numéricos reales** — copiados del portal, nunca calculados (los flujos comparan por número). Ese apéndice es
-un **contrato vivo** que **dos** suites parsean:
+El [Catálogo de Choices](../referencia/catalogo-de-choices.md) es una tabla markdown con los 5 choices
+globales, sus etiquetas y **sus valores numéricos reales** — copiados del portal, nunca calculados (los
+flujos comparan por número). Es un **contrato vivo** que **tres** suites parsean:
 
 - `ChoicesTests` (§2.1) — lo contrasta contra los enums de `Choices.cs` (sin ambiente).
 - `Conformance_ModeloDatosTests` (§5) — lo contrasta contra los option sets de **Dataverse real**.
+- `states.contract.test.ts` (frontend) — lo contrasta contra los mapas de `src/domain/states.ts`.
 
 Los 5 choices y su cardinalidad: `transactionstatus` (9), `participantstatus` (4), `routingtype` (2),
 `tsastatus` (3), `eventtype` (13) — 31 opciones en total. Si el apéndice y el código (o el ambiente) divergen,
-alguna de las dos suites se pone roja.
+alguna de las tres suites se pone roja.
 
 ---
 
