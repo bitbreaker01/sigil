@@ -6,6 +6,10 @@ Platform se publican como [GitHub Releases](https://github.com/bitbreaker01/sigi
 
 ## [Unreleased]
 
+## [[1.2.0.0](https://github.com/bitbreaker01/sigil/releases/tag/sol-v1.2.0.0)] — 2026-07-24
+
+🎉 **Primer MVP estable.**
+
 ### Added
 - **Documentación de referencia** (`docs/referencia/`): índice, catálogo de choices, modelo de datos,
   Custom APIs (contrato I/O completo de las 17), roles y seguridad, variables de entorno, conexiones y
