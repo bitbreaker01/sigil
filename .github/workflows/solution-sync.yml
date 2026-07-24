@@ -1,0 +1,103 @@
+# ALM de la solución — NIVEL 1 (semi-automático).
+#
+# Manual (vos):     exportás la solución UNMANAGED desde Power Platform y la adjuntás como asset
+#                   de un GitHub Release (ej. `sigil_core_sigil_unmanaged.zip`).
+# Automático (esto): al publicarse el Release, descomprime el zip (`pac solution unpack`), BOTA lo
+#                   que ya vive como código, y commitea SOLO la metadata no-código en
+#                   `solutions/unpacked/` — donde el diff de git es el changelog real.
+#
+# Se bota (fuente real en el repo):  CanvasApps (code app → src/frontend), pluginpackages (.nupkg →
+#   src/backend), customapis + SdkMessageProcessingSteps (los registra tools/Sigil.Deploy).
+# Se mantiene: Entities, OptionSets, environmentvariabledefinitions, Roles, Workflows, Other.
+#
+# El unpack es OFFLINE (no toca Dataverse) → este nivel NO necesita secretos ni Service Principal.
+name: solution-sync
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag del Release a procesar (ej. v1.1.0.4)"
+        required: true
+
+permissions:
+  contents: write # commitea la metadata de vuelta a main
+
+concurrency:
+  group: solution-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Instalar Power Platform CLI (pac)
+        uses: microsoft/powerplatform-actions/actions-install@v1
+
+      - name: Descargar el zip UNMANAGED del Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "Release: $TAG"
+          mkdir -p _dl
+          gh release download "$TAG" --pattern '*.zip' --dir _dl
+          # Elegir el asset unmanaged: primero por nombre; si no, el que NO sea *managed*.
+          ZIP="$(ls _dl/*unmanaged*.zip 2>/dev/null | head -1 || true)"
+          if [ -z "$ZIP" ]; then
+            ZIP="$(ls _dl/*.zip | grep -viE 'managed' | head -1 || true)"
+          fi
+          if [ -z "$ZIP" ]; then
+            echo "::error::No encontré un zip unmanaged en el Release $TAG. Adjuntá el export unmanaged (ej. sigil_core_sigil_unmanaged.zip)."
+            exit 1
+          fi
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+          echo "Usando: $ZIP"
+
+      - name: Unpack de la solución (offline)
+        run: |
+          set -euo pipefail
+          rm -rf _unpacked
+          pac solution unpack --zipfile "$ZIP" --folder _unpacked --packagetype Unmanaged
+          echo "Unpack OK."
+
+      - name: Botar lo que ya es código
+        run: |
+          set -euo pipefail
+          rm -rf _unpacked/CanvasApps \
+                 _unpacked/pluginpackages \
+                 _unpacked/customapis \
+                 _unpacked/SdkMessageProcessingSteps
+          echo "Prune OK. Componentes que quedan:"
+          ls -1 _unpacked
+
+      - name: Sincronizar en solutions/unpacked/
+        run: |
+          set -euo pipefail
+          rm -rf solutions/unpacked
+          mkdir -p solutions/unpacked
+          cp -a _unpacked/. solutions/unpacked/
+
+      - name: Commit + push de la metadata
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add solutions/unpacked
+          if git diff --cached --quiet; then
+            echo "Sin cambios en la metadata — nada para commitear."
+            exit 0
+          fi
+          git commit -m "chore(solution): sync de metadata no-código desde el release $TAG"
+          git push origin main
