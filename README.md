@@ -18,8 +18,7 @@ sigil/
 ├── docs/
 │   ├── guias/              # 📖 Documentación viva (usuario, operador, cumplimiento, desarrollador)
 │   ├── referencia/         #   Contratos vivos que los tests corroboran (ej. Apéndice A de choices)
-│   └── desarrollo/         #   Documentación técnica del código (en construcción)
-├── _andamio/               # Andamio de construcción — descartable, NO se mantiene
+│   └── desarrollo/         #   Referencia técnica del código (arquitectura, backend, frontend, ALM…)
 └── .github/workflows/      # CI
 ```
 
