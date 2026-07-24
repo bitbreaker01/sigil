@@ -37,9 +37,11 @@ var clientSecret = Environment.GetEnvironmentVariable("SIGIL_CLIENT_SECRET");
 bool useSp = !interactive && !string.IsNullOrWhiteSpace(clientId) && !string.IsNullOrWhiteSpace(clientSecret);
 var connectionString = useSp
     ? $"AuthType=ClientSecret;Url={url};ClientId={clientId};ClientSecret='{clientSecret}';RequireNewInstance=true"
-    // AppId/RedirectUri = app público de muestra de Microsoft para conexiones interactivas de
-    // Dataverse (documentado en ServiceClient); LoginPrompt=Auto abre el navegador.
-    : $"AuthType=OAuth;Url={url};AppId=51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri=app://58145B91-0C36-4500-8554-080854F2AC97;LoginPrompt=Auto;RequireNewInstance=true";
+    // AppId = app público de muestra de Microsoft para conexiones interactivas de Dataverse
+    // (documentado en ServiceClient). RedirectUri DEBE ser loopback (http://localhost): MSAL.NetCore
+    // en el flujo de system-browser rechaza el redirect legacy app://... con loopback_redirect_uri
+    // (MSAL 4.84). El AppId de muestra tiene http://localhost registrado. LoginPrompt=Auto abre el browser.
+    : $"AuthType=OAuth;Url={url};AppId=51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri=http://localhost;LoginPrompt=Auto;RequireNewInstance=true";
 
 Console.WriteLine($"[1] Conectando a {url} ({(useSp ? "service principal" : "login interactivo")}) ...");
 using var client = new ServiceClient(connectionString);
